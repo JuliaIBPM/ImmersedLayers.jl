@@ -2,10 +2,11 @@
  Methods and types associated with single and double layer potentials
 =#
 
-module Layers
+module ImmersedLayers
 
-using CartesianGrids
-using RigidBodyTools
+using Reexport
+@reexport using CartesianGrids
+@reexport using RigidBodyTools
 
 export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask
 

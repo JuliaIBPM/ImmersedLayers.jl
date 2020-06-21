@@ -1,4 +1,3 @@
-import ViscousFlow: Layers
 
 Δx = 0.02
 xlim = (-5.98,5.98)
