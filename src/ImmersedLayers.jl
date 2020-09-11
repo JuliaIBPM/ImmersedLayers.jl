@@ -8,9 +8,13 @@ using Reexport
 @reexport using CartesianGrids
 @reexport using RigidBodyTools
 
+using LinearAlgebra
+
 export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask
 
 abstract type LayerType{N,NX,NY} end
+
+include("tools.jl")
 
 struct DoubleLayer{N,NX,NY,G,T,DTN,DT,DDT} <: LayerType{N,NX,NY}
     nds :: VectorData{N,Float64,DTN}

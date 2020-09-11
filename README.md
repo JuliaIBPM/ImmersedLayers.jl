@@ -7,4 +7,4 @@ _Tools for implementing discrete single and double layer potentials immersed in 
 
 ## About the package
 
-This package provides tools for immersing single and double layer potentials on Cartesian grids via the use of discrete Diract delta function
+This package provides tools for immersing single and double layer potentials on Cartesian grids via the use of discrete Dirac delta function

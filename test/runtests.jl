@@ -7,6 +7,7 @@ using Test
 
 
 #@test isempty(detect_ambiguities(ViscousFlow))
+include("tools.jl")
 include("layers.jl")
 
 
