@@ -8,9 +8,7 @@ struct DoubleLayer{N,NX,NY,G,T,DTN,DT,DDT} <: LayerType{N,NX,NY}
 end
 
 function DoubleLayer(body::Union{Body,BodyList},H::RegularizationMatrix;weight::Float64 = 1.0)
-  #ds = areas(body)*weight
   nrm = normals(body)*weight
-  #return DoubleLayer(normals∘ds,H)
   return DoubleLayer(nrm,H)
 end
 

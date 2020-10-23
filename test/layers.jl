@@ -39,7 +39,6 @@ end
   slayer = SingleLayer(body,Hs) #,weight=cellsize(g)^2)
   ϕ .= 1.0
 
-  #@test abs(sum(slayer(ϕ))-2π*radius) < 2e-3
   @test abs(dot(oc,slayer(ϕ),g)-2π*radius) < 2e-3
 
   slayer2 = SingleLayer(body,g,w)
@@ -54,7 +53,6 @@ end
 
   fill!(w,1)
 
-  #@test abs(sum(inner(w))*cellsize(g)^2 - π*radius^2) < 1e-3
   @test abs(dot(oc,inner(w),g) - π*radius^2) < 1e-3
 
   outer = ComplementaryMask(inner)
