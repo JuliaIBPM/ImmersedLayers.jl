@@ -12,8 +12,9 @@ function DoubleLayer(body::Union{Body,BodyList},H::RegularizationMatrix;weight::
   return DoubleLayer(nrm,H)
 end
 
-function DoubleLayer(body::Union{Body,BodyList},g::PhysicalGrid,w::GridData{NX,NY,T}) where {NX,NY,T}
-  reg = _get_regularization(body,g)
+function DoubleLayer(body::Union{Body,BodyList},g::PhysicalGrid,w::GridData{NX,NY,T};
+                      ddftype=CartesianGrids.Yang3) where {NX,NY,T}
+  reg = _get_regularization(body,g,ddftype=ddftype)
   out = RegularizationMatrix(reg,VectorData(numpts(body),dtype=T),Edges(celltype(w),w,dtype=T))
   return DoubleLayer(body,out, weight = 1/cellsize(g))
 end
@@ -43,8 +44,9 @@ function SingleLayer(body::Union{Body,BodyList},H::RegularizationMatrix;weight::
   return SingleLayer(ds,H)
 end
 
-function SingleLayer(body::Union{Body,BodyList},g::PhysicalGrid,w::GridData{NX,NY,T}) where {NX,NY,T}
-  reg = _get_regularization(body,g)
+function SingleLayer(body::Union{Body,BodyList},g::PhysicalGrid,w::GridData{NX,NY,T};
+                      ddftype=CartesianGrids.Yang3) where {NX,NY,T}
+  reg = _get_regularization(body,g,ddftype=ddftype)
   out = RegularizationMatrix(reg,ScalarData(numpts(body),dtype=T),Nodes(celltype(w),w,dtype=T))
   return SingleLayer(body,out) #,weight=cellsize(g)^2)
 end
