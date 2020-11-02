@@ -84,7 +84,7 @@ Returns a `Nodes` mask that sets every grid point equal to 1 if it lies inside t
 physical grid `g`.
 """
 function Mask(dlayer::DoubleLayer{N,NX,NY,G,T,DTN,DT,DDT},g::PhysicalGrid) where {N,NX,NY,G,T,DTN,DT,DDT}
-  L = plan_laplacian(NX,NY,with_inverse=true,dtype=T)
+  L = plan_laplacian(CartesianGrids.node_inds(G,size(g)),with_inverse=true,dtype=T)
   return Mask{N,NX,NY,G}(cellsize(g)^2*(L\dlayer(1)))
 end
 
