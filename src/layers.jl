@@ -1,7 +1,16 @@
 # Definitions of layers
 
 
+"""
+    DoubleLayer(b::Body/BodyList,g::PhysicalGrid,u::GridData)
 
+Construct a double-layer operator for a body or bodies `b`. When the
+resulting operator acts upon scalar point data `f`, it returns scalar
+grid data of the form ``D(f\\circ R_F n)``, where ``D`` is the discrete
+divergence operator on grid `g`, ``n`` are the normals associated with
+body/bodies `b`, and ``R_F`` is the regularization operator to (edge data on)
+`g`.
+"""
 struct DoubleLayer{N,NX,NY,G,T,DTN,DT,DDT} <: LayerType{N,NX,NY}
     nds :: VectorData{N,Float64,DTN}
     H :: RegularizationMatrix{Edges{G,NX,NY,T,DDT},VectorData{N,T,DT}}
@@ -16,7 +25,8 @@ function DoubleLayer(body::Union{Body,BodyList},g::PhysicalGrid,w::GridData{NX,N
                       ddftype=CartesianGrids.Yang3) where {NX,NY,T}
   reg = _get_regularization(body,g,ddftype=ddftype)
   out = RegularizationMatrix(reg,VectorData(numpts(body),dtype=T),Edges(celltype(w),w,dtype=T))
-  return DoubleLayer(body,out, weight = 1/cellsize(g))
+  #return DoubleLayer(body,out, weight = 1/cellsize(g))
+  return DoubleLayer(body,out, weight = 1.0)
 end
 
 (μ::DoubleLayer{N})(p::ScalarData{N}) where {N} = divergence(μ.H*(p∘μ.nds))
@@ -28,11 +38,19 @@ function (μ::DoubleLayer{N,NX,NY,G,T,DTN,DT,DDT})(p::Number) where {N,NX,NY,G,T
 end
 
 function Base.show(io::IO, H::DoubleLayer{N,NX,NY,G,T,DTN,DT,DDT}) where {N,NX,NY,G,T,DTN,DT,DDT}
-    println(io, "Double-layer potential mapping")
+    println(io, "Double-layer operator")
     println(io, "  from $N scalar-valued point data of $T type")
     println(io, "  to a $NX x $NY grid of $G nodal data")
 end
 
+"""
+    SingleLayer(b::Body/BodyList,g::PhysicalGrid,u::GridData)
+
+Construct a single-layer operator for a body or bodies `b`. When the
+resulting operator acts upon scalar point data `f`, it returns
+scalar grid data of form ``R_C f``, where ``R_C`` is the
+regularization operator to (node data on) `g`.
+"""
 struct SingleLayer{N,NX,NY,G,T,DTN,DT,DDT} <: LayerType{N,NX,NY}
     ds :: ScalarData{N,Float64,DTN}
     H :: RegularizationMatrix{Nodes{G,NX,NY,T,DDT},ScalarData{N,T,DT}}
@@ -85,7 +103,8 @@ physical grid `g`.
 """
 function Mask(dlayer::DoubleLayer{N,NX,NY,G,T,DTN,DT,DDT},g::PhysicalGrid) where {N,NX,NY,G,T,DTN,DT,DDT}
   L = plan_laplacian(CartesianGrids.node_inds(G,size(g)),with_inverse=true,dtype=T)
-  return Mask{N,NX,NY,G}(cellsize(g)^2*(L\dlayer(1)))
+  #return Mask{N,NX,NY,G}(-cellsize(g)^2*(L\dlayer(1)))
+  return Mask{N,NX,NY,G}(-cellsize(g)*(L\dlayer(1)))
 end
 
 Mask(body::Union{Body,BodyList},g::PhysicalGrid,w::GridData{NX,NY,T}) where {NX,NY,T} =

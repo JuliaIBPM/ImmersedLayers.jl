@@ -23,7 +23,7 @@ Hs = RegularizationMatrix(regop,ϕ,w)
 
 @testset "Double Layer" begin
 
-  dlayer = DoubleLayer(body,Hv,weight=1/cellsize(g))
+  dlayer = DoubleLayer(body,Hv,weight=1.0)
   ϕ .= rand(length(ϕ))
 
   @test abs(dot(oc,dlayer(ϕ),g)) < 100*eps(1.0)
