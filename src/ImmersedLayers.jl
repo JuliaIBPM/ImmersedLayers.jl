@@ -12,7 +12,7 @@ using LinearAlgebra
 
 export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask
 
-abstract type LayerType{N,NX,NY} end
+abstract type LayerType{N} end
 
 include("tools.jl")
 include("layers.jl")
