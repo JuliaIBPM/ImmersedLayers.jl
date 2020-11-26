@@ -32,6 +32,10 @@ Hs = RegularizationMatrix(regop,ϕ,w)
 
   @test dlayer2(ϕ) == dlayer(ϕ)
 
+  v = Edges(Primal,w)
+  dvlayer = DoubleLayer(body,g,v)
+  
+
 end
 
 @testset "Single Layer" begin

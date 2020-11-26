@@ -22,7 +22,7 @@ struct DoubleLayer{N,D,G,P,PP,GG} <: LayerType{N}
     Gbuf :: GG
 end
 
-function DoubleLayer(body::Union{Body,BodyList},H::RegularizationMatrix{G,P};weight::Float64 = 1.0) where {G,P<:VectorData}
+function DoubleLayer(body::Union{Body,BodyList},H::RegularizationMatrix{G,P};weight::Float64 = 1.0) where {G,P}
   nrm = normals(body)*weight
   Pbuf = P() #_allocate_point_data(P)
   Gbuf = G() #_allocate_grid_data(G)
