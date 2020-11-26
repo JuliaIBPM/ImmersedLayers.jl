@@ -14,15 +14,26 @@ of the form ``D R_T (f\\times n + n\\times f)``, where ``\\times`` is
 the Cartesian product, and ``R_T`` is the regularization operator to
 edge gradient data on `g`.
 """
-struct DoubleLayer{N,D,G,P} <: LayerType{N}
+struct DoubleLayer{N,D,G,P,PP,GG} <: LayerType{N}
     nds :: VectorData{N,Float64,D}
     H :: RegularizationMatrix{G,P}
+    Pbuf :: PP
+    Qbuf :: PP
+    Gbuf :: GG
 end
 
-function DoubleLayer(body::Union{Body,BodyList},H::RegularizationMatrix;weight::Float64 = 1.0)
+function DoubleLayer(body::Union{Body,BodyList},H::RegularizationMatrix{G,P};weight::Float64 = 1.0) where {G,P<:VectorData}
   nrm = normals(body)*weight
-  return DoubleLayer(nrm,H)
+  Pbuf = P() #_allocate_point_data(P)
+  Gbuf = G() #_allocate_grid_data(G)
+  return DoubleLayer(nrm,H,Pbuf,Pbuf,Gbuf)
 end
+
+#_allocate_point_data(P::Type{VectorData{N}}) where {N} = VectorData(N,dtype=eltype(P))
+#_allocate_point_data(P::Type{TensorData{N}}) where {N} = TensorData(N,dtype=eltype(P))
+#_allocate_grid_data(G::Type{Edges{C,NX,NY}}) where {C,NX,NY} = Edges(C,(NX,NY),dtype=eltype(G))
+#_allocate_grid_data(G::Type{EdgeGradient{C,D,NX,NY}}) where {C,D,NX,NY} = EdgeGradient(C,(NX,NY),dtype=eltype(G))
+
 
 function DoubleLayer(body::Union{Body,BodyList},g::PhysicalGrid,w::ScalarGridData{NX,NY,T};
                       ddftype=CartesianGrids.Yang3) where {NX,NY,T}
@@ -40,13 +51,30 @@ function DoubleLayer(body::Union{Body,BodyList},g::PhysicalGrid,w::VectorGridDat
   return DoubleLayer(body,out, weight = 1.0)
 end
 
-(μ::DoubleLayer{N})(p::ScalarData{N}) where {N} = divergence(μ.H*(p∘μ.nds))
+function (μ::DoubleLayer{N,D,<:Edges{C}})(u::Nodes{C},p::ScalarData{N}) where {N,D,C}
+    product!(μ.Pbuf,p,μ.nds)
+    divergence!(u,mul!(μ.Gbuf,μ.H,μ.Pbuf))
+    return u
+end
 
-(μ::DoubleLayer{N})(p::VectorData{N}) where {N} = divergence(μ.H*(p*μ.nds+μ.nds*p))
+function (μ::DoubleLayer{N,D,<:EdgeGradient{C}})(u::Edges{C},p::VectorData{N}) where {N,D,C}
+    tensorproduct!(μ.Pbuf,p,μ.nds)
+    transpose!(μ.Qbuf,μ.Pbuf)
+    μ.Pbuf .+= μ.Qbuf
+    divergence!(u,mul!(μ.Gbuf,μ.H,μ.Pbuf))
+    return u
+end
+
+
+#(μ::DoubleLayer{N})(p::ScalarData{N}) where {N} = divergence(μ.H*(p∘μ.nds))
+(μ::DoubleLayer{N,D,G})(p::ScalarData{N}) where {N,D,G<:GridData{NX,NY}} where {NX,NY} = μ(Nodes(celltype(G),(NX,NY)),p)
+
+#(μ::DoubleLayer{N})(p::VectorData{N}) where {N} = divergence(μ.H*(p*μ.nds+μ.nds*p))
+(μ::DoubleLayer{N,D,G})(p::VectorData{N}) where {N,D,G<:GridData{NX,NY}} where {NX,NY} = μ(Edges(celltype(G),(NX,NY)),p)
 
 
 function (μ::DoubleLayer{N,D,G,P})(p::Number) where {N,D,G<:GridData,P<:PointData}
-  ϕ = ScalarData(N,dtype=eltype(G))
+  ϕ = ScalarData(N,dtype=eltype(P))
   ϕ .= p
   return μ(ϕ)
 end
@@ -68,15 +96,17 @@ vector point data `f`, it returns vector (edge) grid data of the
 form ``R_F f``, where ``R_F`` is the regularization operato to edge
 data on `g`.
 """
-struct SingleLayer{N,D,G,P} <: LayerType{N}
+struct SingleLayer{N,D,G,P,PP} <: LayerType{N}
     ds :: ScalarData{N,Float64,D}
     H :: RegularizationMatrix{G,P}
+    Pbuf :: PP
 end
 
-function SingleLayer(body::Union{Body,BodyList},H::RegularizationMatrix;weight::Float64 = 1.0)
+function SingleLayer(body::Union{Body,BodyList},H::RegularizationMatrix{G,P};weight::Float64 = 1.0) where {G,P}
   ds = ScalarData(numpts(body))
   ds .= weight
-  return SingleLayer(ds,H)
+  Pbuf = ScalarData(numpts(body),dtype=eltype(P))
+  return SingleLayer(ds,H,Pbuf)
 end
 
 function SingleLayer(body::Union{Body,BodyList},g::PhysicalGrid,w::GridData{NX,NY,T};
@@ -86,12 +116,20 @@ function SingleLayer(body::Union{Body,BodyList},g::PhysicalGrid,w::GridData{NX,N
   return SingleLayer(body,out) #,weight=cellsize(g)^2)
 end
 
-(μ::SingleLayer{N})(p::ScalarData{N}) where {N} = μ.H*(p∘μ.ds)
+
+function (μ::SingleLayer{N,D,G})(u::G,p::ScalarData{N}) where {N,D,G}
+    product!(μ.Pbuf,p,μ.ds)
+    mul!(u,μ.H,μ.Pbuf)
+    return u
+end
+
+(μ::SingleLayer{N,D,G})(p::ScalarData{N}) where {N,D,G} = μ(G(),p)
+#(μ::SingleLayer{N})(p::ScalarData{N}) where {N} = μ.H*(p∘μ.ds)
+
 
 function (μ::SingleLayer{N,D,G,P})(p::Number) where {N,D,G<:GridData,P<:PointData}
-  ϕ = ScalarData(N,dtype=eltype(P))
-  ϕ .= p
-  return μ(ϕ)
+  μ.Pbuf .= p
+  return μ(μ.Pbuf)
 end
 
 function Base.show(io::IO, H::SingleLayer{N,D,G,P}) where {N,D,G<:GridData{NX,NY,DG},P<:PointData{N,DP}} where {NX,NY,DG,DP}
