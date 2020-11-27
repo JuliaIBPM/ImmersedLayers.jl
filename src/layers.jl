@@ -25,8 +25,9 @@ end
 function DoubleLayer(body::Union{Body,BodyList},H::RegularizationMatrix{G,P};weight::Float64 = 1.0) where {G,P}
   nrm = normals(body)*weight
   Pbuf = P() #_allocate_point_data(P)
+  Qbuf = P()
   Gbuf = G() #_allocate_grid_data(G)
-  return DoubleLayer(nrm,H,Pbuf,Pbuf,Gbuf)
+  return DoubleLayer(nrm,H,Pbuf,Qbuf,Gbuf)
 end
 
 #_allocate_point_data(P::Type{VectorData{N}}) where {N} = VectorData(N,dtype=eltype(P))
@@ -67,10 +68,10 @@ end
 
 
 #(μ::DoubleLayer{N})(p::ScalarData{N}) where {N} = divergence(μ.H*(p∘μ.nds))
-(μ::DoubleLayer{N,D,G})(p::ScalarData{N}) where {N,D,G<:GridData{NX,NY}} where {NX,NY} = μ(Nodes(celltype(G),(NX,NY)),p)
+(μ::DoubleLayer{N,D,G})(p::ScalarData{N}) where {N,D,G<:Edges{C,NX,NY}} where {C,NX,NY} = μ(Nodes(C,(NX,NY)),p)
 
 #(μ::DoubleLayer{N})(p::VectorData{N}) where {N} = divergence(μ.H*(p*μ.nds+μ.nds*p))
-(μ::DoubleLayer{N,D,G})(p::VectorData{N}) where {N,D,G<:GridData{NX,NY}} where {NX,NY} = μ(Edges(celltype(G),(NX,NY)),p)
+(μ::DoubleLayer{N,D,G})(p::VectorData{N}) where {N,D,G<:EdgeGradient{C,F,NX,NY}} where {C,F,NX,NY} = μ(Edges(C,(NX,NY)),p)
 
 
 function (μ::DoubleLayer{N,D,G,P})(p::Number) where {N,D,G<:GridData,P<:PointData}

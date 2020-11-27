@@ -34,7 +34,9 @@ Hs = RegularizationMatrix(regop,ϕ,w)
 
   v = Edges(Primal,w)
   dvlayer = DoubleLayer(body,g,v)
-  
+
+  f .= rand(length(f))
+  dvlayer(f)
 
 end
 
