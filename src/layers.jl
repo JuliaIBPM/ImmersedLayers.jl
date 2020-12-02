@@ -14,7 +14,7 @@ of the form ``D R_T (f\\times n + n\\times f)``, where ``\\times`` is
 the Cartesian product, and ``R_T`` is the regularization operator to
 edge gradient data on `g`.
 """
-struct DoubleLayer{N,D,G,P} <: LayerType{N}
+mutable struct DoubleLayer{N,D,G,P} <: LayerType{N}
     weight :: Float64
     nds :: VectorData{N,Float64,D}
     H :: RegularizationMatrix{G,P}
@@ -36,8 +36,8 @@ end
 """
 function DoubleLayer!(dl::DoubleLayer{N,D,G,P},body::Union{Body,BodyList},H::RegularizationMatrix{G,P}) where {N,D,G,P}
   numpts(body) == N || error("Inconsistent number of points in body")
-  dl.nds .= normals(body)*dl.weight
-  dl.H .= H
+  dl.nds = normals(body)*dl.weight
+  dl.H = H
   return dl
 end
 
@@ -67,7 +67,7 @@ function DoubleLayer!(dl::DoubleLayer{N,D,G,P},body::Union{Body,BodyList},g::Phy
                       ddftype=CartesianGrids.Yang3) where {N,D,G,P}
 
   reg = _get_regularization(body,g,ddftype=ddftype)
-  DoubleLayer!(dl,body,RegularizationMatrix(reg,P(),G()))
+  DoubleLayer!(dl,body,RegularizationMatrix(reg,dl.Pbuf,dl.Gbuf))
   return dl
 end
 
@@ -116,23 +116,25 @@ vector point data `f`, it returns vector (edge) grid data of the
 form ``R_F f``, where ``R_F`` is the regularization operato to edge
 data on `g`.
 """
-struct SingleLayer{N,D,G,P} <: LayerType{N}
+mutable struct SingleLayer{N,D,G,P} <: LayerType{N}
     weight :: Float64
     ds :: ScalarData{N,Float64,D}
     H :: RegularizationMatrix{G,P}
     Pbuf :: P
+    Gbuf :: G
 end
 
 function SingleLayer(body::Union{Body,BodyList},H::RegularizationMatrix{G,P};weight::Float64 = 1.0) where {G,P}
   ds = ScalarData(numpts(body))
   ds .= weight
-  Pbuf = ScalarData(numpts(body),dtype=eltype(P))
-  return SingleLayer(weight,ds,H,Pbuf)
+  Pbuf = P()
+  Gbuf = G()
+  return SingleLayer(weight,ds,H,Pbuf,Gbuf)
 end
 
 function SingleLayer!(sl::SingleLayer{N,D,G,P},body::Union{Body,BodyList},H::RegularizationMatrix{G,P}) where {N,D,G,P}
   numpts(body) == N || error("Inconsistent number of points in body")
-  sl.H .= H
+  sl.H = H
   return sl
 end
 
@@ -147,7 +149,7 @@ function SingleLayer!(sl::SingleLayer{N,D,G,P},body::Union{Body,BodyList},g::Phy
                       ddftype=CartesianGrids.Yang3) where {N,D,G,P}
 
   reg = _get_regularization(body,g,ddftype=ddftype)
-  SingleLayer!(sl,body,RegularizationMatrix(reg,P(),G()))
+  SingleLayer!(sl,body,RegularizationMatrix(reg,sl.Pbuf,sl.Gbuf))
   return sl
 end
 
