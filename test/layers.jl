@@ -38,6 +38,11 @@ Hs = RegularizationMatrix(regop,ϕ,w)
   f .= rand(length(f))
   dvlayer(f)
 
+  dlayer2 = deepcopy(dlayer)
+  DoubleLayer!(dlayer2,body,g)
+
+  @test dlayer.H == dlayer2.H
+
 end
 
 @testset "Single Layer" begin
@@ -50,6 +55,11 @@ end
   slayer2 = SingleLayer(body,g,w)
 
   @test slayer2(ϕ) == slayer(ϕ)
+
+  slayer2 = deepcopy(slayer)
+  SingleLayer!(slayer2,body,g)
+
+  @test slayer.H == slayer2.H
 
 end
 

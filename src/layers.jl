@@ -14,12 +14,13 @@ of the form ``D R_T (f\\times n + n\\times f)``, where ``\\times`` is
 the Cartesian product, and ``R_T`` is the regularization operator to
 edge gradient data on `g`.
 """
-struct DoubleLayer{N,D,G,P,PP,GG} <: LayerType{N}
+struct DoubleLayer{N,D,G,P} <: LayerType{N}
+    weight :: Float64
     nds :: VectorData{N,Float64,D}
     H :: RegularizationMatrix{G,P}
-    Pbuf :: PP
-    Qbuf :: PP
-    Gbuf :: GG
+    Pbuf :: P
+    Qbuf :: P
+    Gbuf :: G
 end
 
 function DoubleLayer(body::Union{Body,BodyList},H::RegularizationMatrix{G,P};weight::Float64 = 1.0) where {G,P}
@@ -27,7 +28,17 @@ function DoubleLayer(body::Union{Body,BodyList},H::RegularizationMatrix{G,P};wei
   Pbuf = P() #_allocate_point_data(P)
   Qbuf = P()
   Gbuf = G() #_allocate_grid_data(G)
-  return DoubleLayer(nrm,H,Pbuf,Qbuf,Gbuf)
+  return DoubleLayer(weight,nrm,H,Pbuf,Qbuf,Gbuf)
+end
+
+"""
+    DoubleLayer!(dl::DoubleLayer,body::Union{Body,BodyList},g::PhysicalGrid)
+"""
+function DoubleLayer!(dl::DoubleLayer{N,D,G,P},body::Union{Body,BodyList},H::RegularizationMatrix{G,P}) where {N,D,G,P}
+  numpts(body) == N || error("Inconsistent number of points in body")
+  dl.nds .= normals(body)*dl.weight
+  dl.H .= H
+  return dl
 end
 
 #_allocate_point_data(P::Type{VectorData{N}}) where {N} = VectorData(N,dtype=eltype(P))
@@ -50,6 +61,14 @@ function DoubleLayer(body::Union{Body,BodyList},g::PhysicalGrid,w::VectorGridDat
   out = RegularizationMatrix(reg,TensorData(numpts(body),dtype=T),EdgeGradient(celltype(w),w,dtype=T))
   #return DoubleLayer(body,out, weight = 1/cellsize(g))
   return DoubleLayer(body,out, weight = 1.0)
+end
+
+function DoubleLayer!(dl::DoubleLayer{N,D,G,P},body::Union{Body,BodyList},g::PhysicalGrid;
+                      ddftype=CartesianGrids.Yang3) where {N,D,G,P}
+
+  reg = _get_regularization(body,g,ddftype=ddftype)
+  DoubleLayer!(dl,body,RegularizationMatrix(reg,P(),G()))
+  return dl
 end
 
 function (μ::DoubleLayer{N,D,<:Edges{C}})(u::Nodes{C},p::ScalarData{N}) where {N,D,C}
@@ -97,17 +116,24 @@ vector point data `f`, it returns vector (edge) grid data of the
 form ``R_F f``, where ``R_F`` is the regularization operato to edge
 data on `g`.
 """
-struct SingleLayer{N,D,G,P,PP} <: LayerType{N}
+struct SingleLayer{N,D,G,P} <: LayerType{N}
+    weight :: Float64
     ds :: ScalarData{N,Float64,D}
     H :: RegularizationMatrix{G,P}
-    Pbuf :: PP
+    Pbuf :: P
 end
 
 function SingleLayer(body::Union{Body,BodyList},H::RegularizationMatrix{G,P};weight::Float64 = 1.0) where {G,P}
   ds = ScalarData(numpts(body))
   ds .= weight
   Pbuf = ScalarData(numpts(body),dtype=eltype(P))
-  return SingleLayer(ds,H,Pbuf)
+  return SingleLayer(weight,ds,H,Pbuf)
+end
+
+function SingleLayer!(sl::SingleLayer{N,D,G,P},body::Union{Body,BodyList},H::RegularizationMatrix{G,P}) where {N,D,G,P}
+  numpts(body) == N || error("Inconsistent number of points in body")
+  sl.H .= H
+  return sl
 end
 
 function SingleLayer(body::Union{Body,BodyList},g::PhysicalGrid,w::GridData{NX,NY,T};
@@ -117,6 +143,13 @@ function SingleLayer(body::Union{Body,BodyList},g::PhysicalGrid,w::GridData{NX,N
   return SingleLayer(body,out) #,weight=cellsize(g)^2)
 end
 
+function SingleLayer!(sl::SingleLayer{N,D,G,P},body::Union{Body,BodyList},g::PhysicalGrid;
+                      ddftype=CartesianGrids.Yang3) where {N,D,G,P}
+
+  reg = _get_regularization(body,g,ddftype=ddftype)
+  SingleLayer!(sl,body,RegularizationMatrix(reg,P(),G()))
+  return sl
+end
 
 function (μ::SingleLayer{N,D,G})(u::G,p::ScalarData{N}) where {N,D,G}
     product!(μ.Pbuf,p,μ.ds)

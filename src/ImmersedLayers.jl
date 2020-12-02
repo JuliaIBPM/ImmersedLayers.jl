@@ -10,7 +10,8 @@ using Reexport
 
 using LinearAlgebra
 
-export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask
+export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
+        DoubleLayer!, SingleLayer!, Mask!
 
 abstract type LayerType{N} end
 
