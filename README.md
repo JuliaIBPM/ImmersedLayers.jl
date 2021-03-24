@@ -7,4 +7,6 @@ _Tools for implementing discrete single and double layer potentials immersed in 
 
 ## About the package
 
-This package provides tools for immersing single and double layer potentials on Cartesian grids via the use of discrete Dirac delta function
+This package provides tools for immersing single and double layer potentials on Cartesian grids via the use of discrete Dirac delta function. The method details can be found in [1].
+
+[1] Eldredge, J. D. (2021) "A method of immersed layers on Cartesian grids, with application to incompressible flows," [arXiv:2103.04521](https://arxiv.org/abs/2103.04521).
