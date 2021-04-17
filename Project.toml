@@ -12,7 +12,7 @@ RigidBodyTools = "befc5f09-81d5-499c-a4b2-d0464ba9f9c8"
 
 [compat]
 CartesianGrids = "0.1.7"
-Reexport = "0.2.0"
+Reexport = "0.2.0, 1.0"
 RigidBodyTools = "0.1.7"
 julia = "1"
 
