@@ -71,6 +71,7 @@ function DoubleLayer!(dl::DoubleLayer{N,D,G,P},body::Union{Body,BodyList},g::Phy
   return dl
 end
 
+# in-place
 function (μ::DoubleLayer{N,D,<:Edges{C}})(u::Nodes{C},p::ScalarData{N}) where {N,D,C}
     product!(μ.Pbuf,p,μ.nds)
     divergence!(u,mul!(μ.Gbuf,μ.H,μ.Pbuf))
@@ -87,10 +88,13 @@ end
 
 
 #(μ::DoubleLayer{N})(p::ScalarData{N}) where {N} = divergence(μ.H*(p∘μ.nds))
-(μ::DoubleLayer{N,D,G})(p::ScalarData{N}) where {N,D,G<:Edges{C,NX,NY}} where {C,NX,NY} = μ(Nodes(C,(NX,NY)),p)
+# out of place
+(μ::DoubleLayer{N,D,G,P})(p::ScalarData{N,DG}) where {N,D,G<:Edges{C,NX,NY},P<:PointData{N,DG1},DG} where {C,NX,NY,DG1} =
+          μ(Nodes(C,(NX,NY),dtype=DG1),p)
 
 #(μ::DoubleLayer{N})(p::VectorData{N}) where {N} = divergence(μ.H*(p*μ.nds+μ.nds*p))
-(μ::DoubleLayer{N,D,G})(p::VectorData{N}) where {N,D,G<:EdgeGradient{C,F,NX,NY}} where {C,F,NX,NY} = μ(Edges(C,(NX,NY)),p)
+(μ::DoubleLayer{N,D,G,P})(p::VectorData{N,DG}) where {N,D,G<:EdgeGradient{C,F,NX,NY},P<:PointData{N,DG1},DG} where {C,F,NX,NY,DG1} =
+          μ(Edges(C,(NX,NY),dtype=DG1),p)
 
 
 function (μ::DoubleLayer{N,D,G,P})(p::Number) where {N,D,G<:GridData,P<:PointData}
@@ -153,12 +157,14 @@ function SingleLayer!(sl::SingleLayer{N,D,G,P},body::Union{Body,BodyList},g::Phy
   return sl
 end
 
+# In place
 function (μ::SingleLayer{N,D,G})(u::G,p::ScalarData{N}) where {N,D,G}
     product!(μ.Pbuf,p,μ.ds)
     mul!(u,μ.H,μ.Pbuf)
     return u
 end
 
+# Out of place
 (μ::SingleLayer{N,D,G})(p::ScalarData{N}) where {N,D,G} = μ(G(),p)
 #(μ::SingleLayer{N})(p::ScalarData{N}) where {N} = μ.H*(p∘μ.ds)
 

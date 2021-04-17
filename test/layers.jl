@@ -5,6 +5,8 @@ ylim = (-5.98,5.98)
 g = PhysicalGrid(xlim,ylim,Δx)
 
 w = Nodes(Dual,size(g))
+wc = Nodes(Dual,size(g),dtype=ComplexF64)
+
 dq = Edges(Dual,w)
 oc = similar(w)
 oc .= 1
@@ -43,6 +45,10 @@ Hs = RegularizationMatrix(regop,ϕ,w)
 
   @test dlayer.H == dlayer2.H
 
+  dlayerc = DoubleLayer(body,g,wc)
+
+  @test eltype(dlayerc(1)) == ComplexF64
+
 end
 
 @testset "Single Layer" begin
@@ -72,5 +78,9 @@ end
   @test abs(dot(oc,inner(w),g) - π*radius^2) < 1e-3
 
   outer = ComplementaryMask(inner)
+
+  innerc = Mask(body,g,wc)
+
+  @test eltype(innerc(wc)) == ComplexF64
 
 end
