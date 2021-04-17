@@ -5,8 +5,10 @@
 module ImmersedLayers
 
 using Reexport
-@reexport using CartesianGrids
-@reexport using RigidBodyTools
+#@reexport using CartesianGrids
+#@reexport using RigidBodyTools
+using CartesianGrids
+using RigidBodyTools
 
 using LinearAlgebra
 
