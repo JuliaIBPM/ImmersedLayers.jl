@@ -208,7 +208,12 @@ Mask(body::Union{Body,BodyList},g::PhysicalGrid,w::GridData{NX,NY,T}) where {NX,
 
 (m::Mask{N,NX,NY,G})(w::Nodes{G,NX,NY,T}) where {N,NX,NY,G,T} = m.data ∘ w
 
+(m::Mask{N,NX,NY,G})(out::Nodes{G,NX,NY,T},w::Nodes{G,NX,NY,T}) where {N,NX,NY,G,T} = product!(out,m.data,w)
+
+
 (m::ComplementaryMask{N,NX,NY,G})(w::Nodes{G,NX,NY,T}) where {N,NX,NY,G,T} = w - m.mask(w)
+
+(m::ComplementaryMask{N,NX,NY,G})(out::Nodes{G,NX,NY,T},w::Nodes{G,NX,NY,T}) where {N,NX,NY,G,T} = (m.mask(out,w); out .= w - out)
 
 
 # Standardize the regularization

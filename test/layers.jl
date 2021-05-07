@@ -77,10 +77,17 @@ end
 
   @test abs(dot(oc,inner(w),g) - π*radius^2) < 1e-3
 
+  out = similar(w)
+  inner(out,w)
+  @test out == inner(w)
+
   outer = ComplementaryMask(inner)
+  outer(out,w)
+  @test out == outer(w)
 
   innerc = Mask(body,g,wc)
 
   @test eltype(innerc(wc)) == ComplexF64
+
 
 end
