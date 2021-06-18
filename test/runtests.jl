@@ -9,6 +9,7 @@ using Test
 #@test isempty(detect_ambiguities(ViscousFlow))
 include("tools.jl")
 include("layers.jl")
+include("surface_ops.jl")
 
 
 #@testset ExtendedTestSet "All tests" begin
