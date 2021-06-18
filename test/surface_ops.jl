@@ -36,7 +36,7 @@ angs(n) = range(0,2π,length=n+1)[1:n]
   @test maximum(eigvals(A)) ≈ 0.45 atol = 1e-1
 
   A = nRTRn(scache)
-  @test maximum(eigvals(A)) ≈ 45 atol = 1e-0
+  @test maximum(svdvals(A)) ≈ 45 atol = 1e-0
 
 end
 
