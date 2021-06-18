@@ -4,7 +4,12 @@ $(TYPEDEF)
 Create a cache of operators and storage data for use in surface operations.
 
 ## Constructors
-`SurfaceCache(X::VectorData,nrm::VectorData,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,weights=nothing])`
+The cache is populated differently depending on the type of data intended. For
+scalar surface quantities, one calls `SurfaceScalarCache`; for vector surface
+quantities, one calls `SurfaceVectorCache`. The examples below can be replaced
+with `SurfaceVectorCache` without modification.
+
+`SurfaceScalarCache(X::VectorData,nrm::VectorData,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,weights=nothing])`
 
 Here, `X` holds the coordinates of surface data and `nrm` holds the corresponding
 surface normals.
@@ -17,49 +22,79 @@ By default, it sets the regularization and interpolation to be symmetric matrice
   interpolation and regularization are adjoints with respect to inner products
   based on discretized integrals.
 
-`SurfaceCache(body::Body/BodyList,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,weights=areas(body)])`
+`SurfaceScalarCache(body::Body/BodyList,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,weights=areas(body)])`
 
 Here, the `body` can be of type `Body` or `BodyList`. The same keyword arguments
 apply. However, now the default is `weights = areas(body)`.
 """
 struct SurfaceCache{N,NT<:VectorData,REGT<:Regularize,RT<:RegularizationMatrix,ET<:InterpolationMatrix,
-                      LT<:CartesianGrids.Laplacian,GVT<:Edges{Primal},GNT<:Nodes{Dual},GCT<:Nodes{Primal},
-                      SVT<:VectorData,SST<:ScalarData}
+                      LT<:CartesianGrids.Laplacian,GVT,GNT,GCT,SVT,SST}
     nrm :: NT
     regop :: REGT
     R :: RT
     E :: ET
     L :: LT
     gv_cache :: GVT
+    gv2_cache :: GVT
     gn_cache :: GNT
     gc_cache :: GCT
     sv_cache :: SVT
+    sv2_cache :: SVT
     ss_cache :: SST
 end
 
-function SurfaceCache(X::VectorData{N},nrm::VectorData{N},g::PhysicalGrid; ddftype = CartesianGrids.Yang3, weights = nothing) where {N}
+for f in [:SurfaceScalarCache, :SurfaceVectorCache]
+  @eval $f(body::Union{Body,BodyList},g::PhysicalGrid;ddftype = CartesianGrids.Yang3, weights=areas(body).data) =
+        $f(VectorData(collect(body)),normals(body),g;ddftype=ddftype,weights=weights)
+end
 
-   σtmp = ScalarData(X)
+function SurfaceScalarCache(X::VectorData{N},nrm::VectorData{N},g::PhysicalGrid; ddftype = CartesianGrids.Yang3, weights = nothing) where {N}
+
+   sstmp = ScalarData(X)
    svtmp = VectorData(X)
 
-   qtmp = Edges(Primal,size(g))
-   wtmp = Nodes(Dual,size(g))
-   ptmp = Nodes(Primal,size(g))
+   gvtmp = Edges(Primal,size(g))
+   gntmp = Nodes(Dual,size(g))
+   gctmp = Nodes(Primal,size(g))
 
    if isnothing(weights)
        regop = Regularize(X, cellsize(g), I0=origin(g), ddftype = CartesianGrids.Yang3, issymmetric=true)
-       Rf, _ = RegularizationMatrix(regop, svtmp, qtmp)
+       Rf, _ = RegularizationMatrix(regop, svtmp, gvtmp)
    else
        regop = Regularize(X, cellsize(g), I0=origin(g), ddftype = CartesianGrids.Yang3, weights=weights)
-       Rf = RegularizationMatrix(regop, svtmp, qtmp)
+       Rf = RegularizationMatrix(regop, svtmp, gvtmp)
    end
 
-   Ef = InterpolationMatrix(regop, qtmp, svtmp)
+   Ef = InterpolationMatrix(regop, gvtmp, svtmp)
 
-   L = plan_laplacian(size(wtmp),with_inverse=true)
+   L = plan_laplacian(size(gntmp),with_inverse=true)
    return SurfaceCache{N,typeof(nrm),typeof(regop),typeof(Rf),typeof(Ef),typeof(L),
-                        typeof(qtmp),typeof(wtmp),typeof(ptmp),typeof(svtmp),typeof(σtmp)}(
-                        nrm,regop,Rf,Ef,L,similar(qtmp),similar(wtmp),similar(ptmp),similar(svtmp),similar(σtmp))
+                        typeof(gvtmp),typeof(gntmp),typeof(gctmp),typeof(svtmp),typeof(sstmp)}(
+                        nrm,regop,Rf,Ef,L,similar(gvtmp),similar(gvtmp),similar(gntmp),similar(gctmp),similar(svtmp),similar(svtmp),similar(sstmp))
 end
 
-@inline SurfaceCache(body::Union{Body,BodyList},g::PhysicalGrid;ddftype = CartesianGrids.Yang3, weights=areas(body).data) = SurfaceCache(VectorData(collect(body)),normals(body),g;ddftype=ddftype,weights=weights)
+
+function SurfaceVectorCache(X::VectorData{N},nrm::VectorData{N},g::PhysicalGrid; ddftype = CartesianGrids.Yang3, weights = nothing) where {N}
+
+   sstmp = VectorData(X)
+   svtmp = TensorData(X)
+
+   gvtmp = EdgeGradient(Primal,size(g))
+   gntmp = Nodes(Dual,size(g))
+   gctmp = Edges(Primal,size(g))
+
+   if isnothing(weights)
+       regop = Regularize(X, cellsize(g), I0=origin(g), ddftype = CartesianGrids.Yang3, issymmetric=true)
+       Rf, _ = RegularizationMatrix(regop, svtmp, gvtmp)
+   else
+       regop = Regularize(X, cellsize(g), I0=origin(g), ddftype = CartesianGrids.Yang3, weights=weights)
+       Rf = RegularizationMatrix(regop, svtmp, gvtmp)
+   end
+
+   Ef = InterpolationMatrix(regop, gvtmp, svtmp)
+
+   L = plan_laplacian(size(gntmp),with_inverse=true)
+   return SurfaceCache{N,typeof(nrm),typeof(regop),typeof(Rf),typeof(Ef),typeof(L),
+                        typeof(gvtmp),typeof(gntmp),typeof(gctmp),typeof(svtmp),typeof(sstmp)}(
+                        nrm,regop,Rf,Ef,L,similar(gvtmp),similar(gvtmp),similar(gntmp),similar(gctmp),similar(svtmp),similar(svtmp),similar(sstmp))
+end
