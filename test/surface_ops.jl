@@ -6,7 +6,7 @@ xlim = (-Lx/2,Lx/2)
 ylim = (-Lx/2,Lx/2)
 g = PhysicalGrid(xlim,ylim,Δx)
 
-RadC = Lx/4
+RadC = 1.0
 Δs = 1.4*cellsize(g)
 body = Circle(RadC,Δs)
 X = VectorData(collect(body))
@@ -58,6 +58,24 @@ vs = VectorData(X)
 
   A = GLinvD(vcache,scale=cellsize(g))
   @test maximum(eigvals(A)) ≈ 1.7 atol = 1e-1
+
+
+end
+
+
+
+@testset "Masks" begin
+
+  scache = SurfaceScalarCache(body,g,scaling=GridScaling)
+
+  inner = mask(scache)
+
+  oc = similar(ϕ)
+  oc .= 1
+  @test abs(dot(oc,inner,g) - π*RadC^2) < 2e-3
+
+  outer = complementary_mask(scache)
+
 
 
 end

@@ -63,7 +63,10 @@ end
 
 The operation ``C_s^T = C^T R_f n\\circ``, which maps scalar surface data `f` (like
 a jump in scalar potential) to grid data `w` (like vorticity). This is the adjoint
-to ``C_s``, also given by `surface_curl!` (but with arguments switched).
+to ``C_s``, also given by `surface_curl!` (but with arguments switched). Note that
+the differential operations are divided either by 1 or by the grid cell size,
+depending on whether `cache` has been designated with `IndexScaling` or `GridScaling`,
+respectively.
 """
 function surface_curl!(w::Nodes{Dual},f::ScalarData,cache::SurfaceCache)
   _unscaled_surface_curl!(w,f,cache.nrm,cache.R,cache.gv_cache,cache.sv_cache)
@@ -81,7 +84,10 @@ end
 The operation ``C_s = n \\cdot I_f C``, which maps grid data `s` (like
 streamfunction) to scalar surface data `vn` (like normal component of velocity).
 This is the adjoint to ``C_s^T``, also given by `surface_curl!`, but with
-arguments switched.
+arguments switched.  Note that
+the differential operations are divided either by 1 or by the grid cell size,
+depending on whether `cache` has been designated with `IndexScaling` or `GridScaling`,
+respectively.
 """
 function surface_curl!(vn::ScalarData,s::Nodes{Dual},cache::SurfaceCache)
   _unscaled_surface_curl!(vn,s,cache.nrm,cache.E,cache.gv_cache,cache.sv_cache)
@@ -100,6 +106,10 @@ end
 
 The operation ``D_s = D R_f n \\circ``, which maps surface scalar data `f` (like
 jump in scalar potential) to grid data `Θ` (like dilatation, i.e. divergence of velocity).
+Note that
+the differential operations are divided either by 1 or by the grid cell size,
+depending on whether `cache` has been designated with `IndexScaling` or `GridScaling`,
+respectively.
 """
 function surface_divergence!(θ::Nodes{Primal},f::ScalarData,cache::SurfaceCache)
   _unscaled_surface_divergence!(θ,f,cache.nrm,cache.R,cache.gv_cache,cache.sv_cache)
@@ -115,7 +125,10 @@ end
     surface_divergence!(v::Edges{Primal},dv::VectorData,cache::SurfaceCache)
 
 The operation ``D_s = D R_f (n \\circ \\cdot + \\cdot \\circ n)``, which maps surface vector data `v` (like
-jump in velocity) to grid data `v` (like velocity).
+jump in velocity) to grid data `v` (like velocity). Note that
+the differential operations are divided either by 1 or by the grid cell size,
+depending on whether `cache` has been designated with `IndexScaling` or `GridScaling`,
+respectively.
 """
 function surface_divergence!(θ::Edges{Primal},f::VectorData,cache::SurfaceCache)
   _unscaled_surface_divergence!(θ,f,cache.nrm,cache.R,cache.gv_cache,cache.sv_cache,cache.sv2_cache)
@@ -131,7 +144,10 @@ end
     surface_grad!(vn::ScalarData,ϕ::Nodes{Primal},cache::SurfaceCache)
 
 The operation ``G_s = n \\cdot I_f G``, which maps grid data `ϕ` (like
-scalar potential) to scalar surface data (like normal component of velocity).
+scalar potential) to scalar surface data (like normal component of velocity).  Note that
+the differential operations are divided either by 1 or by the grid cell size,
+depending on whether `cache` has been designated with `IndexScaling` or `GridScaling`,
+respectively.
 """
 function surface_grad!(vn::ScalarData,ϕ::Nodes{Primal},cache::SurfaceCache)
   _unscaled_surface_grad!(vn,ϕ,cache.nrm,cache.E,cache.gv_cache,cache.sv_cache)
@@ -148,7 +164,10 @@ end
     surface_grad!(τ::VectorData,v::Edges{Primal},cache::SurfaceCache)
 
 The operation ``G_s = n \\cdot I_f (G v + (G v)^T)``, which maps grid vector data `v` (like
-velocity) to vector surface data `τ` (like traction).
+velocity) to vector surface data `τ` (like traction). Note that
+the differential operations are divided either by 1 or by the grid cell size,
+depending on whether `cache` has been designated with `IndexScaling` or `GridScaling`,
+respectively.
 """
 function surface_grad!(vn::VectorData,ϕ::Edges{Primal},cache::SurfaceCache)
   _unscaled_surface_grad!(vn,ϕ,cache.nrm,cache.E,cache.gv_cache,cache.gv2_cache,cache.sv_cache)
@@ -165,8 +184,8 @@ end
     inverse_laplacian!(w::GridData,cache::SurfaceCache)
 
 Compute the in-place inverse Laplacian of grid data `w`, and multiply the result
-by unity or by the grid cell size, depending on whether `IndexScaling` or `GridScaling`,
-respectivly.
+by unity or by the grid cell size, depending on whether `cache` has `IndexScaling` or `GridScaling`,
+respectively.
 """
 function inverse_laplacian!(w::GridData,cache::SurfaceCache)
     @unpack L = cache
@@ -176,13 +195,73 @@ end
 
 _unscaled_inverse_laplacian!(w::GridData,L::CartesianGrids.Laplacian) = w .= L\w
 
+"""
+    mask(cache::SurfaceCache) -> GridData
+
+Create grid data that consist of 1s inside of a surface (i.e., on a side opposite
+  the normal vectors) and 0s outside. The grid data are the same type as the
+  output data type of `cache`.  Only allows `cache` to have `GridScaling`.
+"""
+@inline mask(cache::SurfaceCache{N,GridScaling}) where {N} = _mask!(cache.gc_cache,cache)
+
+"""
+    complementary_mask(cache::SurfaceCache) -> GridData
+
+Create grid data that consist of 0s inside of a surface (i.e., on a side opposite
+  the normal vectors) and 1s outside. The grid data are the same type as the
+  output data type of `cache`.  Only allows `cache` to have `GridScaling`.
+"""
+@inline complementary_mask(cache::SurfaceCache{N,GridScaling}) where {N} =
+          _complementary_mask!(cache.gc_cache,cache)
+
+
+"""
+    mask!(w::GridData,cache::SurfaceCache)
+
+Mask the data `w` in place by multiplying it by 1s inside of a surface (i.e., on a side opposite
+  the normal vectors) and 0s outside. The grid data `w` must be of the same type as the
+  output data type of `cache`. Only allows `cache` to have `GridScaling`.
+"""
+function mask!(w::T,cache::SurfaceCache{N,GridScaling}) where {T <: GridData,N}
+  @unpack gc_cache = cache
+  _mask!(gc_cache,cache)
+  product!(w,gc_cache,w)
+end
+
+"""
+    complementary_mask!(w::GridData,cache::SurfaceCache)
+
+Mask the data `w` in place by multiplying it by 0s inside of a surface (i.e., on a side opposite
+  the normal vectors) and 1s outside. The grid data `w` must be of the same type as the
+  output data type of `cache`. Only allows `cache` to have `GridScaling`.
+"""
+function complementary_mask!(w::T,cache::SurfaceCache{N,GridScaling}) where {T <: GridData,N}
+  @unpack gc_cache = cache
+  _complementary_mask!(gc_cache,cache)
+  product!(w,gc_cache,w)
+end
+
+function _mask!(msk,cache)
+  @unpack ss_cache, gc_cache, L = cache
+  typeof(msk) == typeof(gc_cache) || error("Wrong data type")
+  fill!(ss_cache,1.0)
+  surface_divergence!(msk,ss_cache,cache)
+  inverse_laplacian!(msk,cache)
+  msk .*= -1.0
+end
+
+function _complementary_mask!(msk,cache)
+    _mask!(msk,cache)
+    msk .= 1.0 - msk
+end
 
 """
     CLinvCT(cache::SurfaceCache[;scale=1.0])
 
 Construct the square matrix ``-C_s L^{-1}C_s^T``, which maps data of type `ScalarData`
 to data of the same type. The operators `C_s` and `C_s^T` correspond to `surface_curl!`
-and `L` is the grid Laplacian.
+and `L` is the grid Laplacian. The optional keyword `scale` multiplies the
+matrix by the designated value.
 """
 function CLinvCT(cache::SurfaceCache{N};scale=1.0) where {N}
     @unpack L, ss_cache, gn_cache = cache
@@ -213,7 +292,8 @@ end
 
 Construct the square matrix ``G_s L^{-1}D_s``, which maps data of type `ScalarData`
 to data of the same type. The operators `G_s` and `D_s` correspond to `surface_grad!`
-and `surface_divergence!`, and `L` is the grid Laplacian.
+and `surface_divergence!`, and `L` is the grid Laplacian. The optional keyword `scale` multiplies the
+matrix by the designated value.
 """
 function GLinvD(cache::SurfaceCache{N};scale=1.0) where {N}
     @unpack L, ss_cache, gc_cache = cache
@@ -242,7 +322,8 @@ end
 
 Construct the square matrix ``n\\cdot I_f R_f n \\circ``, which maps data of type `ScalarData`
 to data of the same type. The operators `I_f` and `R_f` correspond to the interpolation
-and regularization matrices.
+and regularization matrices. The optional keyword `scale` multiplies the
+matrix by the designated value.
 """
 function nRTRn(cache::SurfaceCache{N};scale=1.0) where {N}
     @unpack ss_cache, gv_cache = cache
