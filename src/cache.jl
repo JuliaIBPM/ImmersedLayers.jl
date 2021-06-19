@@ -43,13 +43,13 @@ struct SurfaceCache{N,SCA<:AbstractScalingType,ND,NT<:VectorData,REGT<:Regulariz
     R :: RT
     E :: ET
     L :: LT
-    gv_cache :: GVT
-    gv2_cache :: GVT
-    gn_cache :: GNT
-    gc_cache :: GCT
-    sv_cache :: SVT
-    sv2_cache :: SVT
-    ss_cache :: SST
+    gsnorm_cache :: GVT
+    gsnorm2_cache :: GVT
+    gcurl_cache :: GNT
+    gdata_cache :: GCT
+    snorm_cache :: SVT
+    snorm2_cache :: SVT
+    sdata_cache :: SST
 end
 
 for f in [:SurfaceScalarCache, :SurfaceVectorCache]
@@ -59,32 +59,37 @@ end
 
 function SurfaceScalarCache(X::VectorData{N},a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid; ddftype = CartesianGrids.Yang3, scaling = IndexScaling) where {N}
 
-   sstmp = ScalarData(X)
+   sdata_cache = ScalarData(X)
    svtmp = VectorData(X)
 
    gvtmp = Edges(Primal,size(g))
    gntmp = Nodes(Dual,size(g))
    gctmp = Nodes(Primal,size(g))
 
-   _surfacecache(X,a,nrm,g,ddftype,scaling,sstmp,svtmp,gvtmp,gntmp,gctmp)
+   _surfacecache(X,a,nrm,g,ddftype,scaling,sdata_cache,svtmp,gvtmp,gntmp,gctmp)
 
 end
 
 
 function SurfaceVectorCache(X::VectorData{N},a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid; ddftype = CartesianGrids.Yang3, scaling = IndexScaling) where {N}
 
-   sstmp = VectorData(X)
+   sdata_cache = VectorData(X)
    svtmp = TensorData(X)
 
    gvtmp = EdgeGradient(Primal,size(g))
    gntmp = Nodes(Dual,size(g))
    gctmp = Edges(Primal,size(g))
 
-   _surfacecache(X,a,nrm,g,ddftype,scaling,sstmp,svtmp,gvtmp,gntmp,gctmp)
+   _surfacecache(X,a,nrm,g,ddftype,scaling,sdata_cache,svtmp,gvtmp,gntmp,gctmp)
 
 end
 
-function _surfacecache(X::VectorData{N},a,nrm,g::PhysicalGrid{ND},ddftype,scaling,sstmp,svtmp,gvtmp,gntmp,gctmp) where {N,ND}
+function Base.show(io::IO, H::SurfaceCache{N,SCA}) where {N,SCA}
+    println(io, "Surface cache with scaling of type $SCA")
+    println(io, "  from $N point data")
+end
+
+function _surfacecache(X::VectorData{N},a,nrm,g::PhysicalGrid{ND},ddftype,scaling,sdata_cache,svtmp,gvtmp,gntmp,gctmp) where {N,ND}
 
   regop = _get_regularization(X,a,g,ddftype,scaling)
   R = _regularization_matrix(regop,svtmp,gvtmp)
@@ -92,10 +97,10 @@ function _surfacecache(X::VectorData{N},a,nrm,g::PhysicalGrid{ND},ddftype,scalin
 
   L = plan_laplacian(size(gntmp),with_inverse=true)
   return SurfaceCache{N,scaling,ND,typeof(nrm),typeof(regop),typeof(R),typeof(E),typeof(L),
-                       typeof(gvtmp),typeof(gntmp),typeof(gctmp),typeof(svtmp),typeof(sstmp)}(
+                       typeof(gvtmp),typeof(gntmp),typeof(gctmp),typeof(svtmp),typeof(sdata_cache)}(
                        g,nrm,regop,R,E,L,
                        similar(gvtmp),similar(gvtmp),similar(gntmp),similar(gctmp),
-                       similar(svtmp),similar(svtmp),similar(sstmp))
+                       similar(svtmp),similar(svtmp),similar(sdata_cache))
 
 end
 

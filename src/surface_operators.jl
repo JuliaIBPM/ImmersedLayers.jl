@@ -5,11 +5,11 @@ The operation ``R_f n\\circ``, which maps scalar surface data `f` (like
 a jump in scalar potential) to grid data `q` (like velocity). This is the adjoint
 to `normal_interpolate!`.
 """
-@inline regularize_normal!(q::Edges{Primal},f::ScalarData,cache::SurfaceCache) = regularize_normal!(q,f,cache.nrm,cache.R,cache.sv_cache)
+@inline regularize_normal!(q::Edges{Primal},f::ScalarData,cache::SurfaceCache) = regularize_normal!(q,f,cache.nrm,cache.R,cache.snorm_cache)
 
-function regularize_normal!(q::Edges{Primal,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,sv_cache::VectorData{N}) where {NX,NY,N}
-    product!(sv_cache,nrm,f)
-    q .= Rf*sv_cache
+function regularize_normal!(q::Edges{Primal,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,snorm_cache::VectorData{N}) where {NX,NY,N}
+    product!(snorm_cache,nrm,f)
+    q .= Rf*snorm_cache
 end
 
 """
@@ -19,13 +19,13 @@ The operation ``R_T n\\circ``, which maps scalar vector data `v` (like
 a jump in velocity) to grid data `qt` (like velocity-normal tensor). This is the adjoint
 to `normal_interpolate!`.
 """
-@inline regularize_normal!(q::EdgeGradient{Primal},f::VectorData,cache::SurfaceCache) = regularize_normal!(q,f,cache.nrm,cache.R,cache.sv_cache,cache.sv2_cache)
+@inline regularize_normal!(q::EdgeGradient{Primal},f::VectorData,cache::SurfaceCache) = regularize_normal!(q,f,cache.nrm,cache.R,cache.snorm_cache,cache.snorm2_cache)
 
-function regularize_normal!(q::EdgeGradient{Primal,Dual,NX,NY},f::VectorData{N},nrm::VectorData{N},Rf::RegularizationMatrix,sv_cache::TensorData{N},sv2_cache::TensorData{N}) where {NX,NY,N}
-    tensorproduct!(sv_cache,nrm,f)
-    transpose!(sv2_cache,sv_cache)
-    sv_cache .+= sv2_cache
-    q .= Rf*sv_cache
+function regularize_normal!(q::EdgeGradient{Primal,Dual,NX,NY},f::VectorData{N},nrm::VectorData{N},Rf::RegularizationMatrix,snorm_cache::TensorData{N},snorm2_cache::TensorData{N}) where {NX,NY,N}
+    tensorproduct!(snorm_cache,nrm,f)
+    transpose!(snorm2_cache,snorm_cache)
+    snorm_cache .+= snorm2_cache
+    q .= Rf*snorm_cache
 end
 
 
@@ -36,11 +36,11 @@ The operation ``n \\cdot I_f``, which maps grid data `q` (like velocity) to scal
 surface data `vn` (like normal component of surface velocity). This is the
 adjoint to `regularize_normal!`.
 """
-@inline normal_interpolate!(vn::ScalarData,q::Edges{Primal},cache::SurfaceCache) = normal_interpolate!(vn,q,cache.nrm,cache.E,cache.sv_cache)
+@inline normal_interpolate!(vn::ScalarData,q::Edges{Primal},cache::SurfaceCache) = normal_interpolate!(vn,q,cache.nrm,cache.E,cache.snorm_cache)
 
-function normal_interpolate!(vn::ScalarData{N},q::Edges{Primal,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,sv_cache::VectorData{N}) where {NX,NY,N}
-    sv_cache .= Ef*q
-    pointwise_dot!(vn,nrm,sv_cache)
+function normal_interpolate!(vn::ScalarData{N},q::Edges{Primal,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,snorm_cache::VectorData{N}) where {NX,NY,N}
+    snorm_cache .= Ef*q
+    pointwise_dot!(vn,nrm,snorm_cache)
 end
 
 """
@@ -49,13 +49,13 @@ end
 The operation ``n \\cdot I_T (A + A^T)``, which maps grid tensor data `A` (like velocity gradient tensor) to vector
 surface data `τ` (like traction). This is the adjoint to `regularize_normal!`.
 """
-@inline normal_interpolate!(vn::VectorData,q::EdgeGradient{Primal},cache::SurfaceCache) = normal_interpolate!(vn,q,cache.nrm,cache.E,cache.gv2_cache,cache.sv_cache)
+@inline normal_interpolate!(vn::VectorData,q::EdgeGradient{Primal},cache::SurfaceCache) = normal_interpolate!(vn,q,cache.nrm,cache.E,cache.gsnorm2_cache,cache.snorm_cache)
 
-function normal_interpolate!(vn::VectorData{N},q::EdgeGradient{Primal,Dual,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,gv_cache::EdgeGradient{Primal,Dual,NX,NY},sv_cache::TensorData{N}) where {NX,NY,N}
-    transpose!(gv_cache,q)
-    gv_cache .+= q
-    sv_cache .= Ef*gv_cache
-    pointwise_dot!(vn,nrm,sv_cache)
+function normal_interpolate!(vn::VectorData{N},q::EdgeGradient{Primal,Dual,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,gsnorm_cache::EdgeGradient{Primal,Dual,NX,NY},snorm_cache::TensorData{N}) where {NX,NY,N}
+    transpose!(gsnorm_cache,q)
+    gsnorm_cache .+= q
+    snorm_cache .= Ef*gsnorm_cache
+    pointwise_dot!(vn,nrm,snorm_cache)
 end
 
 """
@@ -69,12 +69,12 @@ depending on whether `cache` has been designated with `IndexScaling` or `GridSca
 respectively.
 """
 function surface_curl!(w::Nodes{Dual},f::ScalarData,cache::SurfaceCache)
-  _unscaled_surface_curl!(w,f,cache.nrm,cache.R,cache.gv_cache,cache.sv_cache)
+  _unscaled_surface_curl!(w,f,cache.nrm,cache.R,cache.gsnorm_cache,cache.snorm_cache)
   _scale_derivative!(w,cache)
 end
 
-function _unscaled_surface_curl!(w::Nodes{Dual,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::Edges{Primal,NX,NY},sv_cache::VectorData{N}) where {NX,NY,N}
-    regularize_normal!(q_cache,f,nrm,Rf,sv_cache)
+function _unscaled_surface_curl!(w::Nodes{Dual,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::Edges{Primal,NX,NY},snorm_cache::VectorData{N}) where {NX,NY,N}
+    regularize_normal!(q_cache,f,nrm,Rf,snorm_cache)
     curl!(w,q_cache)
 end
 
@@ -90,14 +90,14 @@ depending on whether `cache` has been designated with `IndexScaling` or `GridSca
 respectively.
 """
 function surface_curl!(vn::ScalarData,s::Nodes{Dual},cache::SurfaceCache)
-  _unscaled_surface_curl!(vn,s,cache.nrm,cache.E,cache.gv_cache,cache.sv_cache)
+  _unscaled_surface_curl!(vn,s,cache.nrm,cache.E,cache.gsnorm_cache,cache.snorm_cache)
   _scale_derivative!(vn,cache)
 end
 
-function _unscaled_surface_curl!(vn::ScalarData{N},s::Nodes{Dual,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,q_cache::Edges{Primal,NX,NY},sv_cache::VectorData{N}) where {NX,NY,N}
+function _unscaled_surface_curl!(vn::ScalarData{N},s::Nodes{Dual,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,q_cache::Edges{Primal,NX,NY},snorm_cache::VectorData{N}) where {NX,NY,N}
     fill!(q_cache,0.0)
     curl!(q_cache,s)
-    normal_interpolate!(vn,q_cache,nrm,Ef,sv_cache)
+    normal_interpolate!(vn,q_cache,nrm,Ef,snorm_cache)
 end
 
 
@@ -112,12 +112,12 @@ depending on whether `cache` has been designated with `IndexScaling` or `GridSca
 respectively.
 """
 function surface_divergence!(θ::Nodes{Primal},f::ScalarData,cache::SurfaceCache)
-  _unscaled_surface_divergence!(θ,f,cache.nrm,cache.R,cache.gv_cache,cache.sv_cache)
+  _unscaled_surface_divergence!(θ,f,cache.nrm,cache.R,cache.gsnorm_cache,cache.snorm_cache)
   _scale_derivative!(θ,cache)
 end
 
-function _unscaled_surface_divergence!(θ::Nodes{Primal,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::Edges{Primal,NX,NY},sv_cache::VectorData{N}) where {NX,NY,N}
-    regularize_normal!(q_cache,f,nrm,Rf,sv_cache)
+function _unscaled_surface_divergence!(θ::Nodes{Primal,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::Edges{Primal,NX,NY},snorm_cache::VectorData{N}) where {NX,NY,N}
+    regularize_normal!(q_cache,f,nrm,Rf,snorm_cache)
     divergence!(θ,q_cache)
 end
 
@@ -131,12 +131,12 @@ depending on whether `cache` has been designated with `IndexScaling` or `GridSca
 respectively.
 """
 function surface_divergence!(θ::Edges{Primal},f::VectorData,cache::SurfaceCache)
-  _unscaled_surface_divergence!(θ,f,cache.nrm,cache.R,cache.gv_cache,cache.sv_cache,cache.sv2_cache)
+  _unscaled_surface_divergence!(θ,f,cache.nrm,cache.R,cache.gsnorm_cache,cache.snorm_cache,cache.snorm2_cache)
   _scale_derivative!(θ,cache)
 end
 
-function _unscaled_surface_divergence!(θ::Edges{Primal,NX,NY},f::VectorData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::EdgeGradient{Primal,Dual,NX,NY},sv_cache::TensorData{N},sv2_cache::TensorData{N}) where {NX,NY,N}
-    regularize_normal!(q_cache,f,nrm,Rf,sv_cache,sv2_cache)
+function _unscaled_surface_divergence!(θ::Edges{Primal,NX,NY},f::VectorData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::EdgeGradient{Primal,Dual,NX,NY},snorm_cache::TensorData{N},snorm2_cache::TensorData{N}) where {NX,NY,N}
+    regularize_normal!(q_cache,f,nrm,Rf,snorm_cache,snorm2_cache)
     divergence!(θ,q_cache)
 end
 
@@ -150,14 +150,14 @@ depending on whether `cache` has been designated with `IndexScaling` or `GridSca
 respectively.
 """
 function surface_grad!(vn::ScalarData,ϕ::Nodes{Primal},cache::SurfaceCache)
-  _unscaled_surface_grad!(vn,ϕ,cache.nrm,cache.E,cache.gv_cache,cache.sv_cache)
+  _unscaled_surface_grad!(vn,ϕ,cache.nrm,cache.E,cache.gsnorm_cache,cache.snorm_cache)
   _scale_derivative!(vn,cache)
 end
 
-function _unscaled_surface_grad!(vn::ScalarData{N},ϕ::Nodes{Primal,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,q_cache::Edges{Primal,NX,NY},sv_cache::VectorData{N}) where {NX,NY,N}
+function _unscaled_surface_grad!(vn::ScalarData{N},ϕ::Nodes{Primal,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,q_cache::Edges{Primal,NX,NY},snorm_cache::VectorData{N}) where {NX,NY,N}
     fill!(q_cache,0.0)
     grad!(q_cache,ϕ)
-    normal_interpolate!(vn,q_cache,nrm,Ef,sv_cache)
+    normal_interpolate!(vn,q_cache,nrm,Ef,snorm_cache)
 end
 
 """
@@ -170,14 +170,14 @@ depending on whether `cache` has been designated with `IndexScaling` or `GridSca
 respectively.
 """
 function surface_grad!(vn::VectorData,ϕ::Edges{Primal},cache::SurfaceCache)
-  _unscaled_surface_grad!(vn,ϕ,cache.nrm,cache.E,cache.gv_cache,cache.gv2_cache,cache.sv_cache)
+  _unscaled_surface_grad!(vn,ϕ,cache.nrm,cache.E,cache.gsnorm_cache,cache.gsnorm2_cache,cache.snorm_cache)
   _scale_derivative!(vn,cache)
 end
 
-function _unscaled_surface_grad!(vn::VectorData{N},ϕ::Edges{Primal,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,gv_cache::EdgeGradient{Primal,Dual,NX,NY},gv2_cache::EdgeGradient{Primal,Dual,NX,NY},sv_cache::TensorData{N}) where {NX,NY,N}
-    fill!(gv_cache,0.0)
-    grad!(gv_cache,ϕ)
-    normal_interpolate!(vn,gv_cache,nrm,Ef,gv2_cache,sv_cache)
+function _unscaled_surface_grad!(vn::VectorData{N},ϕ::Edges{Primal,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,gsnorm_cache::EdgeGradient{Primal,Dual,NX,NY},gsnorm2_cache::EdgeGradient{Primal,Dual,NX,NY},snorm_cache::TensorData{N}) where {NX,NY,N}
+    fill!(gsnorm_cache,0.0)
+    grad!(gsnorm_cache,ϕ)
+    normal_interpolate!(vn,gsnorm_cache,nrm,Ef,gsnorm2_cache,snorm_cache)
 end
 
 """
@@ -202,7 +202,7 @@ Create grid data that consist of 1s inside of a surface (i.e., on a side opposit
   the normal vectors) and 0s outside. The grid data are the same type as the
   output data type of `cache`.  Only allows `cache` to have `GridScaling`.
 """
-@inline mask(cache::SurfaceCache{N,GridScaling}) where {N} = _mask!(cache.gc_cache,cache)
+@inline mask(cache::SurfaceCache{N,GridScaling}) where {N} = _mask!(cache.gdata_cache,cache)
 
 """
     complementary_mask(cache::SurfaceCache) -> GridData
@@ -212,7 +212,7 @@ Create grid data that consist of 0s inside of a surface (i.e., on a side opposit
   output data type of `cache`.  Only allows `cache` to have `GridScaling`.
 """
 @inline complementary_mask(cache::SurfaceCache{N,GridScaling}) where {N} =
-          _complementary_mask!(cache.gc_cache,cache)
+          _complementary_mask!(cache.gdata_cache,cache)
 
 
 """
@@ -223,9 +223,9 @@ Mask the data `w` in place by multiplying it by 1s inside of a surface (i.e., on
   output data type of `cache`. Only allows `cache` to have `GridScaling`.
 """
 function mask!(w::T,cache::SurfaceCache{N,GridScaling}) where {T <: GridData,N}
-  @unpack gc_cache = cache
-  _mask!(gc_cache,cache)
-  product!(w,gc_cache,w)
+  @unpack gdata_cache = cache
+  _mask!(gdata_cache,cache)
+  product!(w,gdata_cache,w)
 end
 
 """
@@ -236,16 +236,16 @@ Mask the data `w` in place by multiplying it by 0s inside of a surface (i.e., on
   output data type of `cache`. Only allows `cache` to have `GridScaling`.
 """
 function complementary_mask!(w::T,cache::SurfaceCache{N,GridScaling}) where {T <: GridData,N}
-  @unpack gc_cache = cache
-  _complementary_mask!(gc_cache,cache)
-  product!(w,gc_cache,w)
+  @unpack gdata_cache = cache
+  _complementary_mask!(gdata_cache,cache)
+  product!(w,gdata_cache,w)
 end
 
 function _mask!(msk,cache)
-  @unpack ss_cache, gc_cache, L = cache
-  typeof(msk) == typeof(gc_cache) || error("Wrong data type")
-  fill!(ss_cache,1.0)
-  surface_divergence!(msk,ss_cache,cache)
+  @unpack sdata_cache, gdata_cache, L = cache
+  typeof(msk) == typeof(gdata_cache) || error("Wrong data type")
+  fill!(sdata_cache,1.0)
+  surface_divergence!(msk,sdata_cache,cache)
   inverse_laplacian!(msk,cache)
   msk .*= -1.0
 end
@@ -264,23 +264,23 @@ and `L` is the grid Laplacian. The optional keyword `scale` multiplies the
 matrix by the designated value.
 """
 function CLinvCT(cache::SurfaceCache{N};scale=1.0) where {N}
-    @unpack L, ss_cache, gn_cache = cache
+    @unpack L, sdata_cache, gcurl_cache = cache
 
-    len = length(ss_cache)
-    A = Matrix{eltype(ss_cache)}(undef,len,len)
-    fill!(ss_cache,0.0)
+    len = length(sdata_cache)
+    A = Matrix{eltype(sdata_cache)}(undef,len,len)
+    fill!(sdata_cache,0.0)
 
     for col in 1:len
-        ss_cache[col] = 1.0
-        fill!(gn_cache,0.0)
-        surface_curl!(gn_cache,ss_cache,cache)
+        sdata_cache[col] = 1.0
+        fill!(gcurl_cache,0.0)
+        surface_curl!(gcurl_cache,sdata_cache,cache)
 
-        inverse_laplacian!(gn_cache,cache)
-        gn_cache .*= -1
-        surface_curl!(ss_cache,gn_cache,cache)
+        inverse_laplacian!(gcurl_cache,cache)
+        gcurl_cache .*= -1
+        surface_curl!(sdata_cache,gcurl_cache,cache)
 
-        A[:,col] = scale*ss_cache
-        fill!(ss_cache,0.0)
+        A[:,col] = scale*sdata_cache
+        fill!(sdata_cache,0.0)
     end
 
     return A
@@ -296,21 +296,21 @@ and `surface_divergence!`, and `L` is the grid Laplacian. The optional keyword `
 matrix by the designated value.
 """
 function GLinvD(cache::SurfaceCache{N};scale=1.0) where {N}
-    @unpack L, ss_cache, gc_cache = cache
+    @unpack L, sdata_cache, gdata_cache = cache
 
-    len = length(ss_cache)
-    A = Matrix{eltype(ss_cache)}(undef,len,len)
-    fill!(ss_cache,0.0)
+    len = length(sdata_cache)
+    A = Matrix{eltype(sdata_cache)}(undef,len,len)
+    fill!(sdata_cache,0.0)
 
     for col in 1:len
-        ss_cache[col] = 1.0
-        fill!(gc_cache,0.0)
-        surface_divergence!(gc_cache,ss_cache,cache)
-        inverse_laplacian!(gc_cache,cache)
-        surface_grad!(ss_cache,gc_cache,cache)
+        sdata_cache[col] = 1.0
+        fill!(gdata_cache,0.0)
+        surface_divergence!(gdata_cache,sdata_cache,cache)
+        inverse_laplacian!(gdata_cache,cache)
+        surface_grad!(sdata_cache,gdata_cache,cache)
 
-        A[:,col] .= scale*ss_cache
-        fill!(ss_cache,0.0)
+        A[:,col] .= scale*sdata_cache
+        fill!(sdata_cache,0.0)
     end
 
     return A
@@ -326,20 +326,20 @@ and regularization matrices. The optional keyword `scale` multiplies the
 matrix by the designated value.
 """
 function nRTRn(cache::SurfaceCache{N};scale=1.0) where {N}
-    @unpack ss_cache, gv_cache = cache
+    @unpack sdata_cache, gsnorm_cache = cache
 
-    len = length(ss_cache)
-    A = Matrix{eltype(ss_cache)}(undef,len,len)
-    fill!(ss_cache,0.0)
+    len = length(sdata_cache)
+    A = Matrix{eltype(sdata_cache)}(undef,len,len)
+    fill!(sdata_cache,0.0)
 
     for col in 1:len
-        ss_cache[col] = 1.0
-        fill!(gv_cache,0.0)
-        regularize_normal!(gv_cache,ss_cache,cache)
-        normal_interpolate!(ss_cache,gv_cache,cache)
+        sdata_cache[col] = 1.0
+        fill!(gsnorm_cache,0.0)
+        regularize_normal!(gsnorm_cache,sdata_cache,cache)
+        normal_interpolate!(sdata_cache,gsnorm_cache,cache)
 
-        A[:,col] .= scale*ss_cache
-        fill!(ss_cache,0.0)
+        A[:,col] .= scale*sdata_cache
+        fill!(sdata_cache,0.0)
     end
 
     return A
