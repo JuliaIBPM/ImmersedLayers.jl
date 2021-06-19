@@ -49,16 +49,16 @@ end
 
 function DoubleLayer(body::Union{Body,BodyList},g::PhysicalGrid,w::ScalarGridData{NX,NY,T};
                       ddftype=CartesianGrids.Yang3) where {NX,NY,T}
-  reg = _get_regularization(body,g,ddftype=ddftype)
-  out = RegularizationMatrix(reg,VectorData(numpts(body),dtype=T),Edges(celltype(w),w,dtype=T))
+  reg = _get_regularization(body,g,ddftype,GridScaling)
+  out = _regularization_matrix(reg,VectorData(numpts(body),dtype=T),Edges(celltype(w),w,dtype=T))
   #return DoubleLayer(body,out, weight = 1/cellsize(g))
   return DoubleLayer(body,out, weight = 1.0)
 end
 
 function DoubleLayer(body::Union{Body,BodyList},g::PhysicalGrid,w::VectorGridData{NX,NY,T};
                       ddftype=CartesianGrids.Yang3) where {NX,NY,T}
-  reg = _get_regularization(body,g,ddftype=ddftype)
-  out = RegularizationMatrix(reg,TensorData(numpts(body),dtype=T),EdgeGradient(celltype(w),w,dtype=T))
+  reg = _get_regularization(body,g,ddftype,GridScaling)
+  out = _regularization_matrix(reg,TensorData(numpts(body),dtype=T),EdgeGradient(celltype(w),w,dtype=T))
   #return DoubleLayer(body,out, weight = 1/cellsize(g))
   return DoubleLayer(body,out, weight = 1.0)
 end
@@ -66,8 +66,8 @@ end
 function DoubleLayer!(dl::DoubleLayer{N,D,G,P},body::Union{Body,BodyList},g::PhysicalGrid;
                       ddftype=CartesianGrids.Yang3) where {N,D,G,P}
 
-  reg = _get_regularization(body,g,ddftype=ddftype)
-  DoubleLayer!(dl,body,RegularizationMatrix(reg,dl.Pbuf,dl.Gbuf))
+  reg = _get_regularization(body,g,ddftype,GridScaling)
+  DoubleLayer!(dl,body,_regularization_matrix(reg,dl.Pbuf,dl.Gbuf))
   return dl
 end
 
@@ -144,16 +144,16 @@ end
 
 function SingleLayer(body::Union{Body,BodyList},g::PhysicalGrid,w::GridData{NX,NY,T};
                       ddftype=CartesianGrids.Yang3) where {NX,NY,T}
-  reg = _get_regularization(body,g,ddftype=ddftype)
-  out = RegularizationMatrix(reg,ScalarData(numpts(body),dtype=T),Nodes(celltype(w),w,dtype=T))
+  reg = _get_regularization(body,g,ddftype,GridScaling)
+  out = _regularization_matrix(reg,ScalarData(numpts(body),dtype=T),Nodes(celltype(w),w,dtype=T))
   return SingleLayer(body,out) #,weight=cellsize(g)^2)
 end
 
 function SingleLayer!(sl::SingleLayer{N,D,G,P},body::Union{Body,BodyList},g::PhysicalGrid;
                       ddftype=CartesianGrids.Yang3) where {N,D,G,P}
 
-  reg = _get_regularization(body,g,ddftype=ddftype)
-  SingleLayer!(sl,body,RegularizationMatrix(reg,sl.Pbuf,sl.Gbuf))
+  reg = _get_regularization(body,g,ddftype,GridScaling)
+  SingleLayer!(sl,body,_regularization_matrix(reg,sl.Pbuf,sl.Gbuf))
   return sl
 end
 
@@ -214,10 +214,3 @@ Mask(body::Union{Body,BodyList},g::PhysicalGrid,w::GridData{NX,NY,T}) where {NX,
 (m::ComplementaryMask{N,NX,NY,G})(w::Nodes{G,NX,NY,T}) where {N,NX,NY,G,T} = w - m.mask(w)
 
 (m::ComplementaryMask{N,NX,NY,G})(out::Nodes{G,NX,NY,T},w::Nodes{G,NX,NY,T}) where {N,NX,NY,G,T} = (m.mask(out,w); out .= w - out)
-
-
-# Standardize the regularization
-
-_get_regularization(body::Union{Body,BodyList},g::PhysicalGrid;ddftype=CartesianGrids.Yang3) =
-     Regularize(VectorData(collect(body)),cellsize(g),I0=origin(g),
-                weights=dlengthmid(body),ddftype=ddftype)

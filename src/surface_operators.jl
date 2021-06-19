@@ -65,9 +65,12 @@ The operation ``C_s^T = C^T R_f n\\circ``, which maps scalar surface data `f` (l
 a jump in scalar potential) to grid data `w` (like vorticity). This is the adjoint
 to ``C_s``, also given by `surface_curl!` (but with arguments switched).
 """
-@inline surface_curl!(w::Nodes{Dual},f::ScalarData,cache::SurfaceCache) = surface_curl!(w,f,cache.nrm,cache.R,cache.gv_cache,cache.sv_cache)
+function surface_curl!(w::Nodes{Dual},f::ScalarData,cache::SurfaceCache)
+  _unscaled_surface_curl!(w,f,cache.nrm,cache.R,cache.gv_cache,cache.sv_cache)
+  _scale_derivative!(w,cache)
+end
 
-function surface_curl!(w::Nodes{Dual,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::Edges{Primal,NX,NY},sv_cache::VectorData{N}) where {NX,NY,N}
+function _unscaled_surface_curl!(w::Nodes{Dual,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::Edges{Primal,NX,NY},sv_cache::VectorData{N}) where {NX,NY,N}
     regularize_normal!(q_cache,f,nrm,Rf,sv_cache)
     curl!(w,q_cache)
 end
@@ -80,9 +83,12 @@ streamfunction) to scalar surface data `vn` (like normal component of velocity).
 This is the adjoint to ``C_s^T``, also given by `surface_curl!`, but with
 arguments switched.
 """
-@inline surface_curl!(vn::ScalarData,s::Nodes{Dual},cache::SurfaceCache) = surface_curl!(vn,s,cache.nrm,cache.E,cache.gv_cache,cache.sv_cache)
+function surface_curl!(vn::ScalarData,s::Nodes{Dual},cache::SurfaceCache)
+  _unscaled_surface_curl!(vn,s,cache.nrm,cache.E,cache.gv_cache,cache.sv_cache)
+  _scale_derivative!(vn,cache)
+end
 
-function surface_curl!(vn::ScalarData{N},s::Nodes{Dual,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,q_cache::Edges{Primal,NX,NY},sv_cache::VectorData{N}) where {NX,NY,N}
+function _unscaled_surface_curl!(vn::ScalarData{N},s::Nodes{Dual,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,q_cache::Edges{Primal,NX,NY},sv_cache::VectorData{N}) where {NX,NY,N}
     fill!(q_cache,0.0)
     curl!(q_cache,s)
     normal_interpolate!(vn,q_cache,nrm,Ef,sv_cache)
@@ -95,9 +101,12 @@ end
 The operation ``D_s = D R_f n \\circ``, which maps surface scalar data `f` (like
 jump in scalar potential) to grid data `Θ` (like dilatation, i.e. divergence of velocity).
 """
-@inline surface_divergence!(θ::Nodes{Primal},f::ScalarData,cache::SurfaceCache) = surface_divergence!(θ,f,cache.nrm,cache.R,cache.gv_cache,cache.sv_cache)
+function surface_divergence!(θ::Nodes{Primal},f::ScalarData,cache::SurfaceCache)
+  _unscaled_surface_divergence!(θ,f,cache.nrm,cache.R,cache.gv_cache,cache.sv_cache)
+  _scale_derivative!(θ,cache)
+end
 
-function surface_divergence!(θ::Nodes{Primal,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::Edges{Primal,NX,NY},sv_cache::VectorData{N}) where {NX,NY,N}
+function _unscaled_surface_divergence!(θ::Nodes{Primal,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::Edges{Primal,NX,NY},sv_cache::VectorData{N}) where {NX,NY,N}
     regularize_normal!(q_cache,f,nrm,Rf,sv_cache)
     divergence!(θ,q_cache)
 end
@@ -108,9 +117,12 @@ end
 The operation ``D_s = D R_f (n \\circ \\cdot + \\cdot \\circ n)``, which maps surface vector data `v` (like
 jump in velocity) to grid data `v` (like velocity).
 """
-@inline surface_divergence!(θ::Edges{Primal},f::VectorData,cache::SurfaceCache) = surface_divergence!(θ,f,cache.nrm,cache.R,cache.gv_cache,cache.sv_cache,cache.sv2_cache)
+function surface_divergence!(θ::Edges{Primal},f::VectorData,cache::SurfaceCache)
+  _unscaled_surface_divergence!(θ,f,cache.nrm,cache.R,cache.gv_cache,cache.sv_cache,cache.sv2_cache)
+  _scale_derivative!(θ,cache)
+end
 
-function surface_divergence!(θ::Edges{Primal,NX,NY},f::VectorData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::EdgeGradient{Primal,Dual,NX,NY},sv_cache::TensorData{N},sv2_cache::TensorData{N}) where {NX,NY,N}
+function _unscaled_surface_divergence!(θ::Edges{Primal,NX,NY},f::VectorData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::EdgeGradient{Primal,Dual,NX,NY},sv_cache::TensorData{N},sv2_cache::TensorData{N}) where {NX,NY,N}
     regularize_normal!(q_cache,f,nrm,Rf,sv_cache,sv2_cache)
     divergence!(θ,q_cache)
 end
@@ -121,9 +133,12 @@ end
 The operation ``G_s = n \\cdot I_f G``, which maps grid data `ϕ` (like
 scalar potential) to scalar surface data (like normal component of velocity).
 """
-@inline surface_grad!(vn::ScalarData,ϕ::Nodes{Primal},cache::SurfaceCache) = surface_grad!(vn,ϕ,cache.nrm,cache.E,cache.gv_cache,cache.sv_cache)
+function surface_grad!(vn::ScalarData,ϕ::Nodes{Primal},cache::SurfaceCache)
+  _unscaled_surface_grad!(vn,ϕ,cache.nrm,cache.E,cache.gv_cache,cache.sv_cache)
+  _scale_derivative!(vn,cache)
+end
 
-function surface_grad!(vn::ScalarData{N},ϕ::Nodes{Primal,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,q_cache::Edges{Primal,NX,NY},sv_cache::VectorData{N}) where {NX,NY,N}
+function _unscaled_surface_grad!(vn::ScalarData{N},ϕ::Nodes{Primal,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,q_cache::Edges{Primal,NX,NY},sv_cache::VectorData{N}) where {NX,NY,N}
     fill!(q_cache,0.0)
     grad!(q_cache,ϕ)
     normal_interpolate!(vn,q_cache,nrm,Ef,sv_cache)
@@ -135,13 +150,31 @@ end
 The operation ``G_s = n \\cdot I_f (G v + (G v)^T)``, which maps grid vector data `v` (like
 velocity) to vector surface data `τ` (like traction).
 """
-@inline surface_grad!(vn::VectorData,ϕ::Edges{Primal},cache::SurfaceCache) = surface_grad!(vn,ϕ,cache.nrm,cache.E,cache.gv_cache,cache.gv2_cache,cache.sv_cache)
+function surface_grad!(vn::VectorData,ϕ::Edges{Primal},cache::SurfaceCache)
+  _unscaled_surface_grad!(vn,ϕ,cache.nrm,cache.E,cache.gv_cache,cache.gv2_cache,cache.sv_cache)
+  _scale_derivative!(vn,cache)
+end
 
-function surface_grad!(vn::VectorData{N},ϕ::Edges{Primal,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,gv_cache::EdgeGradient{Primal,Dual,NX,NY},gv2_cache::EdgeGradient{Primal,Dual,NX,NY},sv_cache::TensorData{N}) where {NX,NY,N}
+function _unscaled_surface_grad!(vn::VectorData{N},ϕ::Edges{Primal,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,gv_cache::EdgeGradient{Primal,Dual,NX,NY},gv2_cache::EdgeGradient{Primal,Dual,NX,NY},sv_cache::TensorData{N}) where {NX,NY,N}
     fill!(gv_cache,0.0)
     grad!(gv_cache,ϕ)
     normal_interpolate!(vn,gv_cache,nrm,Ef,gv2_cache,sv_cache)
 end
+
+"""
+    inverse_laplacian!(w::GridData,cache::SurfaceCache)
+
+Compute the in-place inverse Laplacian of grid data `w`, and multiply the result
+by unity or by the grid cell size, depending on whether `IndexScaling` or `GridScaling`,
+respectivly.
+"""
+function inverse_laplacian!(w::GridData,cache::SurfaceCache)
+    @unpack L = cache
+    _unscaled_inverse_laplacian!(w,L)
+    _scale_inverse_laplacian!(w,cache)
+end
+
+_unscaled_inverse_laplacian!(w::GridData,L::CartesianGrids.Laplacian) = w .= L\w
 
 
 """
@@ -163,7 +196,8 @@ function CLinvCT(cache::SurfaceCache{N};scale=1.0) where {N}
         fill!(gn_cache,0.0)
         surface_curl!(gn_cache,ss_cache,cache)
 
-        gn_cache .= -(L\gn_cache);
+        inverse_laplacian!(gn_cache,cache)
+        gn_cache .*= -1
         surface_curl!(ss_cache,gn_cache,cache)
 
         A[:,col] = scale*ss_cache
@@ -192,8 +226,7 @@ function GLinvD(cache::SurfaceCache{N};scale=1.0) where {N}
         ss_cache[col] = 1.0
         fill!(gc_cache,0.0)
         surface_divergence!(gc_cache,ss_cache,cache)
-
-        gc_cache .= L\gc_cache;
+        inverse_laplacian!(gc_cache,cache)
         surface_grad!(ss_cache,gc_cache,cache)
 
         A[:,col] .= scale*ss_cache
@@ -231,3 +264,9 @@ function nRTRn(cache::SurfaceCache{N};scale=1.0) where {N}
     return A
 
 end
+
+_scale_derivative!(w,cache::SurfaceCache{N,IndexScaling}) where {N} = w
+_scale_derivative!(w,cache::SurfaceCache{N,GridScaling}) where {N} = w ./= cellsize(cache)
+
+_scale_inverse_laplacian!(w,cache::SurfaceCache{N,IndexScaling}) where {N} = w
+_scale_inverse_laplacian!(w,cache::SurfaceCache{N,GridScaling}) where {N} = w .*= cellsize(cache)^2

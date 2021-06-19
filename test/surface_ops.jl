@@ -19,7 +19,7 @@ f = ScalarData(X)
 angs(n) = range(0,2π,length=n+1)[1:n]
 
 @testset "Scalar surface ops" begin
-  scache = SurfaceScalarCache(body,g)
+  scache = SurfaceScalarCache(body,g,scaling=GridScaling)
 
   f .= sin.(angs(length(body)) .- π/4)
   regularize_normal!(q,f,scache)
@@ -44,7 +44,7 @@ dq = EdgeGradient(Primal,size(g))
 vs = VectorData(X)
 
 @testset "Vector surface ops" begin
-  vcache = SurfaceVectorCache(body,g)
+  vcache = SurfaceVectorCache(body,g,scaling=GridScaling)
 
   vs.u .= sin.(angs(length(body)) .- π/4)
 

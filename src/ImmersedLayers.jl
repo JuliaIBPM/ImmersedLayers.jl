@@ -18,8 +18,9 @@ using UnPack
 export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         DoubleLayer!, SingleLayer!, Mask!,
         SurfaceCache,SurfaceScalarCache,SurfaceVectorCache,
+        AbstractScalingType,GridScaling,IndexScaling,
         regularize_normal!,normal_interpolate!,
-        surface_curl!,surface_divergence!,surface_grad!,
+        surface_curl!,surface_divergence!,surface_grad!,inverse_laplacian!,
         CLinvCT,GLinvD,nRTRn
 
 abstract type LayerType{N} end
