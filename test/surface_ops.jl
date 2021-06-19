@@ -1,6 +1,6 @@
 using LinearAlgebra
 
-Δx = 0.01
+Δx = 0.04
 Lx = 4.0
 xlim = (-Lx/2,Lx/2)
 ylim = (-Lx/2,Lx/2)
@@ -24,8 +24,8 @@ angs(n) = range(0,2π,length=n+1)[1:n]
   f .= sin.(angs(length(body)) .- π/4)
   regularize_normal!(q,f,scache)
   normal_interpolate!(f,q,scache)
-  @test maximum(f) ≈ 45 atol = 1e-0
-  @test minimum(f) ≈ -45 atol = 1e-0
+  @test maximum(f) ≈ 11 atol = 1e-0
+  @test minimum(f) ≈ -11 atol = 1e-0
 
   A = CLinvCT(scache,scale=cellsize(g))
 
@@ -36,7 +36,7 @@ angs(n) = range(0,2π,length=n+1)[1:n]
   @test maximum(eigvals(A)) ≈ 0.45 atol = 1e-1
 
   A = nRTRn(scache)
-  @test maximum(svdvals(A)) ≈ 45 atol = 1e-0
+  @test maximum(svdvals(A)) ≈ 11 atol = 1e-0
 
 end
 
@@ -50,14 +50,14 @@ vs = VectorData(X)
 
   regularize_normal!(dq,vs,vcache)
   normal_interpolate!(vs,dq,vcache)
-  @test minimum(vs.u) ≈ -155 atol = 1e-0
-  @test maximum(vs.u) ≈ 155 atol = 1e-0
+  @test minimum(vs.u) ≈ -39 atol = 1e-0
+  @test maximum(vs.u) ≈ 39 atol = 1e-0
 
   surface_divergence!(q,vs,vcache)
   surface_grad!(vs,q,vcache)
 
   A = GLinvD(vcache,scale=cellsize(g))
-  @test maximum(eigvals(A)) ≈ 1.8 atol = 1e-1
+  @test maximum(eigvals(A)) ≈ 1.7 atol = 1e-1
 
 
 end

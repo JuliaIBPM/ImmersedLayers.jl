@@ -27,8 +27,10 @@ By default, it sets the regularization and interpolation to be symmetric matrice
 Here, the `body` can be of type `Body` or `BodyList`. The same keyword arguments
 apply. However, now the default is `weights = areas(body)`.
 """
-struct SurfaceCache{N,NT<:VectorData,REGT<:Regularize,RT<:RegularizationMatrix,ET<:InterpolationMatrix,
+struct SurfaceCache{N,ND,NT<:VectorData,REGT<:Regularize,RT<:RegularizationMatrix,ET<:InterpolationMatrix,
                       LT<:CartesianGrids.Laplacian,GVT,GNT,GCT,SVT,SST}
+
+    g :: PhysicalGrid{ND}
     nrm :: NT
     regop :: REGT
     R :: RT
@@ -57,20 +59,8 @@ function SurfaceScalarCache(X::VectorData{N},nrm::VectorData{N},g::PhysicalGrid;
    gntmp = Nodes(Dual,size(g))
    gctmp = Nodes(Primal,size(g))
 
-   if isnothing(weights)
-       regop = Regularize(X, cellsize(g), I0=origin(g), ddftype = CartesianGrids.Yang3, issymmetric=true)
-       Rf, _ = RegularizationMatrix(regop, svtmp, gvtmp)
-   else
-       regop = Regularize(X, cellsize(g), I0=origin(g), ddftype = CartesianGrids.Yang3, weights=weights)
-       Rf = RegularizationMatrix(regop, svtmp, gvtmp)
-   end
+   _surfacecache(X,nrm,g,ddftype,weights,sstmp,svtmp,gvtmp,gntmp,gctmp)
 
-   Ef = InterpolationMatrix(regop, gvtmp, svtmp)
-
-   L = plan_laplacian(size(gntmp),with_inverse=true)
-   return SurfaceCache{N,typeof(nrm),typeof(regop),typeof(Rf),typeof(Ef),typeof(L),
-                        typeof(gvtmp),typeof(gntmp),typeof(gctmp),typeof(svtmp),typeof(sstmp)}(
-                        nrm,regop,Rf,Ef,L,similar(gvtmp),similar(gvtmp),similar(gntmp),similar(gctmp),similar(svtmp),similar(svtmp),similar(sstmp))
 end
 
 
@@ -83,18 +73,29 @@ function SurfaceVectorCache(X::VectorData{N},nrm::VectorData{N},g::PhysicalGrid;
    gntmp = Nodes(Dual,size(g))
    gctmp = Edges(Primal,size(g))
 
-   if isnothing(weights)
-       regop = Regularize(X, cellsize(g), I0=origin(g), ddftype = CartesianGrids.Yang3, issymmetric=true)
-       Rf, _ = RegularizationMatrix(regop, svtmp, gvtmp)
-   else
-       regop = Regularize(X, cellsize(g), I0=origin(g), ddftype = CartesianGrids.Yang3, weights=weights)
-       Rf = RegularizationMatrix(regop, svtmp, gvtmp)
-   end
+   _surfacecache(X,nrm,g,ddftype,weights,sstmp,svtmp,gvtmp,gntmp,gctmp)
 
-   Ef = InterpolationMatrix(regop, gvtmp, svtmp)
-
-   L = plan_laplacian(size(gntmp),with_inverse=true)
-   return SurfaceCache{N,typeof(nrm),typeof(regop),typeof(Rf),typeof(Ef),typeof(L),
-                        typeof(gvtmp),typeof(gntmp),typeof(gctmp),typeof(svtmp),typeof(sstmp)}(
-                        nrm,regop,Rf,Ef,L,similar(gvtmp),similar(gvtmp),similar(gntmp),similar(gctmp),similar(svtmp),similar(svtmp),similar(sstmp))
 end
+
+function _surfacecache(X::VectorData{N},nrm,g::PhysicalGrid{ND},ddftype,weights,sstmp,svtmp,gvtmp,gntmp,gctmp) where {N,ND}
+
+  if isnothing(weights)
+      regop = Regularize(X, cellsize(g), I0=origin(g), ddftype = ddftype, issymmetric=true)
+      Rf, _ = RegularizationMatrix(regop, svtmp, gvtmp)
+  else
+      regop = Regularize(X, cellsize(g), I0=origin(g), ddftype = ddftype, weights=weights)
+      Rf = RegularizationMatrix(regop, svtmp, gvtmp)
+  end
+
+  Ef = InterpolationMatrix(regop, gvtmp, svtmp)
+
+  L = plan_laplacian(size(gntmp),with_inverse=true)
+  return SurfaceCache{N,ND,typeof(nrm),typeof(regop),typeof(Rf),typeof(Ef),typeof(L),
+                       typeof(gvtmp),typeof(gntmp),typeof(gctmp),typeof(svtmp),typeof(sstmp)}(
+                       g,nrm,regop,Rf,Ef,L,
+                       similar(gvtmp),similar(gvtmp),similar(gntmp),similar(gctmp),
+                       similar(svtmp),similar(svtmp),similar(sstmp))
+
+end
+
+@inline CartesianGrids.cellsize(s::SurfaceCache) = cellsize(s.g)
