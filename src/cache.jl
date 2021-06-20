@@ -3,6 +3,8 @@ abstract type AbstractScalingType end
 abstract type GridScaling <: AbstractScalingType end
 abstract type IndexScaling <: AbstractScalingType end
 
+abstract type AbstractExtraILCache end
+
 
 """
 $(TYPEDEF)
@@ -57,30 +59,34 @@ for f in [:SurfaceScalarCache, :SurfaceVectorCache]
         $f(VectorData(collect(body)),areas(body),normals(body),g;ddftype=ddftype,scaling=scaling)
 end
 
-function SurfaceScalarCache(X::VectorData{N},a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid; ddftype = CartesianGrids.Yang3, scaling = IndexScaling) where {N}
+function SurfaceScalarCache(X::VectorData{N},a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid;
+                              ddftype = CartesianGrids.Yang3,
+                              scaling = IndexScaling) where {N}
 
    sdata_cache = ScalarData(X)
-   svtmp = VectorData(X)
+   snorm_cache = VectorData(X)
 
-   gvtmp = Edges(Primal,size(g))
-   gntmp = Nodes(Dual,size(g))
-   gctmp = Nodes(Primal,size(g))
+   gsnorm_cache = Edges(Primal,size(g))
+   gcurl_cache = Nodes(Dual,size(g))
+   gdata_cache = Nodes(Primal,size(g))
 
-   _surfacecache(X,a,nrm,g,ddftype,scaling,sdata_cache,svtmp,gvtmp,gntmp,gctmp)
+   _surfacecache(X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdata_cache)
 
 end
 
 
-function SurfaceVectorCache(X::VectorData{N},a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid; ddftype = CartesianGrids.Yang3, scaling = IndexScaling) where {N}
+function SurfaceVectorCache(X::VectorData{N},a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid;
+                              ddftype = CartesianGrids.Yang3,
+                              scaling = IndexScaling) where {N}
 
    sdata_cache = VectorData(X)
-   svtmp = TensorData(X)
+   snorm_cache = TensorData(X)
 
-   gvtmp = EdgeGradient(Primal,size(g))
-   gntmp = Nodes(Dual,size(g))
-   gctmp = Edges(Primal,size(g))
+   gsnorm_cache = EdgeGradient(Primal,size(g))
+   gcurl_cache = Nodes(Dual,size(g))
+   gdata_cache = Edges(Primal,size(g))
 
-   _surfacecache(X,a,nrm,g,ddftype,scaling,sdata_cache,svtmp,gvtmp,gntmp,gctmp)
+   _surfacecache(X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdata_cache)
 
 end
 
@@ -89,18 +95,18 @@ function Base.show(io::IO, H::SurfaceCache{N,SCA}) where {N,SCA}
     println(io, "  from $N point data")
 end
 
-function _surfacecache(X::VectorData{N},a,nrm,g::PhysicalGrid{ND},ddftype,scaling,sdata_cache,svtmp,gvtmp,gntmp,gctmp) where {N,ND}
+function _surfacecache(X::VectorData{N},a,nrm,g::PhysicalGrid{ND},ddftype,scaling,sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdata_cache) where {N,ND}
 
   regop = _get_regularization(X,a,g,ddftype,scaling)
-  R = _regularization_matrix(regop,svtmp,gvtmp)
-  E = InterpolationMatrix(regop, gvtmp, svtmp)
+  R = _regularization_matrix(regop,snorm_cache,gsnorm_cache)
+  E = InterpolationMatrix(regop, gsnorm_cache, snorm_cache)
 
-  L = plan_laplacian(size(gntmp),with_inverse=true)
+  L = plan_laplacian(size(gcurl_cache),with_inverse=true)
   return SurfaceCache{N,scaling,ND,typeof(nrm),typeof(regop),typeof(R),typeof(E),typeof(L),
-                       typeof(gvtmp),typeof(gntmp),typeof(gctmp),typeof(svtmp),typeof(sdata_cache)}(
+                       typeof(gsnorm_cache),typeof(gcurl_cache),typeof(gdata_cache),typeof(snorm_cache),typeof(sdata_cache)}(
                        g,nrm,regop,R,E,L,
-                       similar(gvtmp),similar(gvtmp),similar(gntmp),similar(gctmp),
-                       similar(svtmp),similar(svtmp),similar(sdata_cache))
+                       similar(gsnorm_cache),similar(gsnorm_cache),similar(gcurl_cache),similar(gdata_cache),
+                       similar(snorm_cache),similar(snorm_cache),similar(sdata_cache))
 
 end
 
