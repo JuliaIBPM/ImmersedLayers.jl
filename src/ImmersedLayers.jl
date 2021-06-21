@@ -18,6 +18,7 @@ using UnPack
 export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         DoubleLayer!, SingleLayer!, Mask!,
         SurfaceCache,SurfaceScalarCache,SurfaceVectorCache,
+        BasicScalarILMProblem,BasicVectorILMProblem,prob_cache,
         AbstractScalingType,GridScaling,IndexScaling,
         regularize_normal!,normal_interpolate!,
         surface_curl!,surface_divergence!,surface_grad!,inverse_laplacian!,
@@ -28,6 +29,8 @@ abstract type LayerType{N} end
 
 include("tools.jl")
 include("cache.jl")
+include("problem.jl")
+include("system.jl")
 include("layers.jl")
 include("surface_operators.jl")
 

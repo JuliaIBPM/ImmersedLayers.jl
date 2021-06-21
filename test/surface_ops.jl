@@ -79,3 +79,22 @@ end
 
 
 end
+
+@testset "Problem specification" begin
+
+  prob = BasicScalarILMProblem(g,body,scaling=GridScaling)
+  sys = ImmersedLayers.__init(prob)
+
+  scache = SurfaceScalarCache(body,g,scaling=GridScaling)
+
+  @test typeof(sys.base_cache) == typeof(scache)
+
+  vprob = BasicVectorILMProblem(g,body,scaling=GridScaling)
+  vsys = ImmersedLayers.__init(vprob)
+
+  vcache = SurfaceVectorCache(body,g,scaling=GridScaling)
+
+  @test typeof(vsys.base_cache) == typeof(vcache)
+
+
+end
