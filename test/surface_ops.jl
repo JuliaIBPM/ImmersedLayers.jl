@@ -27,15 +27,15 @@ angs(n) = range(0,2π,length=n+1)[1:n]
   @test maximum(f) ≈ 11 atol = 1e-0
   @test minimum(f) ≈ -11 atol = 1e-0
 
-  A = CLinvCT(scache,scale=cellsize(g))
+  A = create_CLinvCT(scache,scale=cellsize(g))
 
   @test maximum(eigvals(A)) ≈ 0.2 atol = 1e-1
   @test minimum(eigvals(A)) > 0
 
-  A = GLinvD(scache,scale=cellsize(g))
+  A = create_GLinvD(scache,scale=cellsize(g))
   @test maximum(eigvals(A)) ≈ 0.45 atol = 1e-1
 
-  A = nRTRn(scache)
+  A = create_nRTRn(scache)
   @test maximum(svdvals(A)) ≈ 11 atol = 1e-0
 
 end
@@ -56,7 +56,7 @@ vs = VectorData(X)
   surface_divergence!(q,vs,vcache)
   surface_grad!(vs,q,vcache)
 
-  A = GLinvD(vcache,scale=cellsize(g))
+  A = create_GLinvD(vcache,scale=cellsize(g))
   @test maximum(eigvals(A)) ≈ 1.7 atol = 1e-1
 
 
