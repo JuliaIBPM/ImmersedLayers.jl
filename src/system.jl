@@ -3,7 +3,7 @@ $(TYPEDEF)
 
 A system of operators and caches for immersed layer problems.
 """
-struct ILMSystem{BCT<:BasicILMCache,ECT<:Union{AbstractExtraILMCache,Nothing}}
+struct ILMSystem{PT,BCT<:BasicILMCache,ECT<:Union{AbstractExtraILMCache,Nothing}}
 
   base_cache :: BCT
   extra_cache :: ECT
@@ -21,6 +21,6 @@ function __init(prob::AbstractILMProblem{DT,ST}) where {DT,ST}
 
     extra_cache = prob_cache(prob,base_cache)
 
-    return ILMSystem(base_cache,extra_cache)
+    return ILMSystem{typeof(prob),typeof(base_cache),typeof(extra_cache)}(base_cache,extra_cache)
 
 end
