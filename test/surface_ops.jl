@@ -80,6 +80,19 @@ end
 
 end
 
+@testset "Grid operations" begin
+  scache = SurfaceScalarCache(body,g,scaling=GridScaling)
+
+  q .= randn(size(q))
+  cv_cache = ConvectiveDerivativeCache(EdgeGradient(Primal,q))
+  qdq = zero(q)
+  convective_derivative!(qdq,q,scache,cv_cache)
+
+  qdq2 = convective_derivative(q,scache)
+
+  @test qdq == qdq2
+end
+
 @testset "Problem specification" begin
 
   prob = BasicScalarILMProblem(g,body,scaling=GridScaling)

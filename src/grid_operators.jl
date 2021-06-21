@@ -40,7 +40,7 @@ the grid cell size depending on whether `base_cache` is of type `IndexScaling`
 or `GridScaling`.
 """
 function convective_derivative(u::Edges{Primal},base_cache::BasicILMCache)
-    extra_cache = ConvectiveDerivativeCache(Edges(Primal,u))
+    extra_cache = ConvectiveDerivativeCache(EdgeGradient(Primal,u))
     udu = similar(u)
     convective_derivative!(udu,u,base_cache,extra_cache)
 end
