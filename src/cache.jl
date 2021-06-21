@@ -3,7 +3,7 @@ abstract type AbstractScalingType end
 abstract type GridScaling <: AbstractScalingType end
 abstract type IndexScaling <: AbstractScalingType end
 
-abstract type AbstractExtraILCache end
+abstract type AbstractExtraILMCache end
 
 
 """
@@ -36,7 +36,7 @@ be symmetric matrices (i.e., interpolation is the adjoint of regularization with
 Here, the `body` can be of type `Body` or `BodyList`. The same keyword arguments
 apply.
 """
-struct SurfaceCache{N,SCA<:AbstractScalingType,ND,NT<:VectorData,REGT<:Regularize,RT<:RegularizationMatrix,ET<:InterpolationMatrix,
+struct BasicILMCache{N,SCA<:AbstractScalingType,ND,NT<:VectorData,REGT<:Regularize,RT<:RegularizationMatrix,ET<:InterpolationMatrix,
                       LT<:CartesianGrids.Laplacian,GVT,GNT,GCT,SVT,SST}
 
     g :: PhysicalGrid{ND}
@@ -90,9 +90,10 @@ function SurfaceVectorCache(X::VectorData{N},a::ScalarData{N},nrm::VectorData{N}
 
 end
 
-function Base.show(io::IO, H::SurfaceCache{N,SCA}) where {N,SCA}
+function Base.show(io::IO, H::BasicILMCache{N,SCA}) where {N,SCA}
     println(io, "Surface cache with scaling of type $SCA")
-    println(io, "  from $N point data")
+    println(io, "  $N point data of type $(typeof(H.sdata_cache))")
+    println(io, "  Grid data of type $(typeof(H.gdata_cache))")
 end
 
 function _surfacecache(X::VectorData{N},a,nrm,g::PhysicalGrid{ND},ddftype,scaling,sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdata_cache) where {N,ND}
@@ -102,7 +103,7 @@ function _surfacecache(X::VectorData{N},a,nrm,g::PhysicalGrid{ND},ddftype,scalin
   E = InterpolationMatrix(regop, gsnorm_cache, snorm_cache)
 
   L = plan_laplacian(size(gcurl_cache),with_inverse=true)
-  return SurfaceCache{N,scaling,ND,typeof(nrm),typeof(regop),typeof(R),typeof(E),typeof(L),
+  return BasicILMCache{N,scaling,ND,typeof(nrm),typeof(regop),typeof(R),typeof(E),typeof(L),
                        typeof(gsnorm_cache),typeof(gcurl_cache),typeof(gdata_cache),typeof(snorm_cache),typeof(sdata_cache)}(
                        g,nrm,regop,R,E,L,
                        similar(gsnorm_cache),similar(gsnorm_cache),similar(gcurl_cache),similar(gdata_cache),
@@ -110,7 +111,7 @@ function _surfacecache(X::VectorData{N},a,nrm,g::PhysicalGrid{ND},ddftype,scalin
 
 end
 
-@inline CartesianGrids.cellsize(s::SurfaceCache) = cellsize(s.g)
+@inline CartesianGrids.cellsize(s::BasicILMCache) = cellsize(s.g)
 
 
 

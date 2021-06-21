@@ -27,15 +27,15 @@ angs(n) = range(0,2π,length=n+1)[1:n]
   @test maximum(f) ≈ 11 atol = 1e-0
   @test minimum(f) ≈ -11 atol = 1e-0
 
-  A = CLinvCT(scache,scale=cellsize(g))
+  A = create_CLinvCT(scache,scale=cellsize(g))
 
   @test maximum(eigvals(A)) ≈ 0.2 atol = 1e-1
   @test minimum(eigvals(A)) > 0
 
-  A = GLinvD(scache,scale=cellsize(g))
+  A = create_GLinvD(scache,scale=cellsize(g))
   @test maximum(eigvals(A)) ≈ 0.45 atol = 1e-1
 
-  A = nRTRn(scache)
+  A = create_nRTRn(scache)
   @test maximum(svdvals(A)) ≈ 11 atol = 1e-0
 
 end
@@ -56,7 +56,7 @@ vs = VectorData(X)
   surface_divergence!(q,vs,vcache)
   surface_grad!(vs,q,vcache)
 
-  A = GLinvD(vcache,scale=cellsize(g))
+  A = create_GLinvD(vcache,scale=cellsize(g))
   @test maximum(eigvals(A)) ≈ 1.7 atol = 1e-1
 
 
@@ -76,6 +76,38 @@ end
 
   outer = complementary_mask(scache)
 
+
+
+end
+
+@testset "Grid operations" begin
+  scache = SurfaceScalarCache(body,g,scaling=GridScaling)
+
+  q .= randn(size(q))
+  cv_cache = ConvectiveDerivativeCache(EdgeGradient(Primal,q))
+  qdq = zero(q)
+  convective_derivative!(qdq,q,scache,cv_cache)
+
+  qdq2 = convective_derivative(q,scache)
+
+  @test qdq == qdq2
+end
+
+@testset "Problem specification" begin
+
+  prob = BasicScalarILMProblem(g,body,scaling=GridScaling)
+  sys = ImmersedLayers.__init(prob)
+
+  scache = SurfaceScalarCache(body,g,scaling=GridScaling)
+
+  @test typeof(sys.base_cache) == typeof(scache)
+
+  vprob = BasicVectorILMProblem(g,body,scaling=GridScaling)
+  vsys = ImmersedLayers.__init(vprob)
+
+  vcache = SurfaceVectorCache(body,g,scaling=GridScaling)
+
+  @test typeof(vsys.base_cache) == typeof(vcache)
 
 
 end
