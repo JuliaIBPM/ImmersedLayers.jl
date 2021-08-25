@@ -1,8 +1,8 @@
 """
     create_CLinvCT(cache::BasicILMCache[;scale=1.0])
 
-Construct the square matrix ``-C_s L^{-1}C_s^T``, which maps data of type `ScalarData`
-to data of the same type. The operators `C_s` and `C_s^T` correspond to `surface_curl!`
+Using the provided cache `cache`, construct the square matrix ``-C_s L^{-1}C_s^T``, which maps data of type `ScalarData`
+to data of the same type. The operators `C_s` and `C_s^T` correspond to [`surface_curl!`](@ref)
 and `L` is the grid Laplacian. The optional keyword `scale` multiplies the
 matrix by the designated value.
 """
@@ -33,9 +33,9 @@ end
 """
     create_GLinvD(cache::BasicILMCache[;scale=1.0])
 
-Construct the square matrix ``G_s L^{-1}D_s``, which maps data of type `ScalarData`
-to data of the same type. The operators `G_s` and `D_s` correspond to `surface_grad!`
-and `surface_divergence!`, and `L` is the grid Laplacian. The optional keyword `scale` multiplies the
+Using the provided cache `cache`, construct the square matrix ``G_s L^{-1}D_s``, which maps data of type `ScalarData`
+to data of the same type. The operators `G_s` and `D_s` correspond to [`surface_grad!`](@ref)
+and [`surface_divergence!`](@ref), and `L` is the grid Laplacian. The optional keyword `scale` multiplies the
 matrix by the designated value.
 """
 function create_GLinvD(cache::BasicILMCache{N};scale=1.0) where {N}
@@ -63,8 +63,8 @@ end
 """
     create_nRTRn(cache::BasicILMCache[;scale=1.0])
 
-Construct the square matrix ``n\\cdot I_f R_f n \\circ``, which maps data of type `ScalarData`
-to data of the same type. The operators `I_f` and `R_f` correspond to the interpolation
+Using the provided cache `cache`, construct the square matrix ``n\\cdot R_f^T R_f n \\circ``, which maps data of type `ScalarData`
+to data of the same type. The operators `R_f^T` and `R_f` correspond to the interpolation
 and regularization matrices. The optional keyword `scale` multiplies the
 matrix by the designated value.
 """

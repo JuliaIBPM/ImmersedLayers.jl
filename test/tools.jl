@@ -36,7 +36,7 @@ os .= 1
 
    @test norm(w,g) == (xlim[2]-xlim[1])*(ylim[2]-ylim[1])
 
-   @test isapprox(dot(os,ds,os),2π,atol=1e-3)
+   @test isapprox(dot(os,os,ds),2π,atol=1e-3)
 
 end
 
@@ -47,12 +47,12 @@ end
   Rc = RegularizationMatrix(reg,ϕ,oc)
   Ec = InterpolationMatrix(reg,oc,ϕ)
 
-  @test isapprox(abs(dot(oc,Rc*os,g) - dot(os,ds,os)),0,atol=1e-14)
+  @test isapprox(abs(dot(oc,Rc*os,g) - dot(os,os,ds)),0,atol=1e-14)
 
   u = similar(w)
   u .= randn(size(u))
   ϕ .= randn(size(ϕ))
-  @test isapprox(dot(u,Rc*ϕ,g),dot(Ec*u,ds,ϕ),atol=1e-14)
+  @test isapprox(dot(u,Rc*ϕ,g),dot(Ec*u,ϕ,ds),atol=1e-14)
 
   Rf = RegularizationMatrix(reg,f,q);
   Ef = InterpolationMatrix(reg,q,f);

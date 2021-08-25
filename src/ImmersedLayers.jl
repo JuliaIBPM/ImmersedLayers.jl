@@ -39,7 +39,8 @@ include("grid_operators.jl")
 include("surface_operators.jl")
 include("matrix_operators.jl")
 
-
+@deprecate DoubleLayer surface_divergence!
+#@deprecate SingleLayer
 
 
 end

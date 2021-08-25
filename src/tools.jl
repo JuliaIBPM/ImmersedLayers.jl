@@ -44,13 +44,13 @@ of the cell in grid `g`.
 norm(u::GridData,g::PhysicalGrid) = dot(u,u,g)
 
 """
-    dot(u1::PointData,ds::ScalarData,u2::PointData)
+    dot(u1::PointData,u2::PointData,ds::ScalarData)
 
 Return the inner product between `u1` and `u2`, weighted by `ds`.
 """
-dot(u1::ScalarData{N},ds::ScalarData{N},u2::ScalarData{N}) where {N} = dot(u1,ds∘u2)
+dot(u1::ScalarData{N},u2::ScalarData{N},ds::ScalarData{N}) where {N} = dot(u1,ds∘u2)
 
-dot(u1::VectorData{N},ds::ScalarData{N},u2::VectorData{N}) where {N} =
+dot(u1::VectorData{N},u2::VectorData{N},ds::ScalarData{N}) where {N} =
     dot(u1.u,ds∘u2.u) + dot(u1.v,ds∘u2.v)
 
 """

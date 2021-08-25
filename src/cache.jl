@@ -3,6 +3,11 @@ abstract type AbstractScalingType end
 abstract type GridScaling <: AbstractScalingType end
 abstract type IndexScaling <: AbstractScalingType end
 
+"""
+$(TYPEDEF)
+
+When defining problem-specific cache, make it a subtype of this.
+"""
 abstract type AbstractExtraILMCache end
 
 
@@ -12,7 +17,7 @@ $(TYPEDEF)
 Create a cache of operators and storage data for use in surface operations.
 
 ## Constructors
-The cache is populated differently depending on the type of data intended. For
+This is often only called from within`ILMSystem` rather than directly. The cache is populated differently depending on the type of data intended. For
 scalar surface quantities, one calls `SurfaceScalarCache`; for vector surface
 quantities, one calls `SurfaceVectorCache`. The examples below can be replaced
 with `SurfaceVectorCache` without modification.

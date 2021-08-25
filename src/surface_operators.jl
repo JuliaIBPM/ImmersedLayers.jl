@@ -5,10 +5,11 @@ end
 
 """
     regularize_normal!(q::Edges{Primal},f::ScalarData,sys::ILMSystem)
+    regularize_normal!(q::Edges{Primal},f::ScalarData,cache::BasicILMCache)
 
-The operation ``R_f n\\circ``, which maps scalar surface data `f` (like
+The operation ``q = R_f n\\circ f``, which maps scalar surface data `f` (like
 a jump in scalar potential) to grid data `q` (like velocity). This is the adjoint
-to `normal_interpolate!`.
+to [`normal_interpolate!`](@ref).
 """
 @inline regularize_normal!(q::Edges{Primal},f::ScalarData,cache::BasicILMCache) = regularize_normal!(q,f,cache.nrm,cache.R,cache.snorm_cache)
 
@@ -19,10 +20,11 @@ end
 
 """
     regularize_normal!(qt::EdgeGradient{Primal},v::VectorData,sys::ILMSystem)
+    regularize_normal!(qt::EdgeGradient{Primal},v::VectorData,cache::BasicILMCache)
 
-The operation ``R_T n\\circ``, which maps scalar vector data `v` (like
+The operation ``q_t = R_t n\\circ v``, which maps scalar vector data `v` (like
 a jump in velocity) to grid data `qt` (like velocity-normal tensor). This is the adjoint
-to `normal_interpolate!`.
+to [`normal_interpolate!`](@ref).
 """
 @inline regularize_normal!(q::EdgeGradient{Primal},f::VectorData,cache::BasicILMCache) = regularize_normal!(q,f,cache.nrm,cache.R,cache.snorm_cache,cache.snorm2_cache)
 
@@ -37,9 +39,9 @@ end
 """
     normal_interpolate!(vn::ScalarData,q::Edges{Primal},sys::ILMSystem)
 
-The operation ``n \\cdot I_f``, which maps grid data `q` (like velocity) to scalar
+The operation ``v_n = n \\cdot R_f^T q``, which maps grid data `q` (like velocity) to scalar
 surface data `vn` (like normal component of surface velocity). This is the
-adjoint to `regularize_normal!`.
+adjoint to [`regularize_normal!`](@ref).
 """
 @inline normal_interpolate!(vn::ScalarData,q::Edges{Primal},cache::BasicILMCache) = normal_interpolate!(vn,q,cache.nrm,cache.E,cache.snorm_cache)
 
@@ -51,8 +53,8 @@ end
 """
     normal_interpolate!(τ::VectorData,A::EdgeGradient{Primal},sys::ILMSystem)
 
-The operation ``n \\cdot I_T (A + A^T)``, which maps grid tensor data `A` (like velocity gradient tensor) to vector
-surface data `τ` (like traction). This is the adjoint to `regularize_normal!`.
+The operation ``\\tau = n \\cdot R_t^T (A + A^T)``, which maps grid tensor data `A` (like velocity gradient tensor) to vector
+surface data `τ` (like traction). This is the adjoint to [`regularize_normal!`](@ref).
 """
 @inline normal_interpolate!(vn::VectorData,q::EdgeGradient{Primal},cache::BasicILMCache) = normal_interpolate!(vn,q,cache.nrm,cache.E,cache.gsnorm2_cache,cache.snorm_cache)
 
@@ -66,7 +68,7 @@ end
 """
     surface_curl!(w::Nodes{Dual},f::ScalarData,sys::ILMSystem)
 
-The operation ``C_s^T = C^T R_f n\\circ``, which maps scalar surface data `f` (like
+The operation ``w = C_s^T f = C^T R_f n\\circ f``, which maps scalar surface data `f` (like
 a jump in scalar potential) to grid data `w` (like vorticity). This is the adjoint
 to ``C_s``, also given by `surface_curl!` (but with arguments switched). Note that
 the differential operations are divided either by 1 or by the grid cell size,
@@ -86,7 +88,7 @@ end
 """
     surface_curl!(vn::ScalarData,s::Nodes{Dual},sys::ILMSystem)
 
-The operation ``C_s = n \\cdot I_f C``, which maps grid data `s` (like
+The operation ``v_n = C_s s = n \\cdot R_f^T C s``, which maps grid data `s` (like
 streamfunction) to scalar surface data `vn` (like normal component of velocity).
 This is the adjoint to ``C_s^T``, also given by `surface_curl!`, but with
 arguments switched.  Note that
@@ -109,8 +111,9 @@ end
 """
     surface_divergence!(Θ::Nodes{Primal},f::ScalarData,sys::ILMSystem)
 
-The operation ``D_s = D R_f n \\circ``, which maps surface scalar data `f` (like
+The operation ``\\theta = D_s f = D R_f n \\circ f``, which maps surface scalar data `f` (like
 jump in scalar potential) to grid data `Θ` (like dilatation, i.e. divergence of velocity).
+This is the adjoint of [`surface_grad!`](@ref).
 Note that
 the differential operations are divided either by 1 or by the grid cell size,
 depending on whether `sys` has been designated with `IndexScaling` or `GridScaling`,
@@ -129,8 +132,8 @@ end
 """
     surface_divergence!(v::Edges{Primal},dv::VectorData,sys::ILMSystem)
 
-The operation ``D_s = D R_f (n \\circ \\cdot + \\cdot \\circ n)``, which maps surface vector data `v` (like
-jump in velocity) to grid data `v` (like velocity). Note that
+The operation ``v = D_s v = D R_f (n \\circ v + v \\circ n)``, which maps surface vector data `v` (like
+jump in velocity) to grid data `v` (like velocity). This is the adjoint of [`surface_grad!`](@ref). Note that
 the differential operations are divided either by 1 or by the grid cell size,
 depending on whether `sys` has been designated with `IndexScaling` or `GridScaling`,
 respectively.
@@ -148,8 +151,9 @@ end
 """
     surface_grad!(vn::ScalarData,ϕ::Nodes{Primal},sys::ILMSystem)
 
-The operation ``G_s = n \\cdot I_f G``, which maps grid data `ϕ` (like
-scalar potential) to scalar surface data (like normal component of velocity).  Note that
+The operation ``v_n = G_s\\phi = n \\cdot R_f^T G\\phi``, which maps grid data `ϕ` (like
+scalar potential) to scalar surface data (like normal component of velocity). This is the adjoint of [`surface_divergence!`](@ref).
+Note that
 the differential operations are divided either by 1 or by the grid cell size,
 depending on whether `sys` has been designated with `IndexScaling` or `GridScaling`,
 respectively.
@@ -168,8 +172,8 @@ end
 """
     surface_grad!(τ::VectorData,v::Edges{Primal},sys::ILMSystem)
 
-The operation ``G_s = n \\cdot I_f (G v + (G v)^T)``, which maps grid vector data `v` (like
-velocity) to vector surface data `τ` (like traction). Note that
+The operation ``\\tau = G_s v = n \\cdot R_t^T (G v + (G v)^T)``, which maps grid vector data `v` (like
+velocity) to vector surface data `τ` (like traction). This is the adjoint of [`surface_divergence!`](@ref). Note that
 the differential operations are divided either by 1 or by the grid cell size,
 depending on whether `sys` has been designated with `IndexScaling` or `GridScaling`,
 respectively.

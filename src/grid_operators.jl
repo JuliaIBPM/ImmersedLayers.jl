@@ -15,6 +15,13 @@ respectively.
 """
 inverse_laplacian!(w,sys::ILMSystem) = inverse_laplacian!(w,sys.base_cache)
 
+"""
+    inverse_laplacian!(w::GridData,cache::BasicILMCache)
+
+Compute the in-place inverse Laplacian of grid data `w`, and multiply the result
+by unity or by the grid cell size, depending on whether `cache` has `IndexScaling` or `GridScaling`,
+respectively.
+"""
 function inverse_laplacian!(w::GridData,cache::BasicILMCache)
     @unpack L = cache
     _unscaled_inverse_laplacian!(w,L)
@@ -25,6 +32,12 @@ _unscaled_inverse_laplacian!(w::GridData,L::CartesianGrids.Laplacian) = w .= L\w
 
 ###  Convective derivative of velocity-like data by itself ###
 
+"""
+    ConvectiveDerivativeCache(dv::EdgeGradient)
+
+Create a cache (a subtype of [`AbstractExtraILMCache`](@ref)) for computing
+the convective derivative, using `dv` to define the cache data.
+"""
 struct ConvectiveDerivativeCache{VTT} <: AbstractExtraILMCache
    vt1_cache :: VTT
    vt2_cache :: VTT
@@ -51,7 +64,8 @@ end
 Compute the convective derivative of `v`, i.e., ``v\\cdot \\nabla v``, and
 return the result in `vdv`. The result is either divided by unity or
 the grid cell size depending on whether `base_cache` is of type `IndexScaling`
-or `GridScaling`.
+or `GridScaling`. This version of the method uses `extra_cache` of type
+[`ConvectiveDerivativeCache`](@ref).
 """
 function convective_derivative!(udu::Edges{Primal},u::Edges{Primal},base_cache::BasicILMCache,extra_cache::ConvectiveDerivativeCache)
     _unscaled_convective_derivative!(udu,u,extra_cache)
