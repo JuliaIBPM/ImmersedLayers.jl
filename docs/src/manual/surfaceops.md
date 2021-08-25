@@ -10,8 +10,10 @@ complementary_mask!
 complementary_mask
 mask!
 mask
-normal_interpolate!
+regularize!
+interpolate!
 regularize_normal!
+normal_interpolate!
 surface_curl!
 surface_divergence!
 surface_grad!

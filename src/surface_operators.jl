@@ -1,7 +1,58 @@
-for f in [:regularize_normal!,:normal_interpolate!,:surface_curl!,:surface_divergence!,:surface_grad!]
+for f in [:regularize!, :interpolate!, :regularize_normal!,:normal_interpolate!,:surface_curl!,:surface_divergence!,:surface_grad!]
   @eval $f(a,b,sys::ILMSystem) = $f(a,b,sys.base_cache)
 end
 
+"""
+    regularize!(s::Nodes{Primal},f::ScalarData,sys::ILMSystem)
+
+The operation ``s = R_c f``, which regularizes scalar surface data `f`
+onto the grid in the form of scalar grid data `s`. This is the adjoint
+to [`interpolate!`](@ref)
+"""
+@inline regularize!(s::Nodes{Primal},f::ScalarData,cache::BasicILMCache) = regularize!(s,f,cache.R)
+
+function regularize!(s::Nodes{Primal},f::ScalarData,Rc::RegularizationMatrix)
+  return s .= Rc*f
+end
+
+"""
+    regularize!(v::Edges{Primal},vb::VectorData,sys::ILMSystem)
+
+The operation ``v = R_f v_b``, which regularizes vector surface data `vb`
+onto the grid in the form of scalar grid data `v`. This is the adjoint
+to [`interpolate!`](@ref)
+"""
+@inline regularize!(v::Edges{Primal},vb::VectorData,cache::BasicILMCache) = regularize!(v,vb,cache.R)
+
+function regularize!(v::Edges{Primal},vb::VectorData,Rf::RegularizationMatrix)
+  return v .= Rf*vb
+end
+
+"""
+    interpolate!(f::ScalarData,s::Nodes{Primal},sys::ILMSystem)
+
+The operation ``f = R_c^T s``, which interpolates scalar grid data `s`
+onto the surface points in the form of scalar point data `f`. This is the adjoint
+to [`regularize!`](@ref)
+"""
+@inline interpolate!(f::ScalarData,s::Nodes{Primal},cache::BasicILMCache) = interpolate!(f,s,cache.E)
+
+function interpolate!(f::ScalarData,s::Nodes{Primal},Ec::InterpolationMatrix)
+  return f .= Ec*s
+end
+
+"""
+    interpolate!(vb::VectorData,v::Edges{Primal},sys::ILMSystem)
+
+The operation ``v_b = R_c^T v``, which interpolates vector grid data `v`
+onto the surface points in the form of scalar point data `vb`. This is the adjoint
+to [`regularize!`](@ref)
+"""
+@inline interpolate!(vb::VectorData,v::Edges{Primal},cache::BasicILMCache) = interpolate!(vb,v,cache.E)
+
+function interpolate!(vb::VectorData,v::Edges{Primal},Ef::InterpolationMatrix)
+  return vb .= Ef*v
+end
 
 """
     regularize_normal!(q::Edges{Primal},f::ScalarData,sys::ILMSystem)
