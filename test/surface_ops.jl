@@ -85,7 +85,8 @@ end
 
   q .= randn(size(q))
   cv_cache = ConvectiveDerivativeCache(EdgeGradient(Primal,q))
-  qdq = zero(q)
+  qdq = similar(q)
+  qdq .= 0.0
   convective_derivative!(qdq,q,scache,cv_cache)
 
   qdq2 = convective_derivative(q,scache)
