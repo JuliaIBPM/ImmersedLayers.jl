@@ -146,3 +146,46 @@ function _regularization_matrix(regop::Regularize,src,trg)
     end
     return R
 end
+
+## Obtaining copies of the grid and surface data
+"""
+    similar_grid(::BasicILMCache)
+
+Get a `similar` copy of the basic grid data in the cache.
+"""
+@inline similar_grid(cache::BasicILMCache,kwargs...) = similar(cache.gdata_cache,kwargs...)
+
+"""
+    similar_surface(::BasicILMCache)
+
+Get a `similar` copy of the basic surface point data in the cache.
+"""
+@inline similar_surface(cache::BasicILMCache,kwargs...) = similar(cache.sdata_cache,kwargs...)
+
+"""
+    zeros_grid(::BasicILMCache)
+
+Get a copy of the basic grid data in the cache, with values set to zero.
+"""
+@inline zeros_grid(cache::BasicILMCache,kwargs...) = zero(cache.gdata_cache,kwargs...)
+
+"""
+    zeros_surface(::BasicILMCache)
+
+Get a copy of the basic surface point data in the cache, with values set to zero.
+"""
+@inline zeros_surface(cache::BasicILMCache,kwargs...) = zero(cache.sdata_cache,kwargs...)
+
+"""
+    ones_grid(::BasicILMCache)
+
+Get a copy of the basic grid data in the cache, with values set to one.
+"""
+@inline ones_grid(cache::BasicILMCache,kwargs...) = ones(cache.gdata_cache,kwargs...)
+
+"""
+    ones_surface(::BasicILMCache)
+
+Get a copy of the basic surface point data in the cache, with values set to one.
+"""
+@inline ones_surface(cache::BasicILMCache,kwargs...) = ones(cache.sdata_cache,kwargs...)

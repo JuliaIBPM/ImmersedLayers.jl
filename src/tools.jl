@@ -83,3 +83,27 @@ function ones(u::VectorData{N},dim::Integer) where {N}
   ocomp .= 1
   o
 end
+
+"""
+    ones(u::ScalarGridData)
+
+Returns `ScalarGridData` of the same type as `u` filled with ones.
+"""
+function ones(u::ScalarGridData)
+  o = similar(u)
+  o .= 1
+  o
+end
+
+"""
+    ones(u::VectorGridData,dim::Int)
+
+Returns `VectorGridData` of the same type as `u`, filled with ones in
+component `dim`.
+"""
+function ones(u::VectorGridData,dim::Integer)
+  o = zero(u)
+  ocomp = getfield(o,dim+1) # offset
+  ocomp .= 1
+  o
+end

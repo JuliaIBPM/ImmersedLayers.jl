@@ -21,6 +21,9 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         BasicScalarILMProblem,BasicVectorILMProblem,prob_cache,
         AbstractScalingType,GridScaling,IndexScaling,
         BasicILMCache,ILMSystem,
+        similar_grid,similar_surface,
+        zeros_grid,zeros_surface,
+        ones_grid,ones_surface,
         AbstractExtraILMCache,AbstractScalarILMProblem,AbstractVectorILMProblem,
         ConvectiveDerivativeCache,convective_derivative, convective_derivative!,
         regularize!, interpolate!,
@@ -41,7 +44,7 @@ include("surface_operators.jl")
 include("matrix_operators.jl")
 
 @deprecate DoubleLayer surface_divergence!
-#@deprecate SingleLayer
+@deprecate SingleLayer regularize!
 
 
 end
