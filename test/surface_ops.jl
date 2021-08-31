@@ -21,6 +21,12 @@ angs(n) = range(0,2π,length=n+1)[1:n]
 @testset "Scalar surface ops" begin
   scache = SurfaceScalarCache(body,g,scaling=GridScaling)
 
+  gd = similar_grid(scache)
+  @test typeof(gd) == typeof(scache.gdata_cache)
+
+  sd = similar_surface(scache)
+  @test typeof(sd) == typeof(scache.sdata_cache)
+
   f .= sin.(angs(length(body)) .- π/4)
   regularize_normal!(q,f,scache)
   normal_interpolate!(f,q,scache)

@@ -35,7 +35,6 @@ jobs:
       - uses: codecov/codecov-action@v1
         with:
           file: lcov.info
-          version: '1'
   docs:
     name: Documentation
     runs-on: ubuntu-latest

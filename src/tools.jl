@@ -1,6 +1,15 @@
 import LinearAlgebra: dot, norm
 import Base: ones
-export normals, areas
+export points, normals, areas
+
+
+"""
+    points(b::Body/BodyList)
+
+Return `VectorData` filled with the coordinates of the points
+associated with `b`.
+"""
+@inline points(b::Union{Body,BodyList}) = VectorData(collect(b))
 
 """
     normals(b::Body/BodyList)
@@ -41,7 +50,7 @@ end
 Return the norm of `u`, weighted by the volume (area)
 of the cell in grid `g`.
 """
-norm(u::GridData,g::PhysicalGrid) = dot(u,u,g)
+norm(u::GridData,g::PhysicalGrid) = sqrt(dot(u,u,g))
 
 """
     dot(u1::PointData,u2::PointData,ds::ScalarData)
@@ -58,7 +67,7 @@ dot(u1::VectorData{N},u2::VectorData{N},ds::ScalarData{N}) where {N} =
 
 Return the norm of `u`, weighted by `ds`.
 """
-norm(u::PointData{N},ds::ScalarData{N}) where {N} = dot(u,ds,u)
+norm(u::PointData{N},ds::ScalarData{N}) where {N} = sqrt(dot(u,ds,u))
 
 """
     ones(u::ScalarData)
