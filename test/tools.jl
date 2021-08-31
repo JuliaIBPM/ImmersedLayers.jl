@@ -28,13 +28,13 @@ os .= 1
    w .= 1
    u = similar(w)
    u .= 1
-   @test dot(w,u,g) == norm(w,g)
+   @test sqrt(dot(w,u,g)) == norm(w,g)
 
    u = Nodes(Dual,5,5)
    @test_throws MethodError dot(w,u,g)
    @test_throws AssertionError dot(u,u,g)
 
-   @test norm(w,g) == (xlim[2]-xlim[1])*(ylim[2]-ylim[1])
+   @test norm(w,g) == sqrt((xlim[2]-xlim[1])*(ylim[2]-ylim[1]))
 
    @test isapprox(dot(os,os,ds),2π,atol=1e-3)
 

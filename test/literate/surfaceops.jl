@@ -105,18 +105,25 @@ surface_divergence!(dl,pts.v,cache)
 plot(dl,grid)
 
 #=
-## A curl double layer
+## A curl layer
 We also sometimes need to take the curl of the regularized surface data,
 
 $$\nabla\times \left( \delta(\chi) \mathbf{n} f \right)$$
 
 For this, we use the [`surface_curl!`](@ref) operator. Let's demonstrate this
-on the $x$ coordinate of the body data.
+on a uniform field on the surface.
 =#
 gc = zeros_gridcurl(cache)
 f = ones_surface(cache)
 surface_curl!(gc,f,cache)
 plot(gc,grid)
+
+#=
+The continuous version of this operation is actually zero. It's not quite
+zero in discrete form. However, its norm is much smaller than that of
+the double layer.
+=#
+norm(gc,cache)/norm(dl,cache)
 
 #md # ## Surface-grid operator functions
 #md # ```@docs
