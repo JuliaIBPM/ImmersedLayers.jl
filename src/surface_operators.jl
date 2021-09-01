@@ -247,7 +247,7 @@ Create grid data that consist of 1s inside of a surface (i.e., on a side opposit
   the normal vectors) and 0s outside. The grid data are the same type as the
   output data type of `sys`.  Only allows `sys` to have `GridScaling`.
 """
-@inline mask(cache::BasicILMCache{N,GridScaling}) where {N} = _mask!(cache.gdata_cache,cache)
+@inline mask(cache::BasicILMCache{N,GridScaling}) where {N} = _mask!(zeros_grid(cache),cache)
 
 """
     complementary_mask(cache::BasicILMCache) -> GridData
@@ -257,7 +257,7 @@ Create grid data that consist of 0s inside of a surface (i.e., on a side opposit
   output data type of `cache`.  Only allows `cache` to have `GridScaling`.
 """
 @inline complementary_mask(cache::BasicILMCache{N,GridScaling}) where {N} =
-          _complementary_mask!(cache.gdata_cache,cache)
+          _complementary_mask!(zeros_grid(cache),cache)
 
 
 """
