@@ -14,6 +14,7 @@ using ImmersedLayers
 using CartesianGrids
 using RigidBodyTools
 using Plots
+using LinearAlgebra
 
 #=
 ### Set up the grid, shape, and cache
@@ -51,9 +52,11 @@ regularize!(gx,pts.u,cache) #hide
 @time regularize!(gx,pts.u,cache);
 
 #=
-Let's plot this to look at it
+Let's plot this to look at it. This also gives us a chance to highlight
+the plot recipe for grid data associated with the cache, which is achieved by
+simply supplying the cache to the `plot` function in `Plots.jl`.
 =#
-plot(gx,grid)
+plot(gx,cache)
 
 #=
 This shows how the regularization spreads the data over a couple of cells
@@ -102,7 +105,7 @@ surface points:
 =#
 dl = zeros_grid(cache)
 surface_divergence!(dl,pts.v,cache)
-plot(dl,grid)
+plot(dl,cache)
 
 #=
 ## A curl layer
@@ -116,7 +119,7 @@ on a uniform field on the surface.
 gc = zeros_gridcurl(cache)
 f = ones_surface(cache)
 surface_curl!(gc,f,cache)
-plot(gc,grid)
+plot(gc,cache)
 
 #=
 The continuous version of this operation is actually zero. It's not quite
@@ -125,17 +128,52 @@ the double layer.
 =#
 norm(gc,cache)/norm(dl,cache)
 
+#=
+## Masks
+Masks are grid data that take the value 1 in one region (e.g., the interior of a surface)
+and 0 in the other (e.g., the exterior). The functions [`mask`](@ref)
+and [`complementary_mask`](@ref) achieve this
+=#
+m = mask(cache)
+cm = complementary_mask(cache)
+plot(
+    surface(m,cache),
+    surface(cm,cache)
+    )
+
+#=
+One can apply a mask to some grid data by multiplying it, using, e.g.,
+the `product!` function in `CartesianGrids.jl`. Let's demonstrate that
+with the grid data of $x$ coordinates:
+=#
+xmask = zeros_grid(cache)
+xcmask = zeros_grid(cache)
+product!(xmask,xg,m)
+product!(xcmask,xg,cm)
+plot(
+  plot(xmask,cache),
+  plot(xcmask,cache)
+  )
+
+#=
+The mask and complementary mask effectively partition the field into two parts.
+We can also apply a masks in place, using [`mask!`](@ref) and [`complementary_mask!`](@ref):
+=#
+xmask .= xg
+mask!(xmask,cache)
+plot(xmask,cache)
+
 #md # ## Surface-grid operator functions
 #md # ```@docs
-#md # complementary_mask!
-#md # complementary_mask
-#md # mask!
-#md # mask
 #md # regularize!
 #md # interpolate!
 #md # regularize_normal!
 #md # normal_interpolate!
-#md # surface_curl!
 #md # surface_divergence!
 #md # surface_grad!
+#md # surface_curl!
+#md # mask!
+#md # mask
+#md # complementary_mask!
+#md # complementary_mask
 #md # ```

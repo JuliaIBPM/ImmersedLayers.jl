@@ -1,9 +1,13 @@
-for f in [:regularize!, :interpolate!, :regularize_normal!,:normal_interpolate!,:surface_curl!,:surface_divergence!,:surface_grad!]
+for f in [:regularize!, :interpolate!, :regularize_normal!,
+          :normal_interpolate!,:surface_curl!,:surface_divergence!,
+          :surface_grad!]
   @eval $f(a,b,sys::ILMSystem) = $f(a,b,sys.base_cache)
 end
 
 """
+    regularize!(s::Nodes{Primal},f::ScalarData,cache::BasicILMCache)
     regularize!(s::Nodes{Primal},f::ScalarData,sys::ILMSystem)
+
 
 The operation ``s = R_c f``, which regularizes scalar surface data `f`
 onto the grid in the form of scalar grid data `s`. This is the adjoint
@@ -16,6 +20,7 @@ function regularize!(s::Nodes{Primal},f::ScalarData,Rc::RegularizationMatrix)
 end
 
 """
+    regularize!(v::Edges{Primal},vb::VectorData,cache::BasicILMCache)
     regularize!(v::Edges{Primal},vb::VectorData,sys::ILMSystem)
 
 The operation ``v = R_f v_b``, which regularizes vector surface data `vb`
@@ -29,6 +34,7 @@ function regularize!(v::Edges{Primal},vb::VectorData,Rf::RegularizationMatrix)
 end
 
 """
+    interpolate!(f::ScalarData,s::Nodes{Primal},cache::BasicILMCache)
     interpolate!(f::ScalarData,s::Nodes{Primal},sys::ILMSystem)
 
 The operation ``f = R_c^T s``, which interpolates scalar grid data `s`
@@ -42,6 +48,7 @@ function interpolate!(f::ScalarData,s::Nodes{Primal},Ec::InterpolationMatrix)
 end
 
 """
+    interpolate!(vb::VectorData,v::Edges{Primal},cache::BasicILMCache)
     interpolate!(vb::VectorData,v::Edges{Primal},sys::ILMSystem)
 
 The operation ``v_b = R_c^T v``, which interpolates vector grid data `v`
@@ -55,8 +62,8 @@ function interpolate!(vb::VectorData,v::Edges{Primal},Ef::InterpolationMatrix)
 end
 
 """
-    regularize_normal!(q::Edges{Primal},f::ScalarData,sys::ILMSystem)
     regularize_normal!(q::Edges{Primal},f::ScalarData,cache::BasicILMCache)
+    regularize_normal!(q::Edges{Primal},f::ScalarData,sys::ILMSystem)
 
 The operation ``q = R_f n\\circ f``, which maps scalar surface data `f` (like
 a jump in scalar potential) to grid data `q` (like velocity). This is the adjoint
@@ -70,8 +77,8 @@ function regularize_normal!(q::Edges{Primal,NX,NY},f::ScalarData{N},nrm::VectorD
 end
 
 """
-    regularize_normal!(qt::EdgeGradient{Primal},v::VectorData,sys::ILMSystem)
     regularize_normal!(qt::EdgeGradient{Primal},v::VectorData,cache::BasicILMCache)
+    regularize_normal!(qt::EdgeGradient{Primal},v::VectorData,sys::ILMSystem)
 
 The operation ``q_t = R_t n\\circ v``, which maps scalar vector data `v` (like
 a jump in velocity) to grid data `qt` (like velocity-normal tensor). This is the adjoint
@@ -88,6 +95,7 @@ end
 
 
 """
+    normal_interpolate!(vn::ScalarData,q::Edges{Primal},cache::BasicILMCache)
     normal_interpolate!(vn::ScalarData,q::Edges{Primal},sys::ILMSystem)
 
 The operation ``v_n = n \\cdot R_f^T q``, which maps grid data `q` (like velocity) to scalar
@@ -102,6 +110,7 @@ function normal_interpolate!(vn::ScalarData{N},q::Edges{Primal,NX,NY},nrm::Vecto
 end
 
 """
+    normal_interpolate!(τ::VectorData,A::EdgeGradient{Primal},cache::BasicILMCache)
     normal_interpolate!(τ::VectorData,A::EdgeGradient{Primal},sys::ILMSystem)
 
 The operation ``\\tau = n \\cdot R_t^T (A + A^T)``, which maps grid tensor data `A` (like velocity gradient tensor) to vector
@@ -117,6 +126,7 @@ function normal_interpolate!(vn::VectorData{N},q::EdgeGradient{Primal,Dual,NX,NY
 end
 
 """
+    surface_curl!(w::Nodes{Dual},f::ScalarData,cache::BasicILMCache)
     surface_curl!(w::Nodes{Dual},f::ScalarData,sys::ILMSystem)
 
 The operation ``w = C_s^T f = C^T R_f n\\circ f``, which maps scalar surface data `f` (like
@@ -137,6 +147,7 @@ function _unscaled_surface_curl!(w::Nodes{Dual,NX,NY},f::ScalarData{N},nrm::Vect
 end
 
 """
+    surface_curl!(vn::ScalarData,s::Nodes{Dual},cache::BasicILMCache)
     surface_curl!(vn::ScalarData,s::Nodes{Dual},sys::ILMSystem)
 
 The operation ``v_n = C_s s = n \\cdot R_f^T C s``, which maps grid data `s` (like
@@ -160,6 +171,7 @@ end
 
 
 """
+    surface_divergence!(Θ::Nodes{Primal},f::ScalarData,cache::BasicILMCache)
     surface_divergence!(Θ::Nodes{Primal},f::ScalarData,sys::ILMSystem)
 
 The operation ``\\theta = D_s f = D R_f n \\circ f``, which maps surface scalar data `f` (like
@@ -181,6 +193,7 @@ function _unscaled_surface_divergence!(θ::Nodes{Primal,NX,NY},f::ScalarData{N},
 end
 
 """
+    surface_divergence!(v::Edges{Primal},dv::VectorData,cache::BasicILMCache)
     surface_divergence!(v::Edges{Primal},dv::VectorData,sys::ILMSystem)
 
 The operation ``v = D_s v = D R_f (n \\circ v + v \\circ n)``, which maps surface vector data `v` (like
@@ -200,6 +213,7 @@ function _unscaled_surface_divergence!(θ::Edges{Primal,NX,NY},f::VectorData{N},
 end
 
 """
+    surface_grad!(vn::ScalarData,ϕ::Nodes{Primal},cache::BasicILMCache)
     surface_grad!(vn::ScalarData,ϕ::Nodes{Primal},sys::ILMSystem)
 
 The operation ``v_n = G_s\\phi = n \\cdot R_f^T G\\phi``, which maps grid data `ϕ` (like
@@ -221,6 +235,7 @@ function _unscaled_surface_grad!(vn::ScalarData{N},ϕ::Nodes{Primal,NX,NY},nrm::
 end
 
 """
+    surface_grad!(τ::VectorData,v::Edges{Primal},cache::BasicILMCache)
     surface_grad!(τ::VectorData,v::Edges{Primal},sys::ILMSystem)
 
 The operation ``\\tau = G_s v = n \\cdot R_t^T (G v + (G v)^T)``, which maps grid vector data `v` (like
@@ -241,6 +256,7 @@ function _unscaled_surface_grad!(vn::VectorData{N},ϕ::Edges{Primal,NX,NY},nrm::
 end
 
 """
+    mask(cache::BasicILMCache) -> GridData
     mask(sys::ILMSystem) -> GridData
 
 Create grid data that consist of 1s inside of a surface (i.e., on a side opposite
@@ -251,6 +267,7 @@ Create grid data that consist of 1s inside of a surface (i.e., on a side opposit
 
 """
     complementary_mask(cache::BasicILMCache) -> GridData
+    complementary_mask(sys::ILMSystem) -> GridData
 
 Create grid data that consist of 0s inside of a surface (i.e., on a side opposite
   the normal vectors) and 1s outside. The grid data are the same type as the
@@ -262,6 +279,7 @@ Create grid data that consist of 0s inside of a surface (i.e., on a side opposit
 
 """
     mask!(w::GridData,cache::BasicILMCache)
+    mask!(w::GridData,sys::ILMSystem)
 
 Mask the data `w` in place by multiplying it by 1s inside of a surface (i.e., on a side opposite
   the normal vectors) and 0s outside. The grid data `w` must be of the same type as the
@@ -275,6 +293,7 @@ end
 
 """
     complementary_mask!(w::GridData,cache::BasicILMCache)
+    complementary_mask!(w::GridData,sys::ILMSystem)
 
 Mask the data `w` in place by multiplying it by 0s inside of a surface (i.e., on a side opposite
   the normal vectors) and 1s outside. The grid data `w` must be of the same type as the

@@ -43,6 +43,8 @@ include("grid_operators.jl")
 include("surface_operators.jl")
 include("matrix_operators.jl")
 
+include("plot_recipes.jl")
+
 @deprecate DoubleLayer surface_divergence!
 @deprecate SingleLayer regularize!
 

@@ -16,6 +16,7 @@ using ImmersedLayers
 using CartesianGrids
 using RigidBodyTools
 using Plots
+using LinearAlgebra
 ````
 
 ### Set up the grid, shape, and cache
@@ -60,10 +61,12 @@ regularize!(gx,pts.u,cache) #hide
 nothing #hide
 ````
 
-Let's plot this to look at it
+Let's plot this to look at it. This also gives us a chance to highlight
+the plot recipe for grid data associated with the cache, which is achieved by
+simply supplying the cache to the `plot` function in `Plots.jl`.
 
 ````@example surfaceops
-plot(gx,grid)
+plot(gx,cache)
 ````
 
 This shows how the regularization spreads the data over a couple of cells
@@ -114,22 +117,68 @@ surface points:
 ````@example surfaceops
 dl = zeros_grid(cache)
 surface_divergence!(dl,pts.v,cache)
-plot(dl,grid)
+plot(dl,cache)
 ````
 
-## A curl double layer
+## A curl layer
 We also sometimes need to take the curl of the regularized surface data,
 
 $$\nabla\times \left( \delta(\chi) \mathbf{n} f \right)$$
 
 For this, we use the [`surface_curl!`](@ref) operator. Let's demonstrate this
-on the $x$ coordinate of the body data.
+on a uniform field on the surface.
 
 ````@example surfaceops
 gc = zeros_gridcurl(cache)
 f = ones_surface(cache)
 surface_curl!(gc,f,cache)
-plot(gc,grid)
+plot(gc,cache)
+````
+
+The continuous version of this operation is actually zero. It's not quite
+zero in discrete form. However, its norm is much smaller than that of
+the double layer.
+
+````@example surfaceops
+norm(gc,cache)/norm(dl,cache)
+````
+
+## Masks
+Masks are grid data that take the value 1 in one region (e.g., the interior of a surface)
+and 0 in the other (e.g., the exterior). The functions [`mask`](@ref)
+and [`complementary_mask`](@ref) achieve this
+
+````@example surfaceops
+m = mask(cache)
+cm = complementary_mask(cache)
+plot(
+    surface(m,cache),
+    surface(cm,cache)
+    )
+````
+
+One can apply a mask to some grid data by multiplying it, using, e.g.,
+the `product!` function in `CartesianGrids.jl`. Let's demonstrate that
+with the grid data of $x$ coordinates:
+
+````@example surfaceops
+xmask = zeros_grid(cache)
+xcmask = zeros_grid(cache)
+product!(xmask,xg,m)
+product!(xcmask,xg,cm)
+plot(
+  plot(xmask,cache),
+  plot(xcmask,cache)
+  )
+````
+
+The mask and complementary mask effectively partition the field into two parts.
+We can also apply a masks in place, using [`mask!`](@ref) and [`complementary_mask!`](@ref):
+
+````@example surfaceops
+xmask .= xg
+mask!(xmask,cache)
+plot(xmask,cache)
 ````
 
 ## Surface-grid operator functions
