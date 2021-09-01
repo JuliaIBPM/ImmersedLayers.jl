@@ -1,10 +1,76 @@
-import CartesianGrids: convective_derivative!
+import CartesianGrids: convective_derivative!, divergence!, grad!, curl!
+
+for f in [:divergence!, :grad!, :curl!]
+  @eval $f(a,b,sys::ILMSystem) = $f(a,b,sys.base_cache)
+end
+
 
 _scale_derivative!(w,cache::BasicILMCache{N,IndexScaling}) where {N} = w
 _scale_derivative!(w,cache::BasicILMCache{N,GridScaling}) where {N} = w ./= cellsize(cache)
 
 _scale_inverse_laplacian!(w,cache::BasicILMCache{N,IndexScaling}) where {N} = w
 _scale_inverse_laplacian!(w,cache::BasicILMCache{N,GridScaling}) where {N} = w .*= cellsize(cache)^2
+
+"""
+    divergence!(p::Nodes{Primal},v::Edges{Primal},cache::BasicILMCache)
+    divergence!(p::Nodes{Primal},v::Edges{Primal},sys::ILMSystem)
+
+Compute the discrete divergence of `v` and return it in `p`, scaling it
+by the grid spacing if `cache` (or `sys`) is of `GridScaling` type, or leaving it
+as a simple differencing if `cache` (or `sys`) is of `IndexScaling` type.
+"""
+function divergence!(p::Nodes{Primal,NX,NY},q::Edges{Primal,NX,NY},cache::BasicILMCache) where {NX,NY}
+    _unscaled_divergence!(p,q,cache)
+    _scale_derivative!(p,cache)
+end
+
+_unscaled_divergence!(p,q,cache::BasicILMCache) = divergence!(p,q)
+
+"""
+    grad!(v::Edges{Primal},p::Nodes{Primal},cache::BasicILMCache)
+    grad!(v::Edges{Primal},p::Nodes{Primal},sys::ILMSystem)
+
+Compute the discrete gradient of `p` and return it in `v`, scaling it
+by the grid spacing if `cache` (or `sys`) is of `GridScaling` type, or leaving it
+as a simple differencing if `cache` (or `sys`) is of `IndexScaling` type.
+"""
+function grad!(q::Edges{Primal,NX,NY},p::Nodes{Primal,NX,NY},cache::BasicILMCache) where {NX,NY}
+    _unscaled_grad!(q,p,cache)
+    _scale_derivative!(q,cache)
+end
+
+_unscaled_grad!(q,p,cache::BasicILMCache) = grad!(q,p)
+
+"""
+    curl!(v::Edges{Primal},s::Nodes{Dual},cache::BasicILMCache)
+    curl!(v::Edges{Primal},s::Nodes{Dual},sys::ILMSystem)
+
+Compute the discrete curl of `s` and return it in `v`, scaling it
+by the grid spacing if `cache` (or `sys`) is of `GridScaling` type, or leaving it
+as a simple differencing if `cache` (or `sys`) is of `IndexScaling` type.
+"""
+function curl!(q::Edges{Primal,NX,NY},s::Nodes{Dual,NX,NY},cache::BasicILMCache) where {NX,NY}
+    _unscaled_curl!(q,s,cache)
+    _scale_derivative!(q,cache)
+end
+
+_unscaled_curl!(q::Edges,s::Nodes,cache::BasicILMCache) = curl!(q,s)
+
+"""
+    curl!(w::Nodes{Dual},v::Edges{Primal},cache::BasicILMCache)
+    curl!(w::Nodes{Dual},v::Edges{Primal},sys::ILMSystem)
+
+Compute the discrete curl of `v` and return it in `w`, scaling it
+by the grid spacing if `cache` (or `sys`) is of `GridScaling` type, or leaving it
+as a simple differencing if `cache` (or `sys`) is of `IndexScaling` type.
+"""
+function curl!(w::Nodes{Dual,NX,NY},q::Edges{Primal,NX,NY},cache::BasicILMCache) where {NX,NY}
+    _unscaled_curl!(w,q,cache)
+    _scale_derivative!(w,cache)
+end
+
+_unscaled_curl!(w::Nodes,q::Edges,cache::BasicILMCache) = curl!(w,q)
+
 
 """
     inverse_laplacian!(w::GridData,sys::ILMSystem)
@@ -69,7 +135,7 @@ or `GridScaling`. This version of the method uses `extra_cache` of type
 """
 function convective_derivative!(udu::Edges{Primal},u::Edges{Primal},base_cache::BasicILMCache,extra_cache::ConvectiveDerivativeCache)
     _unscaled_convective_derivative!(udu,u,extra_cache)
-    ImmersedLayers._scale_derivative!(udu,base_cache)
+    _scale_derivative!(udu,base_cache)
 end
 
 function _unscaled_convective_derivative!(udu::Edges{Primal},u::Edges{Primal},extra_cache::ConvectiveDerivativeCache)
