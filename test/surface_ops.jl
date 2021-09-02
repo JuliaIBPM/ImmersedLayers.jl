@@ -35,11 +35,10 @@ angs(n) = range(0,2π,length=n+1)[1:n]
 
   A = create_CLinvCT(scache,scale=cellsize(g))
 
-  @test maximum(eigvals(A)) ≈ 0.2 atol = 1e-1
-  @test minimum(eigvals(A)) > 0
+  @test maximum(abs.(eigvals(A))) ≈ 0.2 atol = 1e-1
 
   A = create_GLinvD(scache,scale=cellsize(g))
-  @test maximum(eigvals(A)) ≈ 0.45 atol = 1e-1
+  @test maximum(abs.(eigvals(A))) ≈ 0.45 atol = 1e-1
 
   A = create_nRTRn(scache)
   @test maximum(svdvals(A)) ≈ 11 atol = 1e-0
@@ -63,7 +62,7 @@ vs = VectorData(X)
   surface_grad!(vs,q,vcache)
 
   A = create_GLinvD(vcache,scale=cellsize(g))
-  @test maximum(eigvals(A)) ≈ 1.7 atol = 1e-1
+  @test maximum(abs.(eigvals(A))) ≈ 1.7 atol = 1e-1
 
 
 end
