@@ -65,7 +65,8 @@ Grid scaling, set with `scaling = GridScaling`, means that the various operators
 and/or surface point spacing so that they approximate the continuous operators. This
 means that regularization and interpolation are transposes with respect to
 inner products that incorporate these physical spacings, rather than the usual
-linear algebra inner products. This choice of scaling is usually the best, and
+linear algebra inner products. Also, differential operations on the grid are true
+approximations of their continuous counterparts. This choice of scaling is usually the best, and
 the [`dot`](@ref) operator is extended in this package to implement the physically-
 scaled inner products.
 

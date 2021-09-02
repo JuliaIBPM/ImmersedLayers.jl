@@ -171,13 +171,13 @@ end
 
 
 # Standardize the regularization
-_get_regularization(X::VectorData{N},a::ScalarData{N},g::PhysicalGrid,ddftype,::Type{GridScaling}) where {N} =
-     Regularize(X,cellsize(g),I0=origin(g),weights=a.data,ddftype=ddftype)
+_get_regularization(X::VectorData{N},a::ScalarData{N},g::PhysicalGrid,ddftype,::Type{GridScaling};filter=false) where {N} =
+     Regularize(X,cellsize(g),I0=origin(g),weights=a.data,ddftype=ddftype,filter=filter)
 
-_get_regularization(X::VectorData{N},a::ScalarData{N},g::PhysicalGrid,ddftype,::Type{IndexScaling}) where {N} =
-     Regularize(X,cellsize(g),I0=origin(g),issymmetric=true,ddftype=ddftype)
+_get_regularization(X::VectorData{N},a::ScalarData{N},g::PhysicalGrid,ddftype,::Type{IndexScaling};filter=false) where {N} =
+     Regularize(X,cellsize(g),I0=origin(g),issymmetric=true,ddftype=ddftype,filter=filter)
 
-_get_regularization(body::Union{Body,BodyList},args...) = _get_regularization(VectorData(collect(body)),areas(body),args...)
+_get_regularization(body::Union{Body,BodyList},args...;kwargs...) = _get_regularization(VectorData(collect(body)),areas(body),args...;kwargs...)
 
 # This is needed to stabilize the type-unstable `RegularizationMatrix` function in
 # CartesianGrids
@@ -189,6 +189,11 @@ function _regularization_matrix(regop::Regularize,src,trg)
     end
     return R
 end
+
+# Some utilities to get the DDF type of the cache
+_ddf_type(::DDF{DT}) where {DT} = DT
+_ddf_type(R::Regularize) = _ddf_type(R.ddf)
+_ddf_type(cache::BasicILMCache) = _ddf_type(cache.regop)
 
 ## Obtaining copies of the grid and surface data
 """

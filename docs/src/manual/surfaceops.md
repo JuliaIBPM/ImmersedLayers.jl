@@ -105,7 +105,7 @@ plot!(pts.u,label="Actual body coordinate")
 ## A double layer
 Now we will generate a double layer. Mathematically, this takes the form
 
-$$\nabla\cdot \left( \delta(\chi) \mathbf{n} f \right)$$
+$$D_s f = \nabla\cdot \left( \delta(\chi) \mathbf{n} f \right)$$
 
 for some scalar data $f$ on the surface. (See [Background](@ref) for an example.)
 Notice that it maps scalar data on the surface ($f$) to scalar data in space. So to
@@ -120,10 +120,34 @@ surface_divergence!(dl,pts.v,cache)
 plot(dl,cache)
 ````
 
+If the surface data are vectors, $\mathbf{f}$, then this operation is a little
+different:
+
+$$D_s \mathbf{f} = \nabla\cdot \delta(\chi) \left(  \mathbf{n} \mathbf{f} + \mathbf{f} \mathbf{n} \right)
+
+This maps $\mathbf{f}$ to a vector field. We use this in conjunction with a cache
+generated with [`SurfaceVectorCache`](@ref).
+
+The transpose of the double layer, $D_s$, is the operation
+
+$$G_s u = \mathbf{n}\cdot \delta^{T}(\chi) \nabla u$$
+
+for some scalar field data $u$. This operation computes the gradient of the field
+data, interpolates this gradient onto the surface, and obtains the normal
+component of that surface data. As such, it represents an important tool
+for computing the normal derivative of field data on a surface. In the
+package, we use [`surface_grad!`](@ref) for this operation.
+
+The vector field version of this is
+
+$$G_s \mathbf{u} = \mathbf{n}\cdot \delta^{T}(\chi) (\nabla \mathbf{u} + \nabla^{T} \mathbf{u})$$
+
+which maps vector field data $\mathb{u}$ to vector-valued surface data.
+
 ## A curl layer
 We also sometimes need to take the curl of the regularized surface data,
 
-$$\nabla\times \left( \delta(\chi) \mathbf{n} f \right)$$
+$$C_s f = \nabla\times \left( \delta(\chi) \mathbf{n} f \right)$$
 
 For this, we use the [`surface_curl!`](@ref) operator. Let's demonstrate this
 on a uniform field on the surface.
@@ -142,6 +166,21 @@ the double layer.
 ````@example surfaceops
 norm(gc,cache)/norm(dl,cache)
 ````
+
+Finally, a pair of operations that are used in support of the
+previous ones, or occasionally on their own, are
+
+$$R_n f = \delta(\chi)\mathbf{n}\circ f$$
+
+for scalar surface data $f$, which maps to a vector field, effectively a
+field of doublet strengths; and its transpose
+
+$$R_n^T \mathbf{u} = \mathbf{n}\cdot \delta^{T}(\chi)\mathbf{u}$$
+
+which maps vector field data $\mathbf{u}$ to a scalar surface field, the normal
+component of the vector field on the surface. These are
+provided by [`regularize_normal!`](@ref) and [`normal_interpolate!`](@ref),
+respectively.
 
 ## Masks
 Masks are grid data that take the value 1 in one region (e.g., the interior of a surface)
