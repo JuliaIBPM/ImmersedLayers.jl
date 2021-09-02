@@ -119,6 +119,18 @@ and
 ones_surface(cache)
 ````
 
+To evaluate functions on the grid, it is useful to be able to
+fill grid data with the x and y coordinates. For this, we use
+
+````@example caches
+x_grid(cache)
+````
+
+````@example caches
+y_grid(cache)
+````
+
+## Norms and inner products
 It is useful to compute norms and inner products on grid and surface data.
 These tools are easily accessible, e.g., `dot(u,v,cache)` and `norm(u,cache)`,
 and they respect the scaling associated with the cache. For example,
@@ -129,27 +141,47 @@ os = ones_surface(cache)
 dot(os,os,cache)
 ````
 
-## Cache types and functions
+## Cache types and constructors
 
 ```@docs
 BasicILMCache
 SurfaceScalarCache
 SurfaceVectorCache
+AbstractExtraILMCache
+```
+
+## Utilities for creating instances of data
+
+```@docs
 similar_grid
+similar_gridgrad
 similar_gridcurl
 similar_surface
 zeros_grid
+zeros_gridgrad
+zeros_gridcurl
 zeros_surface
 ones_grid
 ones_surface
+x_grid
+y_grid
+```
+
+## Utilities for accessing surface information
+
+```@docs
 areas(::BasicILMCache)
 normals(::BasicILMCache)
 points(::BasicILMCache)
+```
+
+## Inner products and norms
+
+```@docs
 dot(::GridData,::GridData,::BasicILMCache)
 dot(::PointData,::PointData,::BasicILMCache)
 norm(::GridData,::BasicILMCache)
 norm(::PointData,::BasicILMCache)
-AbstractExtraILMCache
 ```
 
 [^1]: Yang, X., et al., (2009) "A smoothing technique for discrete delta functions with application to immersed boundary method in moving boundary simulations," J. Comput. Phys., 228, 7821--7836.

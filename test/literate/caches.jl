@@ -63,7 +63,8 @@ Grid scaling, set with `scaling = GridScaling`, means that the various operators
 and/or surface point spacing so that they approximate the continuous operators. This
 means that regularization and interpolation are transposes with respect to
 inner products that incorporate these physical spacings, rather than the usual
-linear algebra inner products. This choice of scaling is usually the best, and
+linear algebra inner products. Also, differential operations on the grid are true
+approximations of their continuous counterparts. This choice of scaling is usually the best, and
 the [`dot`](@ref) operator is extended in this package to implement the physically-
 scaled inner products.
 
@@ -110,6 +111,17 @@ ones_grid(cache)
 ones_surface(cache)
 
 #=
+To evaluate functions on the grid, it is useful to be able to
+fill grid data with the x and y coordinates. For this, we use
+=#
+x_grid(cache)
+#-
+y_grid(cache)
+
+
+
+#=
+## Norms and inner products
 It is useful to compute norms and inner products on grid and surface data.
 These tools are easily accessible, e.g., `dot(u,v,cache)` and `norm(u,cache)`,
 and they respect the scaling associated with the cache. For example,
@@ -118,27 +130,47 @@ the following gives an approximation of the circumference of the circle:
 os = ones_surface(cache)
 dot(os,os,cache)
 
-#md # ## Cache types and functions
+#md # ## Cache types and constructors
 
 #md # ```@docs
 #md # BasicILMCache
 #md # SurfaceScalarCache
 #md # SurfaceVectorCache
+#md # AbstractExtraILMCache
+#md # ```
+
+#md # ## Utilities for creating instances of data
+
+#md # ```@docs
 #md # similar_grid
+#md # similar_gridgrad
 #md # similar_gridcurl
 #md # similar_surface
 #md # zeros_grid
+#md # zeros_gridgrad
+#md # zeros_gridcurl
 #md # zeros_surface
 #md # ones_grid
 #md # ones_surface
+#md # x_grid
+#md # y_grid
+#md # ```
+
+#md # ## Utilities for accessing surface information
+
+#md # ```@docs
 #md # areas(::BasicILMCache)
 #md # normals(::BasicILMCache)
 #md # points(::BasicILMCache)
+#md # ```
+
+#md # ## Inner products and norms
+
+#md # ```@docs
 #md # dot(::GridData,::GridData,::BasicILMCache)
 #md # dot(::PointData,::PointData,::BasicILMCache)
 #md # norm(::GridData,::BasicILMCache)
 #md # norm(::PointData,::BasicILMCache)
-#md # AbstractExtraILMCache
 #md # ```
 
 

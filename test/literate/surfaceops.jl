@@ -157,7 +157,7 @@ plot(
 
 #=
 The mask and complementary mask effectively partition the field into two parts.
-We can also apply a masks in place, using [`mask!`](@ref) and [`complementary_mask!`](@ref):
+We can also apply masks in place, using [`mask!`](@ref) and [`complementary_mask!`](@ref):
 =#
 xmask .= xg
 mask!(xmask,cache)

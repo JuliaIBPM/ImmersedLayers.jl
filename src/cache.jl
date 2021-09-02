@@ -45,23 +45,43 @@ end
 for f in [:SurfaceScalarCache, :SurfaceVectorCache]
   @eval $f(body::Union{Body,BodyList},g::PhysicalGrid;ddftype = CartesianGrids.Yang3, scaling = IndexScaling) =
         $f(points(body),areas(body),normals(body),g;ddftype=ddftype,scaling=scaling)
+
+  @eval $f(g::PhysicalGrid;scaling = IndexScaling) =
+        $f(VectorData(0),ScalarData(0),VectorData(0),g,scaling=scaling)
 end
+"""
+    SurfaceScalarCache(g::PhysicalGrid[,scaling=IndexScaling])
+
+Create a cache of type `BasicILMCache` with scalar grid data, using the grid specified
+in `g`, with no immersed points. The keyword `scaling`
+can be used to set the scaling in the operations.
+By default, it is set to `IndexScaling` which sets the differential operators
+to be only differencing operators. By using `scaling = GridScaling`, then the grid and
+ spacings are accounted for and differential operators are scaled by this spacing.
+""" SurfaceScalarCache(::PhysicalGrid)
 
 """
-$(TYPEDEF)
+    SurfaceVectorCache(g::PhysicalGrid[,scaling=IndexScaling])
+
+Create a cache of type `BasicILMCache` with vector grid data, with no immersed points.
+See [`SurfaceScalarCache`](@ref) for details.
+""" SurfaceVectorCache(::PhysicalGrid)
+
+"""
+    SurfaceVectorCache(body::Body/BodyList,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling])
 
 Create a cache of type `BasicILMCache`, holding operators and storage data
-for use in immersed layer operations on scalar data.
+for use in immersed layer operations on vector data. See [`SurfaceScalarCache`](@ref)
+for details.
+""" SurfaceVectorCache(::Union{Body,BodyList},::PhysicalGrid)
 
-This is often only called from within`ILMSystem` rather than directly. If called
-directly, there are two basic forms:
+"""
+    SurfaceScalarCache(body::Body/BodyList,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling])
 
-`SurfaceScalarCache(X::VectorData,A::ScalarData,nrm::VectorData,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling])`
+Create a cache of type `BasicILMCache`, holding operators and storage data
+for use in immersed layer operations on scalar data. This is sometimes called from within`ILMSystem` rather than directly.
 
-Here, `X` holds the coordinates of surface data, `A` the areas, and `nrm` holds the corresponding
-surface normals.
-
-The keyword `scaling` can be used to set the scaling in the operations.
+The `body` can be of type `Body` or `BodyList`. The keyword `scaling` can be used to set the scaling in the operations.
 By default, it is set to `IndexScaling` which sets the regularization and interpolation to
 be symmetric matrices (i.e., interpolation is the adjoint of regularization with
   respect to a vector dot product), and the vector calculus operations on the grid
@@ -69,12 +89,27 @@ be symmetric matrices (i.e., interpolation is the adjoint of regularization with
   point spacings are accounted for. Interpolation and regularization are adjoints
   with respect to inner products based on discretized surface and volume integrals,
   and vector calculus operations are scaled by the grid spacing.
+""" SurfaceScalarCache(::Union{Body,BodyList},::PhysicalGrid)
 
-`SurfaceScalarCache(body::Body/BodyList,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling])`
-
-Here, the `body` can be of type `Body` or `BodyList`. The same keyword arguments
-apply.
 """
+    SurfaceScalarCache(X::VectorData,A::ScalarData,nrm::VectorData,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling])
+
+Create a cache of type `BasicILMCache`, holding operators and storage data
+for use in immersed layer operations on scalar data. The `X` specifies the
+immersed point coordinates, `A` the element areas surrounding these points,
+and `nrm` the outward normals.
+""" SurfaceScalarCache(::VectorData,::ScalarData,::VectorData,::PhysicalGrid)
+
+"""
+    SurfaceScalarCache(X::VectorData,A::ScalarData,nrm::VectorData,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling])
+
+Create a cache of type `BasicILMCache`, holding operators and storage data
+for use in immersed layer operations on vector data. See [`SurfaceScalarCache`](@ref)
+for details.
+""" SurfaceVectorCache(::VectorData,::ScalarData,::VectorData,::PhysicalGrid)
+
+
+
 function SurfaceScalarCache(X::VectorData{N},a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid;
                               ddftype = CartesianGrids.Yang3,
                               scaling = IndexScaling) where {N}
@@ -90,34 +125,8 @@ function SurfaceScalarCache(X::VectorData{N},a::ScalarData{N},nrm::VectorData{N}
 
 end
 
-"""
-$(TYPEDEF)
 
-Create a cache of type `BasicILMCache`, holding operators and storage data
-for use in immersed layer operations on vector data.
 
-This is often only called from within`ILMSystem` rather than directly. If called
-directly, there are two basic forms:
-
-`SurfaceVectorCache(X::VectorData,A::ScalarData,nrm::VectorData,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling])`
-
-Here, `X` holds the coordinates of surface data, `A` the areas, and `nrm` holds the corresponding
-surface normals.
-
-The keyword `scaling` can be used to set the scaling in the operations.
-By default, it is set to `IndexScaling` which sets the regularization and interpolation to
-be symmetric matrices (i.e., interpolation is the adjoint of regularization with
-  respect to a vector dot product), and the vector calculus operations on the grid
-  are simple differences. By using `scaling = GridScaling`, then the grid and
-  point spacings are accounted for. Interpolation and regularization are adjoints
-  with respect to inner products based on discretized surface and volume integrals,
-  and vector calculus operations are scaled by the grid spacing.
-
-`SurfaceVectorCache(body::Body/BodyList,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling])`
-
-Here, the `body` can be of type `Body` or `BodyList`. The same keyword arguments
-apply.
-"""
 function SurfaceVectorCache(X::VectorData{N},a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid;
                               ddftype = CartesianGrids.Yang3,
                               scaling = IndexScaling) where {N}
@@ -190,6 +199,14 @@ Get a `similar` copy of the basic grid data in the cache.
 @inline similar_grid(cache::BasicILMCache,kwargs...) = similar(cache.gdata_cache,kwargs...)
 
 """
+    similar_gridgrad(::BasicILMCache)
+
+Get a `similar` copy of the gradient of the grid data in the cache.
+"""
+@inline similar_gridgrad(cache::BasicILMCache,kwargs...) = similar(cache.gsnorm_cache,kwargs...)
+
+
+"""
     similar_gridcurl(::BasicILMCache)
 
 Get a `similar` copy of the grid curl field data in the cache.
@@ -207,14 +224,22 @@ Get a `similar` copy of the basic surface point data in the cache.
 """
     zeros_grid(::BasicILMCache)
 
-Get a copy of the basic grid data in the cache, with values set to zero.
+Get an instance of the basic grid data in the cache, with values set to zero.
 """
 @inline zeros_grid(cache::BasicILMCache,kwargs...) = zero(cache.gdata_cache,kwargs...)
 
 """
+    zeros_gridgrad(::BasicILMCache)
+
+Get an instance of the gradient of the grid data in the cache, with values set to zero.
+"""
+@inline zeros_gridgrad(cache::BasicILMCache,kwargs...) = zero(cache.gsnorm_cache,kwargs...)
+
+
+"""
     zeros_gridcurl(::BasicILMCache)
 
-Get a copy of the grid curl field data in the cache, with values set to zero.
+Get an instance of the grid curl field data in the cache, with values set to zero.
 """
 @inline zeros_gridcurl(cache::BasicILMCache,kwargs...) = zero(cache.gcurl_cache,kwargs...)
 
@@ -222,23 +247,45 @@ Get a copy of the grid curl field data in the cache, with values set to zero.
 """
     zeros_surface(::BasicILMCache)
 
-Get a copy of the basic surface point data in the cache, with values set to zero.
+Get an instance of the basic surface point data in the cache, with values set to zero.
 """
 @inline zeros_surface(cache::BasicILMCache,kwargs...) = zero(cache.sdata_cache,kwargs...)
 
 """
     ones_grid(::BasicILMCache)
 
-Get a copy of the basic grid data in the cache, with values set to one.
+Get an instance of the basic grid data in the cache, with values set to one.
 """
 @inline ones_grid(cache::BasicILMCache,kwargs...) = ones(cache.gdata_cache,kwargs...)
 
 """
     ones_surface(::BasicILMCache)
 
-Get a copy of the basic surface point data in the cache, with values set to one.
+Get an instance of the basic surface point data in the cache, with values set to one.
 """
 @inline ones_surface(cache::BasicILMCache,kwargs...) = ones(cache.sdata_cache,kwargs...)
+
+"""
+    x_grid(::BasicILMCache)
+
+Return basic grid data filled with the grid `x` coordinate
+"""
+function x_grid(cache::BasicILMCache)
+    xc, _ = coordinates(cache.gdata_cache,cache.g)
+    p = zeros_grid(cache)
+    p .= xc
+end
+
+"""
+    y_grid(::BasicILMCache)
+
+Return basic grid data filled with the grid `y` coordinate
+"""
+function y_grid(cache::BasicILMCache)
+    _,yc = coordinates(cache.gdata_cache,cache.g)
+    p = zeros_grid(cache)
+    p .= yc'
+end
 
 
 # Extend operators on body points

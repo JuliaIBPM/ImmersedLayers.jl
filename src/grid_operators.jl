@@ -112,6 +112,14 @@ struct ConvectiveDerivativeCache{VTT} <: AbstractExtraILMCache
 end
 
 """
+    ConvectiveDerivativeCache(cache::BasicILMCache)
+
+Create a cache for computing the convective derivative, based on
+the basic ILM cache `cache`.
+"""
+ConvectiveDerivativeCache(cache::BasicILMCache) = ConvectiveDerivativeCache(EdgeGradient(Primal,cache.gdata_cache))
+
+"""
     convective_derivative(v::Edges,base_cache::BasicILMCache)
 
 Compute the convective derivative of `v`, i.e., ``v\\cdot \\nabla v``. The result is either divided by unity or
