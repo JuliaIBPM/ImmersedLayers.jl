@@ -32,3 +32,14 @@ function __init(prob::AbstractILMProblem{DT,ST}) where {DT,ST}
     return ILMSystem{typeof(prob),typeof(base_cache),typeof(extra_cache)}(base_cache,extra_cache)
 
 end
+
+# Create the basic solve function, to be extended
+function solve(prob::AbstractILMProblem,sys::ILMSystem) end
+
+# Extend functions on `BasicILMCache` type to `ILMSystem`
+for f in [:zeros_surface,:zeros_grid,:zeros_gridcurl,:zeros_gridgrad,
+          :similar_surface,:similar_grid,:similar_gridcurl,:similar_gridgrad,
+          :ones_surface,:ones_grid,:x_grid,:y_grid,
+          :normals,:areas,:points]
+   @eval $f(sys::ILMSystem) = $f(sys.base_cache)
+end

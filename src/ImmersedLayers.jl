@@ -32,7 +32,8 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         surface_curl!,surface_divergence!,surface_grad!,inverse_laplacian!,
         mask,mask!,complementary_mask,complementary_mask!,
         create_CLinvCT,create_GLinvD,create_nRTRn,create_RTLinvR,
-        create_surface_filter
+        create_surface_filter,
+        solve
 
 abstract type LayerType{N} end
 
