@@ -11,8 +11,9 @@ makedocs(
         "Home" => "index.md",
         "Manual" => ["manual/caches.md",
                      "manual/surfaceops.md",
-                     "manual/gridops.md",                 
+                     "manual/gridops.md",
                      "manual/matrices.md",
+                     "manual/dirichlet.md",
                      "manual/problems.md",
                      "manual/utilities.md"
                      ]
@@ -35,7 +36,7 @@ makedocs(
 
 #if "DOCUMENTER_KEY" in keys(ENV)
 deploydocs(
-     repo = "github.com/JuliaIBPM/ViscousFlow.jl.git",
+     repo = "github.com/JuliaIBPM/ImmersedLayers.jl.git",
      target = "build",
      deps = nothing,
      make = nothing

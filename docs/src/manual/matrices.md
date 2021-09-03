@@ -48,7 +48,8 @@ $$\tilde{R}^T R$$
 
 where $\tilde{R}^T$ is a modified form of the interpolation operator,
 designed to return the regularized field to the surface points while
-maintaining the integral value of the original field [^1].
+maintaining the integral value of the original field [^1]. We can
+obtain this matrix with [`create_surface_filter`](@ref).
 
 ## Matrix construction functions
 
