@@ -6,6 +6,9 @@ _Tools for immersing surfaces and their operations in Cartesian grids_
 | [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaIBPM.github.io/ImmersedLayers.jl/stable) [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaIBPM.github.io/ImmersedLayers.jl/dev) | [![Build Status](https://github.com/JuliaIBPM/ImmersedLayers.jl/workflows/CI/badge.svg)](https://github.com/JuliaIBPM/ImmersedLayers.jl/actions) [![Coverage](https://codecov.io/gh/JuliaIBPM/ImmersedLayers.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaIBPM/ImmersedLayers.jl) |
 
 
+<img src="https://raw.githubusercontent.com/JuliaIBPM/ImmersedLayers.jl/je/extend-caches/PoissonDiamonds.svg" width="400">
+
+
 ## Package objective
 
 The objective of this package is to implement
@@ -14,7 +17,8 @@ The objective of this package is to implement
 * discrete differential operators that immerse surface data into the grid (i.e.,
   "layers")
 
-At this time, the package only implements these in two spatial dimensions. The operators and tools are described in detail in [^1], but a summary is given below.
+At this time, the package only implements these in two spatial dimensions. The operators and tools are described in detail in [1], but a summary is given below.
+
 
 ## Background
 
@@ -68,8 +72,5 @@ The plots in this documentation are generated using [Plots.jl](http://docs.julia
 You might want to install that, too, to follow the examples.
 
 ## References
-
-[^1]: Eldredge, J. D. (2021) "A method of immersed layers on Cartesian grids, with application to incompressible flows," arXiv:2103.04521.
-
 
 [1] Eldredge, J. D. (2021) "A method of immersed layers on Cartesian grids, with application to incompressible flows," [arXiv:2103.04521](https://arxiv.org/abs/2103.04521).
