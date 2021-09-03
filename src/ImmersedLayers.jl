@@ -21,12 +21,18 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         BasicScalarILMProblem,BasicVectorILMProblem,prob_cache,
         AbstractScalingType,GridScaling,IndexScaling,
         BasicILMCache,ILMSystem,
+        similar_grid,similar_gridgrad,similar_gridcurl,similar_surface,
+        zeros_grid,zeros_gridgrad,zeros_gridcurl,zeros_surface,
+        ones_grid,ones_surface,
+        x_grid,y_grid,
         AbstractExtraILMCache,AbstractScalarILMProblem,AbstractVectorILMProblem,
         ConvectiveDerivativeCache,convective_derivative, convective_derivative!,
+        regularize!, interpolate!,
         regularize_normal!,normal_interpolate!,
         surface_curl!,surface_divergence!,surface_grad!,inverse_laplacian!,
         mask,mask!,complementary_mask,complementary_mask!,
-        create_CLinvCT,create_GLinvD,create_nRTRn
+        create_CLinvCT,create_GLinvD,create_nRTRn,create_RTLinvR,
+        create_surface_filter
 
 abstract type LayerType{N} end
 
@@ -39,7 +45,10 @@ include("grid_operators.jl")
 include("surface_operators.jl")
 include("matrix_operators.jl")
 
+include("plot_recipes.jl")
 
+@deprecate DoubleLayer surface_divergence!
+@deprecate SingleLayer regularize!
 
 
 end

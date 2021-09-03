@@ -2,20 +2,46 @@
 #using Compat
 
 using ImmersedLayers
+using Literate
 using Test
 ##using TestSetExtensions
 
+const GROUP = get(ENV, "GROUP", "All")
 
-#@test isempty(detect_ambiguities(ViscousFlow))
-include("tools.jl")
-include("layers.jl")
-include("surface_ops.jl")
+notebookdir = "../examples"
+docdir = "../docs/src/manual"
+litdir = "./literate"
+
+if GROUP == "All" || GROUP == "Auxiliary"
+  include("tools.jl")
+  include("layers.jl")
+  include("surface_ops.jl")
+end
+
+if GROUP == "Literate"
+  for (root, dirs, files) in walkdir(litdir)
+    for file in files
+      endswith(file,".jl") && @testset "$file" begin include(joinpath(root,file)) end
+    end
+  end
+end
 
 
-#@testset ExtendedTestSet "All tests" begin
-#    @includetests ARGS
-#end
+#=
+if GROUP == "All" || GROUP == "Notebooks"
+  for (root, dirs, files) in walkdir(litdir)
+    for file in files
+      #endswith(file,".jl") && startswith(file,"3") && Literate.notebook(joinpath(root, file),notebookdir)
+      endswith(file,".jl") && Literate.notebook(joinpath(root, file),notebookdir)
+    end
+  end
+end
+=#
 
-#if isempty(ARGS)
-#    include("../docs/make.jl")
-#end
+if GROUP == "Documentation"
+  for (root, dirs, files) in walkdir(litdir)
+    for file in files
+      endswith(file,".jl") && Literate.markdown(joinpath(root, file),docdir)
+    end
+  end
+end

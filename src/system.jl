@@ -1,7 +1,8 @@
 """
 $(TYPEDEF)
 
-A system of operators and caches for immersed layer problems.
+A system of operators and caches for immersed layer problems. This is constructed
+by [`__init`](@ref)
 """
 struct ILMSystem{PT,BCT<:BasicILMCache,ECT<:Union{AbstractExtraILMCache,Nothing}}
 
@@ -10,6 +11,13 @@ struct ILMSystem{PT,BCT<:BasicILMCache,ECT<:Union{AbstractExtraILMCache,Nothing}
 
 end
 
+"""
+    __init(prob::AbstractILMProblem)
+
+Initialize `ILMSystem` with the given problem `prob` specification.
+Depending on the type of problem, this sets up a base cache of scalar or
+vector type, as well as an optional extra cache
+"""
 function __init(prob::AbstractILMProblem{DT,ST}) where {DT,ST}
     @unpack g, bodies = prob
 

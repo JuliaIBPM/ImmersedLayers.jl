@@ -21,6 +21,12 @@ angs(n) = range(0,2π,length=n+1)[1:n]
 @testset "Scalar surface ops" begin
   scache = SurfaceScalarCache(body,g,scaling=GridScaling)
 
+  gd = similar_grid(scache)
+  @test typeof(gd) == typeof(scache.gdata_cache)
+
+  sd = similar_surface(scache)
+  @test typeof(sd) == typeof(scache.sdata_cache)
+
   f .= sin.(angs(length(body)) .- π/4)
   regularize_normal!(q,f,scache)
   normal_interpolate!(f,q,scache)
@@ -29,11 +35,10 @@ angs(n) = range(0,2π,length=n+1)[1:n]
 
   A = create_CLinvCT(scache,scale=cellsize(g))
 
-  @test maximum(eigvals(A)) ≈ 0.2 atol = 1e-1
-  @test minimum(eigvals(A)) > 0
+  @test maximum(abs.(eigvals(A))) ≈ 0.2 atol = 1e-1
 
   A = create_GLinvD(scache,scale=cellsize(g))
-  @test maximum(eigvals(A)) ≈ 0.45 atol = 1e-1
+  @test maximum(abs.(eigvals(A))) ≈ 0.45 atol = 1e-1
 
   A = create_nRTRn(scache)
   @test maximum(svdvals(A)) ≈ 11 atol = 1e-0
@@ -57,7 +62,7 @@ vs = VectorData(X)
   surface_grad!(vs,q,vcache)
 
   A = create_GLinvD(vcache,scale=cellsize(g))
-  @test maximum(eigvals(A)) ≈ 1.7 atol = 1e-1
+  @test maximum(abs.(eigvals(A))) ≈ 1.7 atol = 1e-1
 
 
 end
@@ -85,7 +90,8 @@ end
 
   q .= randn(size(q))
   cv_cache = ConvectiveDerivativeCache(EdgeGradient(Primal,q))
-  qdq = zero(q)
+  qdq = similar(q)
+  qdq .= 0.0
   convective_derivative!(qdq,q,scache,cv_cache)
 
   qdq2 = convective_derivative(q,scache)

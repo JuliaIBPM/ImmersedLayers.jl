@@ -1,6 +1,15 @@
 import LinearAlgebra: dot, norm
 import Base: ones
-export normals, areas
+export points, normals, areas
+
+
+"""
+    points(b::Body/BodyList)
+
+Return `VectorData` filled with the coordinates of the points
+associated with `b`.
+"""
+@inline points(b::Union{Body,BodyList}) = VectorData(collect(b))
 
 """
     normals(b::Body/BodyList)
@@ -41,16 +50,16 @@ end
 Return the norm of `u`, weighted by the volume (area)
 of the cell in grid `g`.
 """
-norm(u::GridData,g::PhysicalGrid) = dot(u,u,g)
+norm(u::GridData,g::PhysicalGrid) = sqrt(dot(u,u,g))
 
 """
-    dot(u1::PointData,ds::ScalarData,u2::PointData)
+    dot(u1::PointData,u2::PointData,ds::ScalarData)
 
 Return the inner product between `u1` and `u2`, weighted by `ds`.
 """
-dot(u1::ScalarData{N},ds::ScalarData{N},u2::ScalarData{N}) where {N} = dot(u1,ds∘u2)
+dot(u1::ScalarData{N},u2::ScalarData{N},ds::ScalarData{N}) where {N} = dot(u1,ds∘u2)
 
-dot(u1::VectorData{N},ds::ScalarData{N},u2::VectorData{N}) where {N} =
+dot(u1::VectorData{N},u2::VectorData{N},ds::ScalarData{N}) where {N} =
     dot(u1.u,ds∘u2.u) + dot(u1.v,ds∘u2.v)
 
 """
@@ -58,7 +67,7 @@ dot(u1::VectorData{N},ds::ScalarData{N},u2::VectorData{N}) where {N} =
 
 Return the norm of `u`, weighted by `ds`.
 """
-norm(u::PointData{N},ds::ScalarData{N}) where {N} = dot(u,ds,u)
+norm(u::PointData{N},ds::ScalarData{N}) where {N} = sqrt(dot(u,ds,u))
 
 """
     ones(u::ScalarData)
@@ -78,6 +87,30 @@ Returns `VectorData` of the same type as `u`, filled with ones in
 component `dim`.
 """
 function ones(u::VectorData{N},dim::Integer) where {N}
+  o = zero(u)
+  ocomp = getfield(o,dim+1) # offset
+  ocomp .= 1
+  o
+end
+
+"""
+    ones(u::ScalarGridData)
+
+Returns `ScalarGridData` of the same type as `u` filled with ones.
+"""
+function ones(u::ScalarGridData)
+  o = similar(u)
+  o .= 1
+  o
+end
+
+"""
+    ones(u::VectorGridData,dim::Int)
+
+Returns `VectorGridData` of the same type as `u`, filled with ones in
+component `dim`.
+"""
+function ones(u::VectorGridData,dim::Integer)
   o = zero(u)
   ocomp = getfield(o,dim+1) # offset
   ocomp .= 1
