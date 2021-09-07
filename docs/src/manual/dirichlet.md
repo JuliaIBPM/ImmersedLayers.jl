@@ -48,8 +48,6 @@ We will demonstrate these steps here.
 
 ````@example dirichlet
 using ImmersedLayers
-using CartesianGrids
-using RigidBodyTools
 using Plots
 using LinearAlgebra
 ````
@@ -62,11 +60,11 @@ We do this just as we did in [Immersed layer caches](@ref)
 Lx = 4.0
 xlim = (-Lx/2,Lx/2)
 ylim = (-Lx/2,Lx/2)
-grid = PhysicalGrid(xlim,ylim,Δx)
+g = PhysicalGrid(xlim,ylim,Δx)
 RadC = 1.0
-Δs = 1.4*cellsize(grid)
+Δs = 1.4*cellsize(g)
 body = Circle(RadC,Δs)
-cache = SurfaceScalarCache(body,grid,scaling=GridScaling);
+cache = SurfaceScalarCache(body,g,scaling=GridScaling);
 nothing #hide
 ````
 

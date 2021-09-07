@@ -11,8 +11,6 @@ We will start by generating the cache, just as we did in [Immersed layer caches]
 
 
 using ImmersedLayers
-using CartesianGrids
-using RigidBodyTools
 using Plots
 using LinearAlgebra
 
@@ -24,11 +22,11 @@ We do this just as we did in [Immersed layer caches](@ref)
 Lx = 4.0
 xlim = (-Lx/2,Lx/2)
 ylim = (-Lx/2,Lx/2)
-grid = PhysicalGrid(xlim,ylim,Δx)
+g = PhysicalGrid(xlim,ylim,Δx)
 RadC = 1.0
-Δs = 1.4*cellsize(grid)
+Δs = 1.4*cellsize(g)
 body = Circle(RadC,Δs)
-cache = SurfaceScalarCache(body,grid,scaling=GridScaling)
+cache = SurfaceScalarCache(body,g,scaling=GridScaling)
 
 #=
 ## Basic regularization and interpolation
@@ -83,9 +81,10 @@ function of `CartesianGrids.jl`, which gets the coordinates of the grid,
 and set the values of grid data to the $x$ coordinate. We interpolate and plot,
 comparing to the actual $x$ coordinate of the points on the body:
 =#
-x, y = coordinates(oc,grid)
-xg = similar(oc)
-xg .= x
+#x, y = coordinates(oc,g)
+#xg = similar(oc)
+#xg .= x
+xg = x_grid(cache)
 interpolate!(f,xg,cache)
 plot(f,ylim=(-2,2),label="Interpolated from grid",ylabel="x",xlabel="Index")
 plot!(pts.u,label="Actual body coordinate")
