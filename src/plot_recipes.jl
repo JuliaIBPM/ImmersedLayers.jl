@@ -4,7 +4,7 @@ using ColorTypes
 #using RigidBodyTools
 
 
-@recipe function f(w::T,cache::BasicILMCache; layers=false) where {T<:GridData}
+@recipe function f(w::T,cache::BasicILMCache; layers=true) where {T<:GridData}
 
   framestyle --> :frame
   xlims --> (-Inf,Inf)

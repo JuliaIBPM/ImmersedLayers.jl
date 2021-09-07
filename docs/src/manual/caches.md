@@ -17,7 +17,6 @@ operators. The starting point for a cache is the specification of the
 ````@example caches
 using ImmersedLayers
 using LinearAlgebra
-using Plots
 ````
 
 ### Set up a grid

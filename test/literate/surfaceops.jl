@@ -52,7 +52,9 @@ regularize!(gx,pts.u,cache) #hide
 #=
 Let's plot this to look at it. This also gives us a chance to highlight
 the plot recipe for grid data associated with the cache, which is achieved by
-simply supplying the cache to the `plot` function in `Plots.jl`.
+simply supplying the cache to the `plot` function in `Plots.jl`. By default,
+this plots the immersed points, as well, but this can be suppressed by
+adding the keyword `layers=false`. 
 =#
 plot(gx,cache)
 
