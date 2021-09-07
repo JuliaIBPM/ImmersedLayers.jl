@@ -14,8 +14,8 @@ operators. The starting point for a cache is the specification of the
 # ## Setting up a cache
 
 using ImmersedLayers
-using LinearAlgebra
 using Plots
+using LinearAlgebra
 
 #=
 ### Set up a grid
@@ -79,6 +79,21 @@ other choices, such as `CartesianGrids.Roma`, `CartesianGrids.Goza`, `CartesianG
 =#
 
 cache = SurfaceScalarCache(body,g,scaling=GridScaling)
+
+#=
+## Plotting the immersed points
+We can plot the immersed points with the `plot` function of the `Plots.jl`
+package, using a special plot recipe. This accepts all of the
+usual attribute keywords of the basic plot function.
+=#
+plot(cache,xlims=(-2,2),ylims=(-2,2))
+
+#=
+In this plotting demonstration, we have used the `points` function
+to obtain the coordinates of the immersed points. Other useful
+utilities are `normals` and `areas`, e.g.
+=#
+normals(cache)
 
 #=
 ## Some basic utilities
