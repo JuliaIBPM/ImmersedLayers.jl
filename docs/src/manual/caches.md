@@ -89,7 +89,7 @@ package, using a special plot recipe. This accepts all of the
 usual attribute keywords of the basic plot function.
 
 ````@example caches
-plot(points(cache),cache,xlims=(-2,2),ylims=(-2,2))
+plot(cache,xlims=(-2,2),ylims=(-2,2))
 ````
 
 In this plotting demonstration, we have used the `points` function

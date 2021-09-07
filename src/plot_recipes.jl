@@ -17,9 +17,9 @@ using ColorTypes
   end
 
   if layers
-    pts = points(cache)
+    #pts = points(cache)
     @series begin
-      pts, cache
+      cache
     end
   end
 
@@ -37,20 +37,21 @@ end
     end
 
     if layers
-      pts = points(cache)
+      #pts = points(cache)
       @series begin
-        pts, cache
+        cache
       end
     end
 
 end
 
-@recipe function f(pts::VectorData,cache::BasicILMCache)
+@recipe function f(cache::BasicILMCache)
+  pts = points(cache)
   #x = [pts.u; pts.u[1]]
   #y = [pts.v; pts.v[1]]
-  x = pts.u
-  y = pts.v
-  seriestype --> :scatter
+  x = [pts.u;]
+  y = [pts.v;]
+  seriestype := :scatter
   markersize --> 1
   markershape --> :circle
   markercolor --> :black
@@ -66,6 +67,10 @@ end
   x := x
   y := y
   ()
+end
+
+@recipe function f(sys::ILMSystem)
+    sys.base_cache
 end
 
 @recipe function f(w::T,sys::ILMSystem) where T<:Union{GridData,VectorData}

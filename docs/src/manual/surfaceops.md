@@ -124,7 +124,7 @@ plot(dl,cache)
 If the surface data are vectors, $\mathbf{f}$, then this operation is a little
 different:
 
-$$D_s \mathbf{f} = \nabla\cdot \delta(\chi) \left(  \mathbf{n} \mathbf{f} + \mathbf{f} \mathbf{n} \right)
+$$D_s \mathbf{f} = \nabla\cdot \delta(\chi) \left(  \mathbf{n} \mathbf{f} + \mathbf{f} \mathbf{n} \right)$$
 
 This maps $\mathbf{f}$ to a vector field. We use this in conjunction with a cache
 generated with [`SurfaceVectorCache`](@ref).
@@ -143,7 +143,7 @@ The vector field version of this is
 
 $$G_s \mathbf{u} = \mathbf{n}\cdot \delta^{T}(\chi) (\nabla \mathbf{u} + \nabla^{T} \mathbf{u})$$
 
-which maps vector field data $\mathb{u}$ to vector-valued surface data.
+which maps vector field data $\mathbf{u}$ to vector-valued surface data.
 
 ## A curl layer
 We also sometimes need to take the curl of the regularized surface data,
@@ -192,8 +192,8 @@ and [`complementary_mask`](@ref) achieve this
 m = mask(cache)
 cm = complementary_mask(cache)
 plot(
-    surface(m,cache),
-    surface(cm,cache)
+    surface(m,cache,layers=false),
+    surface(cm,cache,layers=false)
     )
 ````
 

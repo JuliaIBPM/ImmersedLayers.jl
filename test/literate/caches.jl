@@ -86,7 +86,7 @@ We can plot the immersed points with the `plot` function of the `Plots.jl`
 package, using a special plot recipe. This accepts all of the
 usual attribute keywords of the basic plot function.
 =#
-plot(points(cache),cache,xlims=(-2,2),ylims=(-2,2))
+plot(cache,xlims=(-2,2),ylims=(-2,2))
 
 #=
 In this plotting demonstration, we have used the `points` function
