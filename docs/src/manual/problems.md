@@ -33,8 +33,6 @@ type called `DirichletPoissonProblem`, which we make a subtype of
 
 ````@example problems
 using ImmersedLayers
-using CartesianGrids
-using RigidBodyTools
 using Plots
 using UnPack
 ````
@@ -118,9 +116,9 @@ now we don't create a cache, since it will be done internally.
 Lx = 4.0
 xlim = (-Lx/2,Lx/2)
 ylim = (-Lx/2,Lx/2)
-grid = PhysicalGrid(xlim,ylim,Δx)
+g = PhysicalGrid(xlim,ylim,Δx)
 RadC = 1.0
-Δs = 1.4*cellsize(grid)
+Δs = 1.4*cellsize(g)
 body = Circle(RadC,Δs)
 ````
 
@@ -133,7 +131,7 @@ Also, note that pretty much any function that accepts `base_cache`
 as an argument also accepts `sys`.
 
 ````@example problems
-prob = DirichletPoissonProblem(grid,body,scaling=GridScaling)
+prob = DirichletPoissonProblem(g,body,scaling=GridScaling)
 sys = ImmersedLayers.__init(prob)
 
 pts = points(sys)

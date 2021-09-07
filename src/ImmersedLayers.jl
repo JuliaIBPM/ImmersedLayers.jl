@@ -6,10 +6,10 @@ module ImmersedLayers
 
 using Reexport
 using DocStringExtensions
-#@reexport using CartesianGrids
-#@reexport using RigidBodyTools
-using CartesianGrids
-using RigidBodyTools
+@reexport using CartesianGrids
+@reexport using RigidBodyTools
+#using CartesianGrids
+#using RigidBodyTools
 
 using LinearAlgebra
 

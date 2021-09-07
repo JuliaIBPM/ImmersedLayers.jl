@@ -26,7 +26,7 @@ using Plots
 Lx = 4.0
 xlim = (-Lx/2,Lx/2)
 ylim = (-Lx/2,Lx/2)
-grid = PhysicalGrid(xlim,ylim,Δx)
+g = PhysicalGrid(xlim,ylim,Δx)
 ````
 
 We still generate a cache for these operations, but
@@ -34,7 +34,7 @@ now, we only supply the grid. There are no immersed surfaces
 for this demonstration.
 
 ````@example gridops
-cache = SurfaceScalarCache(grid,scaling=GridScaling)
+cache = SurfaceScalarCache(g,scaling=GridScaling)
 ````
 
 To demonstrate, let's generate a Gaussian

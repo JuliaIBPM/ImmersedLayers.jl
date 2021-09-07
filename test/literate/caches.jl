@@ -14,8 +14,6 @@ operators. The starting point for a cache is the specification of the
 # ## Setting up a cache
 
 using ImmersedLayers
-using CartesianGrids
-using RigidBodyTools
 using LinearAlgebra
 using Plots
 
@@ -28,7 +26,7 @@ constructor of the `CartesianGrids.jl` package to create this.
 Lx = 4.0
 xlim = (-Lx/2,Lx/2)
 ylim = (-Lx/2,Lx/2)
-grid = PhysicalGrid(xlim,ylim,Δx)
+g = PhysicalGrid(xlim,ylim,Δx)
 
 
 #=
@@ -40,7 +38,7 @@ on this shape equal to 1.4 times the grid spacing. This is not critical, but it
 is generally best to set it to a value between 1 and 2.
 =#
 RadC = 1.0
-Δs = 1.4*cellsize(grid)
+Δs = 1.4*cellsize(g)
 body = Circle(RadC,Δs)
 
 
@@ -80,7 +78,7 @@ other choices, such as `CartesianGrids.Roma`, `CartesianGrids.Goza`, `CartesianG
 `CartesianGrids.M3`, `CartesianGrids.M4prime`.
 =#
 
-cache = SurfaceScalarCache(body,grid,scaling=GridScaling)
+cache = SurfaceScalarCache(body,g,scaling=GridScaling)
 
 #=
 ## Some basic utilities

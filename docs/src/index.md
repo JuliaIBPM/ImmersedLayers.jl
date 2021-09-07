@@ -39,7 +39,9 @@ So standard partial differential equations can be adapted for the masked fields,
 
 $$\delta^T(\chi) f = f_s$$
 
-In a computational environment, we discretize the fields on both the surface as well as in the higher-dimensional space, so this immersion process involves *regularization* (the discrete form of immersion) and *interpolation* (the discrete form of restriction), defined with the help of a discrete version of the Dirac delta function, the "DDF". We discretize the higher-dimensional space with the a staggered Cartesian grid, using tools in the `CartesianGrids.jl` package.
+In a computational environment, we discretize the fields on both the surface as well as in the higher-dimensional space, so this immersion process involves *regularization* (the discrete form of immersion) and *interpolation* (the discrete form of restriction), defined with the help of a discrete version of the Dirac delta function, the "DDF". We discretize the higher-dimensional space with the a staggered Cartesian grid, using tools in the `CartesianGrids.jl` package, which is
+fully exported by this package. The package also exports `RigidBodyTools.jl`,
+which has a variety of tools for creating and transforming bodies.
 
 For example, to regularize surface scalar data to the cell centers of the grid,
 we use a matrix operator, $R_c$. Alternatively, for regularizing vector surface data to cell faces, we use $R_f$. Each of these has a transpose, used for interpolation of the grid data to the surface points, e.g, $R_c^T$.

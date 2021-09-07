@@ -18,7 +18,7 @@ if GROUP == "All" || GROUP == "Auxiliary"
   include("surface_ops.jl")
 end
 
-if GROUP == "Literate"
+if GROUP == "All" || GROUP == "Literate"
   for (root, dirs, files) in walkdir(litdir)
     for file in files
       endswith(file,".jl") && @testset "$file" begin include(joinpath(root,file)) end
