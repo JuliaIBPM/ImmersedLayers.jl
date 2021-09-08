@@ -27,7 +27,7 @@ in a higher-dimensional space. One way to facilitate this interaction
 is by "immersing" the surface data, as well as the associated operations on these data, into the higher-dimensional space, and similarly, allowing data in the
 higher-dimensional space to be restricted to the surface. Underlying these is
 the concept of a "masked" field, which takes a certain continuous form on one
-side of a surface and another form on the other side. A Heaviside function H can be used to write this mathematically [^1]:
+side of a surface and another form on the other side. A Heaviside function H can be used to write this mathematically [1]:
 
 f = H(χ) f⁺ + H(-χ) f⁻
 
