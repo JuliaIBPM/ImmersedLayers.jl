@@ -43,3 +43,11 @@ for f in [:zeros_surface,:zeros_grid,:zeros_gridcurl,:zeros_gridgrad,
           :normals,:areas,:points]
    @eval $f(sys::ILMSystem) = $f(sys.base_cache)
 end
+
+for f in [:norm]
+   @eval $f(a,sys::ILMSystem) = $f(a,sys.base_cache)
+end
+
+for f in [:dot]
+   @eval $f(a,b,sys::ILMSystem) = $f(a,b,sys.base_cache)
+end

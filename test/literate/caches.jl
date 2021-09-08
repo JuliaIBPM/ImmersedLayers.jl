@@ -134,7 +134,7 @@ y_grid(cache)
 
 
 #=
-## Norms and inner products
+## Using norms and inner products
 It is useful to compute norms and inner products on grid and surface data.
 These tools are easily accessible, e.g., `dot(u,v,cache)` and `norm(u,cache)`,
 and they respect the scaling associated with the cache. For example,

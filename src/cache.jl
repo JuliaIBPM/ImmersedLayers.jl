@@ -315,6 +315,15 @@ Return the areas (as `ScalarData`) of the surface panels associated with `cache`
 """
 areas(cache::BasicILMCache) = cache.ds
 
+# Integrals
+"""
+    integrate(u::PointData,cache::BasicILMCache)
+
+Calculate the discrete surface integral of `u` on the immersed points in `cache`.
+This uses trapezoidal rule quadrature.
+"""
+@inline integrate(u::PointData,cache::BasicILMCache) = dot(ones_surface(cache),u,cache)
+
 # Extend norms and inner products
 """
     norm(u::GridData,cache::BasicILMCache)
