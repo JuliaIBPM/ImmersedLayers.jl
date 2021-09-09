@@ -1,7 +1,9 @@
+using CatViews
+
 import LinearAlgebra: dot, norm
 import RigidBodyTools: view
 import CartesianGrids: integrate
-import Base: ones
+import Base: ones, copyto!
 export points, normals, areas
 
 
@@ -35,6 +37,8 @@ associated with `b`.
 """
 areas(b::Union{Body,BodyList}) = ScalarData(dlengthmid(b))
 
+## Tools for partitioned operations via body lists
+
 """
     view(v::VectorData,bl::BodyList,i::Int)
 
@@ -43,6 +47,39 @@ points of the body with index `i` in a BodyList `bl`.
 """
 @inline view(v::VectorData,bl::BodyList,i::Int) = CatView(view(v.u,bl,i),view(v.v,bl,i))
 
+"""
+    copyto!(u::PointData,v::PointData,bl::BodyList,i::Int)
+
+Copy the data in the elements of `v` associated with body `i` in body list `bl` to
+the corresponding elements in `u`. These data must be of the same type (e.g.,
+`ScalarData` or `VectorData`) and have the same length.
+""" copyto!(u::PointData,v::PointData,bl::BodyList,i::Int)
+
+for f in [:ScalarData,:VectorData]
+  @eval function copyto!(u::$f{N},v::$f{N},bl::BodyList,i::Int) where {N}
+    ui = view(u,bl,i)
+    vi = view(v,bl,i)
+    ui .= vi
+    return u
+  end
+end
+
+
+"""
+    copyto!(u::ScalarData,v::AbstractVector,bl::BodyList,i::Int)
+
+Copy the data in `v` to the elements in `u` associated with body `i` in body list `bl`.
+`v` must have the same length as this subarray of `u` associated with `i`.
+"""
+function copyto!(u::ScalarData{N},v::AbstractVector,bl::BodyList,i::Int) where {N}
+    ui = view(u,bl,i)
+    @assert length(v) == length(ui) "Lengths are incompatible for copyto!"
+    ui .= v
+    return u
+end
+
+
+## Dot, norm, integrate
 
 """
     dot(u1::GridData,u2::GridData,g::PhysicalGrid)

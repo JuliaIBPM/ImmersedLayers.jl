@@ -50,7 +50,7 @@ for f in [:norm,:integrate]
 
 end
 
-for f in [:dot]
+for f in [:dot,:copyto!]
    @eval $f(a,b,sys::ILMSystem) = $f(a,b,sys.base_cache)
    @eval $f(a,b,sys::ILMSystem,i::Int) = $f(a,b,sys.base_cache,i)
 end

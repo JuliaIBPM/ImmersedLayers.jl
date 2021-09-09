@@ -90,3 +90,9 @@ to be nearly $\pi/2$. We use the `pointwise_dot` operation in
 pts = points(cache)
 nrm = normals(cache)
 integrate(pointwise_dot(pts,nrm),cache,3)
+
+#=
+It is common that we will want to assign values to surface data, one body
+at a time. For this, we can make use of an extension of the `copyto!` function.
+Let's see some examples.
+=#

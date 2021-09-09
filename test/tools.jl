@@ -62,6 +62,31 @@ push!(bl,deepcopy(body))
   @test isapprox(integrate(pointwise_dot(nrm,nrm),areas(bl),bl,1),2π,atol=1e-3)
   @test isapprox(integrate(pointwise_dot(nrm,nrm),areas(bl),bl,2),2π,atol=1e-3)
 
+  fl = ScalarData(Xl)
+  gl = ScalarData(Xl)
+  gl .= rand(length(gl))
+
+  copyto!(fl,gl,bl,2)
+
+  @test iszero(view(fl,bl,1))
+  @test view(fl,bl,2) == view(gl,bl,2)
+
+  # test the version that copies a vector of just the right size
+  fl = ScalarData(Xl)
+  copyto!(fl,view(gl,bl,2),bl,2)
+
+  @test iszero(view(fl,bl,1))
+  @test view(fl,bl,2) == view(gl,bl,2)
+
+  @test_throws AssertionError copyto!(fl,[1.0,2.0,3.0],bl,2)
+
+  fl = VectorData(Xl)
+  gl = VectorData(Xl)
+  gl .= rand(length(gl))
+
+  copyto!(fl,gl,bl,1)
+  @test iszero(view(fl.u,bl,2)) && iszero(view(fl.v,bl,2))
+  @test view(fl,bl,1) == view(gl,bl,1)
 
 
 end
