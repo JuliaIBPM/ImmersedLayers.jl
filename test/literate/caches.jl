@@ -80,6 +80,7 @@ other choices, such as `CartesianGrids.Roma`, `CartesianGrids.Goza`, `CartesianG
 
 cache = SurfaceScalarCache(body,g,scaling=GridScaling)
 
+
 #=
 ## Plotting the immersed points
 We can plot the immersed points with the `plot` function of the `Plots.jl`
@@ -177,13 +178,17 @@ dot(os,os,cache)
 #md # points(::BasicILMCache)
 #md # ```
 
-#md # ## Inner products and norms
+#md # ## Inner products, norms, and integrals
 
 #md # ```@docs
 #md # dot(::GridData,::GridData,::BasicILMCache)
 #md # dot(::PointData,::PointData,::BasicILMCache)
 #md # norm(::GridData,::BasicILMCache)
 #md # norm(::PointData,::BasicILMCache)
+#md # integrate(::ScalarData{N},::BasicILMCache{N}) where {N}
+#md # dot(::PointData,::PointData,::BasicILMCache,::Int)
+#md # norm(::PointData,::BasicILMCache,::Int)
+#md # integrate(::ScalarData{N},::BasicILMCache{N},::Int) where {N}
 #md # ```
 
 

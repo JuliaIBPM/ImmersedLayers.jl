@@ -44,13 +44,13 @@ for f in [:zeros_surface,:zeros_grid,:zeros_gridcurl,:zeros_gridgrad,
    @eval $f(sys::ILMSystem) = $f(sys.base_cache)
 end
 
-for f in [:norm]
+for f in [:norm,:integrate]
    @eval $f(a,sys::ILMSystem) = $f(a,sys.base_cache)
    @eval $f(a,sys::ILMSystem,i::Int) = $f(a,sys.base_cache,i)
 
 end
 
-for f in [:dot]
+for f in [:dot,:copyto!]
    @eval $f(a,b,sys::ILMSystem) = $f(a,b,sys.base_cache)
    @eval $f(a,b,sys::ILMSystem,i::Int) = $f(a,b,sys.base_cache,i)
 end

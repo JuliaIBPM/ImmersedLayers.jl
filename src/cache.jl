@@ -332,14 +332,6 @@ Return the areas (as `ScalarData`) of the surface panels associated with `cache`
 """
 areas(cache::BasicILMCache) = cache.ds
 
-# Integrals
-"""
-    integrate(u::PointData,cache::BasicILMCache)
-
-Calculate the discrete surface integral of `u` on the immersed points in `cache`.
-This uses trapezoidal rule quadrature.
-"""
-@inline integrate(u::PointData,cache::BasicILMCache;kwargs...) = dot(ones_surface(cache),u,cache)
 
 # Extend norms and inner products
 """
@@ -400,7 +392,52 @@ Calculate the inner product of surface point data `u1` and `u2`, using the scali
 
 Calculate the inner product of surface point data `u1` and `u2` for body
 `i` in the cache `cache`, scaling as appropriate for this cache.
-"""
+""" dot(u1::PointData,u2::PointData,cache::BasicILMCache,i::Int)
+
 dot(u1::PointData{N},u2::PointData{N},cache::BasicILMCache{N,GridScaling},i::Int) where {N} = dot(u1,u2,cache.ds,cache.bl,i)
 
 dot(u1::PointData{N},u2::PointData{N},cache::BasicILMCache{N,IndexScaling},i::Int) where {N} = dot(u1,u2,cache.bl,i)
+
+
+## Integration
+"""
+    integrate(u::PointData,cache::BasicILMCache)
+
+Calculate the discrete surface integral of data `u` on the immersed points in `cache`.
+This uses trapezoidal rule quadrature. If `u` is `VectorData`, then this returns a vector of the integrals in
+each coordinate direction. This operation produces the same effect,
+regardless if `cache` is set up for `GridScaling` or `IndexScaling`. In both
+cases, the surface element areas are used.
+"""
+@inline integrate(u::PointData{N},cache::BasicILMCache{N}) where {N} = integrate(u,cache.ds)
+
+
+"""
+    integrate(u::PointData,cache::BasicILMCache,i::Int)
+
+Calculate the discrete surface integral of scalar data `u` on the immersed points in `cache`,
+on body `i` in the body list in `cache`.
+This uses trapezoidal rule quadrature. If `u` is `VectorData`, then this returns a vector of the integrals in
+each coordinate direction. This operation produces the same effect,
+regardless if `cache` is set up for `GridScaling` or `IndexScaling`. In both
+cases, the surface element areas are used.
+"""
+@inline integrate(u::PointData{N},cache::BasicILMCache{N},i::Int) where {N} = integrate(u,cache.ds,cache.bl,i)
+
+
+"""
+    copyto!(u::PointData,v::PointData,cache::BasicILMCache,i::Int)
+
+Copy the data in the elements of `v` associated with body `i` in the body list in `cache` to
+the corresponding elements in `u`. These data must be of the same type (e.g.,
+`ScalarData` or `VectorData`) and have the same length.
+""" copyto!(u::PointData,v::PointData,cache::BasicILMCache,i::Int)
+
+"""
+    copyto!(u::ScalarData,v::AbstractVector,cache::BasicILMCache,i::Int)
+
+Copy the data in `v` to the elements in `u` associated with body `i` in the body list in `cache`.
+`v` must have the same length as this subarray of `u` associated with `i`.
+""" copyto!(u::ScalarData,v::AbstractVector,cache::BasicILMCache,i::Int)
+
+@inline copyto!(u::PointData{N},v,cache::BasicILMCache{N},i::Int) where {N} = copyto!(u,v,cache.bl,i)

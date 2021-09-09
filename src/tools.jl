@@ -1,6 +1,9 @@
+using CatViews
+
 import LinearAlgebra: dot, norm
 import RigidBodyTools: view
-import Base: ones
+import CartesianGrids: integrate
+import Base: ones, copyto!
 export points, normals, areas
 
 
@@ -34,6 +37,8 @@ associated with `b`.
 """
 areas(b::Union{Body,BodyList}) = ScalarData(dlengthmid(b))
 
+## Tools for partitioned operations via body lists
+
 """
     view(v::VectorData,bl::BodyList,i::Int)
 
@@ -42,6 +47,41 @@ points of the body with index `i` in a BodyList `bl`.
 """
 @inline view(v::VectorData,bl::BodyList,i::Int) = CatView(view(v.u,bl,i),view(v.v,bl,i))
 
+"""
+    copyto!(u::PointData,v::PointData,bl::BodyList,i::Int)
+
+Copy the data in the elements of `v` associated with body `i` in body list `bl` to
+the corresponding elements in `u`. These data must be of the same type (e.g.,
+`ScalarData` or `VectorData`) and have the same length.
+""" copyto!(u::PointData,v::PointData,bl::BodyList,i::Int)
+
+for f in [:ScalarData,:VectorData]
+  @eval function copyto!(u::$f{N},v::$f{N},bl::BodyList,i::Int) where {N}
+    ui = view(u,bl,i)
+    vi = view(v,bl,i)
+    ui .= vi
+    return u
+  end
+end
+
+
+"""
+    copyto!(u::ScalarData,v::AbstractVector,bl::BodyList,i::Int)
+
+Copy the data in `v` to the elements in `u` associated with body `i` in body list `bl`.
+`v` must have the same length as this subarray of `u` associated with `i`.
+"""
+function copyto!(u::ScalarData{N},v::AbstractVector,bl::BodyList,i::Int) where {N}
+    ui = view(u,bl,i)
+    @assert length(v) == length(ui) "Lengths are incompatible for copyto!"
+    ui .= v
+    return u
+end
+
+### GRID OPERATIONS
+
+
+## Dot, norm, integrate
 
 """
     dot(u1::GridData,u2::GridData,g::PhysicalGrid)
@@ -49,7 +89,7 @@ points of the body with index `i` in a BodyList `bl`.
 Return the inner product between `u1` and `u2` weighted by the volume (area)
 of the cell in grid `g`.
 """
-function LinearAlgebra.dot(u1::GridData{NX,NY},u2::GridData{NX,NY},g::PhysicalGrid) where {NX,NY}
+function dot(u1::GridData{NX,NY},u2::GridData{NX,NY},g::PhysicalGrid) where {NX,NY}
     @assert (NX,NY) == size(g)
     dot(u1,u2)*volume(g)
 end
@@ -61,6 +101,35 @@ Return the norm of `u`, weighted by the volume (area)
 of the cell in grid `g`.
 """
 norm(u::GridData,g::PhysicalGrid) = sqrt(dot(u,u,g))
+
+"""
+    ones(u::ScalarGridData)
+
+Returns `ScalarGridData` of the same type as `u` filled with ones.
+"""
+function ones(u::ScalarGridData)
+  o = similar(u)
+  o .= 1
+  o
+end
+
+"""
+    ones(u::VectorGridData,dim::Int)
+
+Returns `VectorGridData` of the same type as `u`, filled with ones in
+component `dim`.
+"""
+function ones(u::VectorGridData,dim::Integer)
+  o = zero(u)
+  ocomp = getfield(o,dim+1) # offset
+  ocomp .= 1
+  o
+end
+
+
+### POINT OPERATIONS
+
+## Inner products
 
 """
     dot(u1::PointData,u2::PointData,ds::ScalarData)
@@ -87,6 +156,7 @@ dot(u1::VectorData{N},u2::VectorData{N},ds::ScalarData{N},bl::BodyList,i::Int) w
     dot(ScalarData(view(u1.v,bl,i)),ScalarData(view(u2.v,bl,i)),ScalarData(view(ds,bl,i)))
 
 
+# Extend the inner products that do not scale with surface areas.
 dot(u1::ScalarData{N},u2::ScalarData{N},bl::BodyList,i::Int) where {N} =
     dot(ScalarData(view(u1,bl,i)),ScalarData(view(u2,bl,i)))
 
@@ -94,6 +164,7 @@ dot(u1::VectorData{N},u2::VectorData{N},bl::BodyList,i::Int) where {N} =
     dot(ScalarData(view(u1.u,bl,i)),ScalarData(view(u2.u,bl,i))) +
     dot(ScalarData(view(u1.v,bl,i)),ScalarData(view(u2.v,bl,i)))
 
+## Norms
 
 """
     norm(u::PointData,ds::ScalarData)
@@ -109,7 +180,36 @@ Return the norm of `u`, weighted by `ds`, for body `i` in body list `bl`
 """
 norm(u::PointData{N},ds::ScalarData{N},bl::BodyList,i::Int) where {N} = sqrt(dot(u,u,ds,bl,i))
 
+# Extend the norm that does not scale with surface areas.
 norm(u::PointData{N},bl::BodyList,i::Int) where {N} = sqrt(dot(u,u,bl,i))
+
+## Integrals
+
+"""
+    integrate(u::PointData,ds::ScalarData)
+
+Calculate the discrete surface integral of data `u`, using the
+surface element areas in `ds`. This uses trapezoidal rule quadrature.
+If `u` is `VectorData`, then this returns a vector of the integrals in
+each coordinate direction.
+"""
+integrate(u::ScalarData{N},ds::ScalarData{N}) where {N} = dot(u,ds)
+
+integrate(u::VectorData{N},ds::ScalarData{N}) where {N} = [dot(u.u,ds),dot(u.v,ds)]
+
+"""
+    integrate(u::PointData,ds::ScalarData,bl::BodyList,i::Int)
+
+Calculate the discrete surface integral of scalar data `u`, restricting the
+integral to body `i` in body list `bl`, using the
+surface element areas in `ds`. This uses trapezoidal rule quadrature.
+If `u` is `VectorData`, then this returns a vector of the integrals in
+each coordinate direction.
+"""
+integrate(u::ScalarData{N},ds::ScalarData{N},bl::BodyList,i::Int) where {N} = dot(u,ds,bl,i)
+
+integrate(u::VectorData{N},ds::ScalarData{N},bl::BodyList,i::Int) where {N} = [dot(u.u,ds,bl,i); dot(u.v,ds,bl,i)]
+
 
 
 """
@@ -130,30 +230,6 @@ Returns `VectorData` of the same type as `u`, filled with ones in
 component `dim`.
 """
 function ones(u::VectorData{N},dim::Integer) where {N}
-  o = zero(u)
-  ocomp = getfield(o,dim+1) # offset
-  ocomp .= 1
-  o
-end
-
-"""
-    ones(u::ScalarGridData)
-
-Returns `ScalarGridData` of the same type as `u` filled with ones.
-"""
-function ones(u::ScalarGridData)
-  o = similar(u)
-  o .= 1
-  o
-end
-
-"""
-    ones(u::VectorGridData,dim::Int)
-
-Returns `VectorGridData` of the same type as `u`, filled with ones in
-component `dim`.
-"""
-function ones(u::VectorGridData,dim::Integer)
   o = zero(u)
   ocomp = getfield(o,dim+1) # offset
   ocomp .= 1

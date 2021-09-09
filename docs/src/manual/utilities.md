@@ -12,8 +12,17 @@ normals(::Body)
 points(::Body)
 dot(::ScalarData{N},::ScalarData{N},::ScalarData{N}) where {N}
 norm(::PointData{N},::ScalarData{N}) where {N}
+integrate(::ScalarData{N},::ScalarData{N}) where {N}
 ones(::ScalarData)
 ```
+
+## Surface point utilities on body lists
+
+```@docs
+copyto!(::PointData,::PointData,::BodyList,::Int)
+copyto!(::ScalarData,::AbstractVector,::BodyList,::Int)
+```
+
 ## Grid utilities
 
 ```@docs
