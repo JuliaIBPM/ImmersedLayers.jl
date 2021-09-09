@@ -401,26 +401,28 @@ dot(u1::PointData{N},u2::PointData{N},cache::BasicILMCache{N,IndexScaling},i::In
 
 ## Integration
 """
-    integrate(u::ScalarData,cache::BasicILMCache)
+    integrate(u::PointData,cache::BasicILMCache)
 
-Calculate the discrete surface integral of scalar data `u` on the immersed points in `cache`.
-This uses trapezoidal rule quadrature. This operation produces the same effect,
+Calculate the discrete surface integral of data `u` on the immersed points in `cache`.
+This uses trapezoidal rule quadrature. If `u` is `VectorData`, then this returns a vector of the integrals in
+each coordinate direction. This operation produces the same effect,
 regardless if `cache` is set up for `GridScaling` or `IndexScaling`. In both
 cases, the surface element areas are used.
 """
-@inline integrate(u::ScalarData{N},cache::BasicILMCache{N}) where {N} = integrate(u,cache.ds)
+@inline integrate(u::PointData{N},cache::BasicILMCache{N}) where {N} = integrate(u,cache.ds)
 
 
 """
-    integrate(u::ScalarData,cache::BasicILMCache,i::Int)
+    integrate(u::PointData,cache::BasicILMCache,i::Int)
 
 Calculate the discrete surface integral of scalar data `u` on the immersed points in `cache`,
 on body `i` in the body list in `cache`.
-This uses trapezoidal rule quadrature. This operation produces the same effect,
+This uses trapezoidal rule quadrature. If `u` is `VectorData`, then this returns a vector of the integrals in
+each coordinate direction. This operation produces the same effect,
 regardless if `cache` is set up for `GridScaling` or `IndexScaling`. In both
 cases, the surface element areas are used.
 """
-@inline integrate(u::ScalarData{N},cache::BasicILMCache{N},i::Int) where {N} = integrate(u,cache.ds,cache.bl,i)
+@inline integrate(u::PointData{N},cache::BasicILMCache{N},i::Int) where {N} = integrate(u,cache.ds,cache.bl,i)
 
 
 """

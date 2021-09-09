@@ -6,22 +6,20 @@
 #md # ```
 
 #=
-Under the hood, the cache uses the concept of a `Body` to perform certain
+Under the hood, the cache uses the concept of a `Body` (from the `RigidBodyTools.jl` package)
+to perform certain
 calculations, like normal vectors and surface panel areas, which may
-specialize depending on the type of body shape. Most immersed layer
+specialize depending on the type of body shape. Note that most immersed layer
 operations do not depend on whether there is one or more bodies; rather,
 they only depend on the discrete points, and their associated normals and areas.
 However, some post-processing operations, like surface integrals, do
 depend on distinguishing one body from another. For this reason, the
 cache stores points in a `BodyList`, and several operations can exploit this.
-
-
 =#
 
 
 using ImmersedLayers
 using Plots
-using LinearAlgebra
 
 #=
 For the demonstration, we use the same grid.
@@ -79,6 +77,7 @@ cache = SurfaceScalarCache(bl,g,scaling=GridScaling)
 plot(cache,xlims=(-2,2),ylims=(-2,2))
 
 #=
+## Body-by-body calculations
 We can now perform operations on data that exploit the division into
 distinct bodies. For example, let's compute the integral of $\mathbf{x}\cdot\mathbf{n}$,
 for body 3. For any of the bodies, this integral should be approximately equal to the
@@ -89,10 +88,40 @@ to be nearly $\pi/2$. We use the `pointwise_dot` operation in
 =#
 pts = points(cache)
 nrm = normals(cache)
-integrate(pointwise_dot(pts,nrm),cache,3)
+V3 = integrate(pointwise_dot(pts,nrm),cache,3)
 
 #=
+We can also integrate `VectorData` over individual bodies, and the result
+is simply a vector with the integral in each coordinate direction. Let's
+demonstrate on another geometric integral, this time of $(\mathbf{x}\cdot\mathbf{x})\mathbf{n}$,
+This integral, when divided by the enclosed area (volume) of the body,
+is equal to the centroid of the body. Let's demonstrate on body 3, which
+we expect to be centered at (-1,1)
+=#
+Xc = integrate(pointwise_dot(pts,pts)∘nrm,cache,3)/V3
+
+#=
+Other operations we can perform body-by-body are [`dot`](@ref) and [`norm`](@ref)
+=#
+
+#=
+## Copying data body by body
 It is common that we will want to assign values to surface data, one body
 at a time. For this, we can make use of an extension of the `copyto!` function.
-Let's see some examples.
+Let's see some examples. Suppose we wish to set the value of a surface
+scalar `u` to the $x$ component of the normal vectors for points on body 3, but
+leave the values zero for all other bodies. Then we just do the following:
+=#
+u = zeros_surface(cache)
+copyto!(u,nrm.u,cache,3)
+nothing #hide
+
+#=
+Let's plot the data to verify this worked
+=#
+plot(u)
+
+#=
+It is also possible to use [`copyto!`](@ref) to copy a vector of just the right
+size of the subarray associated with the body.
 =#

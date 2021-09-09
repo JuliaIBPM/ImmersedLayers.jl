@@ -78,6 +78,8 @@ function copyto!(u::ScalarData{N},v::AbstractVector,bl::BodyList,i::Int) where {
     return u
 end
 
+### GRID OPERATIONS
+
 
 ## Dot, norm, integrate
 
@@ -99,6 +101,35 @@ Return the norm of `u`, weighted by the volume (area)
 of the cell in grid `g`.
 """
 norm(u::GridData,g::PhysicalGrid) = sqrt(dot(u,u,g))
+
+"""
+    ones(u::ScalarGridData)
+
+Returns `ScalarGridData` of the same type as `u` filled with ones.
+"""
+function ones(u::ScalarGridData)
+  o = similar(u)
+  o .= 1
+  o
+end
+
+"""
+    ones(u::VectorGridData,dim::Int)
+
+Returns `VectorGridData` of the same type as `u`, filled with ones in
+component `dim`.
+"""
+function ones(u::VectorGridData,dim::Integer)
+  o = zero(u)
+  ocomp = getfield(o,dim+1) # offset
+  ocomp .= 1
+  o
+end
+
+
+### POINT OPERATIONS
+
+## Inner products
 
 """
     dot(u1::PointData,u2::PointData,ds::ScalarData)
@@ -133,24 +164,7 @@ dot(u1::VectorData{N},u2::VectorData{N},bl::BodyList,i::Int) where {N} =
     dot(ScalarData(view(u1.u,bl,i)),ScalarData(view(u2.u,bl,i))) +
     dot(ScalarData(view(u1.v,bl,i)),ScalarData(view(u2.v,bl,i)))
 
-
-"""
-    integrate(u::ScalarData,ds::ScalarData)
-
-Calculate the discrete surface integral of scalar data `u`, using the
-surface element areas in `ds`. This uses trapezoidal rule quadrature.
-"""
-integrate(u::ScalarData{N},ds::ScalarData{N}) where {N} = dot(u,ds)
-
-"""
-    integrate(u::ScalarData,ds::ScalarData,bl::BodyList,i::Int)
-
-Calculate the discrete surface integral of scalar data `u`, restricting the
-integral to body `i` in body list `bl`, using the
-surface element areas in `ds`. This uses trapezoidal rule quadrature.
-"""
-integrate(u::ScalarData{N},ds::ScalarData{N},bl::BodyList,i::Int) where {N} = dot(u,ds,bl,i)
-
+## Norms
 
 """
     norm(u::PointData,ds::ScalarData)
@@ -168,6 +182,34 @@ norm(u::PointData{N},ds::ScalarData{N},bl::BodyList,i::Int) where {N} = sqrt(dot
 
 # Extend the norm that does not scale with surface areas.
 norm(u::PointData{N},bl::BodyList,i::Int) where {N} = sqrt(dot(u,u,bl,i))
+
+## Integrals
+
+"""
+    integrate(u::PointData,ds::ScalarData)
+
+Calculate the discrete surface integral of data `u`, using the
+surface element areas in `ds`. This uses trapezoidal rule quadrature.
+If `u` is `VectorData`, then this returns a vector of the integrals in
+each coordinate direction.
+"""
+integrate(u::ScalarData{N},ds::ScalarData{N}) where {N} = dot(u,ds)
+
+integrate(u::VectorData{N},ds::ScalarData{N}) where {N} = [dot(u.u,ds),dot(u.v,ds)]
+
+"""
+    integrate(u::PointData,ds::ScalarData,bl::BodyList,i::Int)
+
+Calculate the discrete surface integral of scalar data `u`, restricting the
+integral to body `i` in body list `bl`, using the
+surface element areas in `ds`. This uses trapezoidal rule quadrature.
+If `u` is `VectorData`, then this returns a vector of the integrals in
+each coordinate direction.
+"""
+integrate(u::ScalarData{N},ds::ScalarData{N},bl::BodyList,i::Int) where {N} = dot(u,ds,bl,i)
+
+integrate(u::VectorData{N},ds::ScalarData{N},bl::BodyList,i::Int) where {N} = [dot(u.u,ds,bl,i); dot(u.v,ds,bl,i)]
+
 
 
 """
@@ -188,30 +230,6 @@ Returns `VectorData` of the same type as `u`, filled with ones in
 component `dim`.
 """
 function ones(u::VectorData{N},dim::Integer) where {N}
-  o = zero(u)
-  ocomp = getfield(o,dim+1) # offset
-  ocomp .= 1
-  o
-end
-
-"""
-    ones(u::ScalarGridData)
-
-Returns `ScalarGridData` of the same type as `u` filled with ones.
-"""
-function ones(u::ScalarGridData)
-  o = similar(u)
-  o .= 1
-  o
-end
-
-"""
-    ones(u::VectorGridData,dim::Int)
-
-Returns `VectorGridData` of the same type as `u`, filled with ones in
-component `dim`.
-"""
-function ones(u::VectorGridData,dim::Integer)
   o = zero(u)
   ocomp = getfield(o,dim+1) # offset
   ocomp .= 1
