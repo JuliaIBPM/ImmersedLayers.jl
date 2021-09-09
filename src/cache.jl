@@ -332,14 +332,6 @@ Return the areas (as `ScalarData`) of the surface panels associated with `cache`
 """
 areas(cache::BasicILMCache) = cache.ds
 
-# Integrals
-"""
-    integrate(u::PointData,cache::BasicILMCache)
-
-Calculate the discrete surface integral of `u` on the immersed points in `cache`.
-This uses trapezoidal rule quadrature.
-"""
-@inline integrate(u::PointData,cache::BasicILMCache;kwargs...) = dot(ones_surface(cache),u,cache)
 
 # Extend norms and inner products
 """
@@ -404,3 +396,27 @@ Calculate the inner product of surface point data `u1` and `u2` for body
 dot(u1::PointData{N},u2::PointData{N},cache::BasicILMCache{N,GridScaling},i::Int) where {N} = dot(u1,u2,cache.ds,cache.bl,i)
 
 dot(u1::PointData{N},u2::PointData{N},cache::BasicILMCache{N,IndexScaling},i::Int) where {N} = dot(u1,u2,cache.bl,i)
+
+
+## Integration
+"""
+    integrate(u::ScalarData,cache::BasicILMCache)
+
+Calculate the discrete surface integral of scalar data `u` on the immersed points in `cache`.
+This uses trapezoidal rule quadrature. This operation produces the same effect,
+regardless if `cache` is set up for `GridScaling` or `IndexScaling`. In both
+cases, the surface element areas are used.
+"""
+@inline integrate(u::ScalarData{N},cache::BasicILMCache{N}) where {N} = integrate(u,cache.ds)
+
+
+"""
+    integrate(u::ScalarData,cache::BasicILMCache,i::Int)
+
+Calculate the discrete surface integral of scalar data `u` on the immersed points in `cache`,
+on body `i` in the body list in `cache`.
+This uses trapezoidal rule quadrature. This operation produces the same effect,
+regardless if `cache` is set up for `GridScaling` or `IndexScaling`. In both
+cases, the surface element areas are used.
+"""
+@inline integrate(u::ScalarData{N},cache::BasicILMCache{N},i::Int) where {N} = integrate(u,cache.ds,cache.bl,i)

@@ -184,6 +184,8 @@ dot(os,os,cache)
 #md # dot(::PointData,::PointData,::BasicILMCache)
 #md # norm(::GridData,::BasicILMCache)
 #md # norm(::PointData,::BasicILMCache)
+#md # dot(::PointData,::PointData,::BasicILMCache,::BodyList,::Int)
+#md # norm(::PointData,::BasicILMCache,::BodyList,::Int)
 #md # ```
 
 

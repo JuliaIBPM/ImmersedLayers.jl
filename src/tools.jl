@@ -1,5 +1,6 @@
 import LinearAlgebra: dot, norm
 import RigidBodyTools: view
+import CartesianGrids: integrate
 import Base: ones
 export points, normals, areas
 
@@ -49,7 +50,7 @@ points of the body with index `i` in a BodyList `bl`.
 Return the inner product between `u1` and `u2` weighted by the volume (area)
 of the cell in grid `g`.
 """
-function LinearAlgebra.dot(u1::GridData{NX,NY},u2::GridData{NX,NY},g::PhysicalGrid) where {NX,NY}
+function dot(u1::GridData{NX,NY},u2::GridData{NX,NY},g::PhysicalGrid) where {NX,NY}
     @assert (NX,NY) == size(g)
     dot(u1,u2)*volume(g)
 end
@@ -87,12 +88,31 @@ dot(u1::VectorData{N},u2::VectorData{N},ds::ScalarData{N},bl::BodyList,i::Int) w
     dot(ScalarData(view(u1.v,bl,i)),ScalarData(view(u2.v,bl,i)),ScalarData(view(ds,bl,i)))
 
 
+# Extend the inner products that do not scale with surface areas.
 dot(u1::ScalarData{N},u2::ScalarData{N},bl::BodyList,i::Int) where {N} =
     dot(ScalarData(view(u1,bl,i)),ScalarData(view(u2,bl,i)))
 
 dot(u1::VectorData{N},u2::VectorData{N},bl::BodyList,i::Int) where {N} =
     dot(ScalarData(view(u1.u,bl,i)),ScalarData(view(u2.u,bl,i))) +
     dot(ScalarData(view(u1.v,bl,i)),ScalarData(view(u2.v,bl,i)))
+
+
+"""
+    integrate(u::ScalarData,ds::ScalarData)
+
+Calculate the discrete surface integral of scalar data `u`, using the
+surface element areas in `ds`. This uses trapezoidal rule quadrature.
+"""
+integrate(u::ScalarData{N},ds::ScalarData{N}) where {N} = dot(u,ds)
+
+"""
+    integrate(u::ScalarData,ds::ScalarData,bl::BodyList,i::Int)
+
+Calculate the discrete surface integral of scalar data `u`, restricting the
+integral to body `i` in body list `bl`, using the
+surface element areas in `ds`. This uses trapezoidal rule quadrature.
+"""
+integrate(u::ScalarData{N},ds::ScalarData{N},bl::BodyList,i::Int) where {N} = dot(u,ds,bl,i)
 
 
 """
@@ -109,6 +129,7 @@ Return the norm of `u`, weighted by `ds`, for body `i` in body list `bl`
 """
 norm(u::PointData{N},ds::ScalarData{N},bl::BodyList,i::Int) where {N} = sqrt(dot(u,u,ds,bl,i))
 
+# Extend the norm that does not scale with surface areas.
 norm(u::PointData{N},bl::BodyList,i::Int) where {N} = sqrt(dot(u,u,bl,i))
 
 

@@ -38,6 +38,9 @@ os .= 1
 
    @test isapprox(dot(os,os,ds),2π,atol=1e-3)
 
+   nrm = normals(body)
+   @test isapprox(integrate(pointwise_dot(nrm,nrm),areas(body)),2π,atol=1e-3)
+
 end
 
 bl = BodyList()
@@ -50,6 +53,17 @@ push!(bl,deepcopy(body))
   @test dot(Xl.u,Xl.u,areas(bl),bl,1) == dot(Xl.u,Xl.u,areas(bl),bl,2) == dot(X.u,X.u,ds)
 
   @test dot(Xl,Xl,areas(bl),bl,1) == dot(Xl,Xl,areas(bl),bl,2) == dot(X,X,ds)
+
+  @test norm(Xl.u,areas(bl),bl,1) == norm(Xl.u,areas(bl),bl,2) == norm(X.u,ds)
+
+  @test norm(Xl,areas(bl),bl,1) == norm(Xl,areas(bl),bl,2) == norm(X,ds)
+
+  nrm = normals(bl)
+  @test isapprox(integrate(pointwise_dot(nrm,nrm),areas(bl),bl,1),2π,atol=1e-3)
+  @test isapprox(integrate(pointwise_dot(nrm,nrm),areas(bl),bl,2),2π,atol=1e-3)
+
+
+
 end
 
 
