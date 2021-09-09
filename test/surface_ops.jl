@@ -18,6 +18,14 @@ f = ScalarData(X)
 
 angs(n) = range(0,2π,length=n+1)[1:n]
 
+@testset "Forming a cache" begin
+  scache1 = SurfaceScalarCache(body,g,scaling=GridScaling)
+  scache2 = SurfaceScalarCache(X,g,scaling=GridScaling)
+  @test normals(scache1) == normals(scache2)
+  @test areas(scache1) == areas(scache2)
+  @test points(scache1) == points(scache2)
+end
+
 @testset "Scalar surface ops" begin
   scache = SurfaceScalarCache(body,g,scaling=GridScaling)
 

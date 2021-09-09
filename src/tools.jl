@@ -1,4 +1,5 @@
 import LinearAlgebra: dot, norm
+import RigidBodyTools: view
 import Base: ones
 export points, normals, areas
 
@@ -34,6 +35,15 @@ associated with `b`.
 areas(b::Union{Body,BodyList}) = ScalarData(dlengthmid(b))
 
 """
+    view(v::VectorData,bl::BodyList,i::Int)
+
+Provide a view of the range of values in `VectorData` `v`, corresponding to the
+points of the body with index `i` in a BodyList `bl`.
+"""
+@inline view(v::VectorData,bl::BodyList,i::Int) = CatView(view(v.u,bl,i),view(v.v,bl,i))
+
+
+"""
     dot(u1::GridData,u2::GridData,g::PhysicalGrid)
 
 Return the inner product between `u1` and `u2` weighted by the volume (area)
@@ -60,14 +70,47 @@ Return the inner product between `u1` and `u2`, weighted by `ds`.
 dot(u1::ScalarData{N},u2::ScalarData{N},ds::ScalarData{N}) where {N} = dot(u1,ds∘u2)
 
 dot(u1::VectorData{N},u2::VectorData{N},ds::ScalarData{N}) where {N} =
-    dot(u1.u,ds∘u2.u) + dot(u1.v,ds∘u2.v)
+    dot(u1.u,u2.u,ds) + dot(u1.v,u2.v,ds)
+
+
+"""
+    dot(u1::PointData,u2::PointData,ds::ScalarData,bl::BodyList,i)
+
+Return the inner product between `u1` and `u2`, weighted by `ds`,
+for only the data associated with body `i` in body list `bl`.
+"""
+dot(u1::ScalarData{N},u2::ScalarData{N},ds::ScalarData{N},bl::BodyList,i::Int) where {N} =
+    dot(ScalarData(view(u1,bl,i)),ScalarData(view(u2,bl,i)),ScalarData(view(ds,bl,i)))
+
+dot(u1::VectorData{N},u2::VectorData{N},ds::ScalarData{N},bl::BodyList,i::Int) where {N} =
+    dot(ScalarData(view(u1.u,bl,i)),ScalarData(view(u2.u,bl,i)),ScalarData(view(ds,bl,i))) +
+    dot(ScalarData(view(u1.v,bl,i)),ScalarData(view(u2.v,bl,i)),ScalarData(view(ds,bl,i)))
+
+
+dot(u1::ScalarData{N},u2::ScalarData{N},bl::BodyList,i::Int) where {N} =
+    dot(ScalarData(view(u1,bl,i)),ScalarData(view(u2,bl,i)))
+
+dot(u1::VectorData{N},u2::VectorData{N},bl::BodyList,i::Int) where {N} =
+    dot(ScalarData(view(u1.u,bl,i)),ScalarData(view(u2.u,bl,i))) +
+    dot(ScalarData(view(u1.v,bl,i)),ScalarData(view(u2.v,bl,i)))
+
 
 """
     norm(u::PointData,ds::ScalarData)
 
 Return the norm of `u`, weighted by `ds`.
 """
-norm(u::PointData{N},ds::ScalarData{N}) where {N} = sqrt(dot(u,ds,u))
+norm(u::PointData{N},ds::ScalarData{N}) where {N} = sqrt(dot(u,u,ds))
+
+"""
+    norm(u::PointData,ds::ScalarData,bl::BodyList,i)
+
+Return the norm of `u`, weighted by `ds`, for body `i` in body list `bl`
+"""
+norm(u::PointData{N},ds::ScalarData{N},bl::BodyList,i::Int) where {N} = sqrt(dot(u,u,ds,bl,i))
+
+norm(u::PointData{N},bl::BodyList,i::Int) where {N} = sqrt(dot(u,u,bl,i))
+
 
 """
     ones(u::ScalarData)

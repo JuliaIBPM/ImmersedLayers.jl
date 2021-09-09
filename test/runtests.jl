@@ -14,7 +14,6 @@ litdir = "./literate"
 
 if GROUP == "All" || GROUP == "Auxiliary"
   include("tools.jl")
-  include("layers.jl")
   include("surface_ops.jl")
 end
 
