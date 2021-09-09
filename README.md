@@ -54,6 +54,11 @@ we use a matrix operator, Rc. Alternatively, for regularizing vector surface dat
 
 When we combine these operations with the standard differential operators on the grid, we get a powerful set of tools for numerically solving PDEs.
 
+## See it in action
+
+This method is used in various downstream packages, including
+* [ViscousFlow.jl](https://github.com/JuliaIBPM/ViscousFlow.jl) (For computing viscous incompressible flows)
+* [GridPotentialFlow.jl](https://github.com/JuliaIBPM/GridPotentialFlow.jl) (For computing potential flows)
 
 ## Installation
 
