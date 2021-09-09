@@ -372,6 +372,16 @@ norm(u::PointData{N},cache::BasicILMCache{N,GridScaling}) where {N} = norm(u,cac
 
 norm(u::PointData{N},cache::BasicILMCache{N,IndexScaling}) where {N} = norm(u)
 
+"""
+    norm(u::PointData,cache::BasicILMCache,i::Int)
+
+Calculate the norm of surface point data `u`, using the scaling associated with `cache`,
+for body `i` in the body list of `cache`.
+""" norm(u::PointData,cache::BasicILMCache,i::Int)
+
+norm(u::PointData{N},cache::BasicILMCache{N,GridScaling},i::Int) where {N} = norm(u,cache.ds,cache.bl,i)
+
+norm(u::PointData{N},cache::BasicILMCache{N,IndexScaling},i::Int) where {N} = norm(u,cache.bl,i)
 
 
 for f in [:ScalarData,:VectorData]
@@ -384,3 +394,13 @@ end
 
 Calculate the inner product of surface point data `u1` and `u2`, using the scaling associated with `cache`.
 """ dot(u1::PointData,u2::PointData,cache::BasicILMCache)
+
+"""
+    dot(u1::PointData,u2::PointData,cache::BasicILMCache,i)
+
+Calculate the inner product of surface point data `u1` and `u2` for body
+`i` in the cache `cache`, scaling as appropriate for this cache.
+"""
+dot(u1::PointData{N},u2::PointData{N},cache::BasicILMCache{N,GridScaling},i::Int) where {N} = dot(u1,u2,cache.ds,cache.bl,i)
+
+dot(u1::PointData{N},u2::PointData{N},cache::BasicILMCache{N,IndexScaling},i::Int) where {N} = dot(u1,u2,cache.bl,i)

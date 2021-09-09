@@ -87,6 +87,13 @@ dot(u1::VectorData{N},u2::VectorData{N},ds::ScalarData{N},bl::BodyList,i::Int) w
     dot(ScalarData(view(u1.v,bl,i)),ScalarData(view(u2.v,bl,i)),ScalarData(view(ds,bl,i)))
 
 
+dot(u1::ScalarData{N},u2::ScalarData{N},bl::BodyList,i::Int) where {N} =
+    dot(ScalarData(view(u1,bl,i)),ScalarData(view(u2,bl,i)))
+
+dot(u1::VectorData{N},u2::VectorData{N},bl::BodyList,i::Int) where {N} =
+    dot(ScalarData(view(u1.u,bl,i)),ScalarData(view(u2.u,bl,i))) +
+    dot(ScalarData(view(u1.v,bl,i)),ScalarData(view(u2.v,bl,i)))
+
 
 """
     norm(u::PointData,ds::ScalarData)
@@ -101,6 +108,9 @@ norm(u::PointData{N},ds::ScalarData{N}) where {N} = sqrt(dot(u,u,ds))
 Return the norm of `u`, weighted by `ds`, for body `i` in body list `bl`
 """
 norm(u::PointData{N},ds::ScalarData{N},bl::BodyList,i::Int) where {N} = sqrt(dot(u,u,ds,bl,i))
+
+norm(u::PointData{N},bl::BodyList,i::Int) where {N} = sqrt(dot(u,u,bl,i))
+
 
 """
     ones(u::ScalarData)

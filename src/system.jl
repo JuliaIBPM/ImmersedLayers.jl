@@ -46,8 +46,11 @@ end
 
 for f in [:norm]
    @eval $f(a,sys::ILMSystem) = $f(a,sys.base_cache)
+   @eval $f(a,sys::ILMSystem,i::Int) = $f(a,sys.base_cache,i)
+
 end
 
 for f in [:dot]
    @eval $f(a,b,sys::ILMSystem) = $f(a,b,sys.base_cache)
+   @eval $f(a,b,sys::ILMSystem,i::Int) = $f(a,b,sys.base_cache,i)
 end
