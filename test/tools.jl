@@ -40,6 +40,19 @@ os .= 1
 
 end
 
+bl = BodyList()
+push!(bl,deepcopy(body))
+push!(bl,deepcopy(body))
+
+@testset "Operations on body lists" begin
+  Xl = points(bl)
+
+  @test dot(Xl.u,Xl.u,areas(bl),bl,1) == dot(Xl.u,Xl.u,areas(bl),bl,2) == dot(X.u,X.u,ds)
+
+  @test dot(Xl,Xl,areas(bl),bl,1) == dot(Xl,Xl,areas(bl),bl,2) == dot(X,X,ds)
+end
+
+
 @testset "Regularization and Interpolation" begin
   reg = Regularize(X,Δx,I0=origin(g),weights=dlengthmid(body),ddftype=CartesianGrids.Yang3)
 
