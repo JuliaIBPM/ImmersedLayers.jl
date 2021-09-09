@@ -392,7 +392,8 @@ Calculate the inner product of surface point data `u1` and `u2`, using the scali
 
 Calculate the inner product of surface point data `u1` and `u2` for body
 `i` in the cache `cache`, scaling as appropriate for this cache.
-"""
+""" dot(u1::PointData,u2::PointData,cache::BasicILMCache,i::Int)
+
 dot(u1::PointData{N},u2::PointData{N},cache::BasicILMCache{N,GridScaling},i::Int) where {N} = dot(u1,u2,cache.ds,cache.bl,i)
 
 dot(u1::PointData{N},u2::PointData{N},cache::BasicILMCache{N,IndexScaling},i::Int) where {N} = dot(u1,u2,cache.bl,i)

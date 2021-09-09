@@ -11,6 +11,7 @@ makedocs(
         "Home" => "index.md",
         "Manual" => ["manual/caches.md",
                      "manual/surfaceops.md",
+                     "manual/multbodies.md",
                      "manual/gridops.md",
                      "manual/matrices.md",
                      "manual/dirichlet.md",

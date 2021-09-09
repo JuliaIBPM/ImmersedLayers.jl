@@ -146,7 +146,7 @@ x_grid(cache)
 y_grid(cache)
 ````
 
-## Norms and inner products
+## Using norms and inner products
 It is useful to compute norms and inner products on grid and surface data.
 These tools are easily accessible, e.g., `dot(u,v,cache)` and `norm(u,cache)`,
 and they respect the scaling associated with the cache. For example,
@@ -191,13 +191,17 @@ normals(::BasicILMCache)
 points(::BasicILMCache)
 ```
 
-## Inner products and norms
+## Inner products, norms, and integrals
 
 ```@docs
 dot(::GridData,::GridData,::BasicILMCache)
 dot(::PointData,::PointData,::BasicILMCache)
 norm(::GridData,::BasicILMCache)
 norm(::PointData,::BasicILMCache)
+integrate(::ScalarData{N},::BasicILMCache{N}) where {N}
+dot(::PointData,::PointData,::BasicILMCache,::Int)
+norm(::PointData,::BasicILMCache,::Int)
+integrate(::ScalarData{N},::BasicILMCache{N},::Int) where {N}
 ```
 
 [^1]: Yang, X., et al., (2009) "A smoothing technique for discrete delta functions with application to immersed boundary method in moving boundary simulations," J. Comput. Phys., 228, 7821--7836.
