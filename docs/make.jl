@@ -16,6 +16,7 @@ makedocs(
                      "manual/matrices.md",
                      "manual/dirichlet.md",
                      "manual/problems.md",
+                     "manual/neumann.md",
                      "manual/utilities.md"
                      ]
         #"Internals" => [ "internals/properties.md"]

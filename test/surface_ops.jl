@@ -51,6 +51,13 @@ end
   A = create_nRTRn(scache)
   @test maximum(svdvals(A)) ≈ 11 atol = 1e-0
 
+  # Create additional regularization and interpolation ops
+  w = ones_gridcurl(scache)
+  Rn = RegularizationMatrix(scache,scache.sdata_cache,w)
+  En = InterpolationMatrix(scache,w,scache.sdata_cache)
+
+  f .= En*w
+
 end
 
 dq = EdgeGradient(Primal,size(g))

@@ -204,9 +204,15 @@ norm(::PointData,::BasicILMCache,::Int)
 integrate(::ScalarData{N},::BasicILMCache{N},::Int) where {N}
 ```
 
+## Other cache utilities
+
+```@docs
+RegularizationMatrix(::BasicILMCache,::PointData,::GridData)
+InterpolationMatrix(::BasicILMCache,::GridData,::PointData)
+```
+
 [^1]: Yang, X., et al., (2009) "A smoothing technique for discrete delta functions with application to immersed boundary method in moving boundary simulations," J. Comput. Phys., 228, 7821--7836.
 
 ---
 
 *This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
-
