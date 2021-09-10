@@ -372,7 +372,7 @@ end
 
 Return basic grid curl field data filled with the grid `y` coordinate
 """
-function y_grid(cache::BasicILMCache)
+function y_gridcurl(cache::BasicILMCache)
     _,yc = coordinates(cache.gcurl_cache,cache.g)
     p = zeros_gridcurl(cache)
     p .= yc'
