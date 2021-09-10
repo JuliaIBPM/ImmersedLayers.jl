@@ -178,9 +178,13 @@ zeros_gridgrad
 zeros_gridcurl
 zeros_surface
 ones_grid
+ones_gridgrad
+ones_gridcurl
 ones_surface
 x_grid
 y_grid
+x_gridcurl
+y_gridcurl
 ```
 
 ## Utilities for accessing surface information
@@ -207,6 +211,7 @@ integrate(::ScalarData{N},::BasicILMCache{N},::Int) where {N}
 ## Other cache utilities
 
 ```@docs
+view(::PointData,::BasicILMCache,::Int)
 RegularizationMatrix(::BasicILMCache,::PointData,::GridData)
 InterpolationMatrix(::BasicILMCache,::GridData,::PointData)
 ```
@@ -216,3 +221,4 @@ InterpolationMatrix(::BasicILMCache,::GridData,::PointData)
 ---
 
 *This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
+

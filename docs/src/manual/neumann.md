@@ -42,7 +42,7 @@ for $f^*$. Then solve
 
 $$-S d = \overline{v}_n - G_s f^{*}$$
 
-for $d$, where $S = R_n^T R_n - G_s L^{-1} D_s = C_s L^{-1}C_s^T$, and finally, compute
+for $d$, where $S = R_n^T R_n - G_s L^{-1} D_s = -C_s L^{-1}C_s^T$, and finally, compute
 
 $$f = f^{*} + L^{-1}D_s d$$
 
@@ -110,7 +110,7 @@ function ImmersedLayers.solve(vnplus,vnminus,prob::NeumannPoissonProblem,sys::IL
     d .= vn - d
     d .= -(S\d);
 
-    surface_divergence!(f,-d,base_cache)
+    surface_divergence!(f,d,base_cache)
     inverse_laplacian!(f,base_cache)
     f .+= fstar;
 

@@ -24,7 +24,7 @@ In other words, we seek to set the value on the exterior normal derivative to $v
 of the local normal vector on the surface, while the interior should have zero normal
 derivative.
 
-Discretizing this problem by the techniques developed in [^1], we seek to solve
+Discretizing this problem by the usual techniques, we seek to solve
 
 $$\begin{bmatrix} L & D_s \\ G_s & R_n^T R_n \end{bmatrix} \begin{pmatrix} f \\ -d \end{pmatrix} = \begin{pmatrix} R s \\ \overline{v}_n \end{pmatrix}$$
 
@@ -39,7 +39,7 @@ for $f^*$. Then solve
 
 $$-S d = \overline{v}_n - G_s f^{*}$$
 
-for $d$, where $S = R_n^T R_n - G_s L^{-1} D_s = C_s L^{-1}C_s^T$, and finally, compute
+for $d$, where $S = R_n^T R_n - G_s L^{-1} D_s = -C_s L^{-1}C_s^T$, and finally, compute
 
 $$f = f^{*} + L^{-1}D_s d$$
 
@@ -104,7 +104,7 @@ function ImmersedLayers.solve(vnplus,vnminus,prob::NeumannPoissonProblem,sys::IL
     d .= vn - d
     d .= -(S\d);
 
-    surface_divergence!(f,-d,base_cache)
+    surface_divergence!(f,d,base_cache)
     inverse_laplacian!(f,base_cache)
     f .+= fstar;
 
