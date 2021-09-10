@@ -51,7 +51,7 @@ for f in [:norm,:integrate]
 end
 
 for f in [:view]
-  @eval $f(a,sys::ILMSystem,i::Int) = $f(a,sys.base_cache,i)
+  @eval $f(a::PointData,sys::ILMSystem,i::Int) = $f(a,sys.base_cache,i)
 end
 
 for f in [:dot,:copyto!]
