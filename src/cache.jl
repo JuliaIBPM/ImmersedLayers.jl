@@ -165,10 +165,10 @@ function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},d
 
   regop = _get_regularization(X,a,g,ddftype,scaling)
   Rsn = _regularization_matrix(regop,snorm_cache,gsnorm_cache)
-  Esn = InterpolationMatrix(regop, gsnorm_cache, snorm_cache)
+  Esn = _interpolation_matrix(regop, gsnorm_cache, snorm_cache)
 
   R = _regularization_matrix(regop,sdata_cache,gdata_cache )
-  E = InterpolationMatrix(regop, gdata_cache,sdata_cache)
+  E = _interpolation_matrix(regop, gdata_cache,sdata_cache)
 
   L = plan_laplacian(size(gcurl_cache),with_inverse=true)
   return BasicILMCache{N,scaling,ND,typeof(bl),typeof(nrm),typeof(a),typeof(regop),typeof(Rsn),typeof(Esn),typeof(R),typeof(E),typeof(L),
@@ -194,7 +194,7 @@ _get_regularization(body::Union{Body,BodyList},args...;kwargs...) = _get_regular
 
 # This is needed to stabilize the type-unstable `RegularizationMatrix` function in
 # CartesianGrids
-function _regularization_matrix(regop::Regularize,src,trg)
+function _regularization_matrix(regop::Regularize,src::PointData,trg::GridData)
     if regop._issymmetric
       R, _ = RegularizationMatrix(regop, src, trg)
     else
@@ -202,6 +202,32 @@ function _regularization_matrix(regop::Regularize,src,trg)
     end
     return R
 end
+
+@inline _interpolation_matrix(regop::Regularize,src::GridData,trg::PointData) =
+        InterpolationMatrix(regop,src,trg)
+
+# An API to generate regularization and interpolation matrices not generated
+# in the basic cache
+"""
+    RegularizationMatrix(cache::BasicILMCache,src::PointData,trg::GridData)
+
+Create a regularization matrix for regularizing point data of type `src` to
+grid data of type `trg`. (Both `src` and `trg` must be appropriately sized
+for the grid and points in `cache`.)
+"""
+CartesianGrids.RegularizationMatrix(cache::BasicILMCache,src::PointData,trg::GridData) =
+    _regularization_matrix(cache.regop,src,trg)
+
+
+"""
+    InterpolationMatrix(cache::BasicILMCache,src::GridData,trg::PointData)
+
+Create a interpolation matrix for regularizing grid data of type `src` to
+point data of type `trg`. (Both `src` and `trg` must be appropriately sized
+for the grid and points in `cache`.)
+"""
+CartesianGrids.InterpolationMatrix(cache::BasicILMCache,src::GridData,trg::PointData) =
+    _interpolation_matrix(cache.regop,src,trg)
 
 # Some utilities to get the DDF type of the cache
 _ddf_type(::DDF{DT}) where {DT} = DT
@@ -251,9 +277,11 @@ Get an instance of the basic grid data in the cache, with values set to zero.
 @inline zeros_grid(cache::BasicILMCache,kwargs...) = zero(cache.gdata_cache,kwargs...)
 
 """
-    zeros_gridgrad(::BasicILMCache)
+    zeros_gridgrad(::BasicILMCache,dim)
 
-Get an instance of the gradient of the grid data in the cache, with values set to zero.
+Get an instance of the gradient of the grid data in the cache, , in direction `dim`,
+with values set to zero. If the data are of type `TensorGridData`, then
+`dim` takes values from 1 to 2^2.
 """
 @inline zeros_gridgrad(cache::BasicILMCache,kwargs...) = zero(cache.gsnorm_cache,kwargs...)
 
@@ -276,14 +304,32 @@ Get an instance of the basic surface point data in the cache, with values set to
 """
     ones_grid(::BasicILMCache)
 
-Get an instance of the basic grid data in the cache, with values set to one.
+Get an instance of the basic grid data in the cache, with values set to unity.
 """
 @inline ones_grid(cache::BasicILMCache,kwargs...) = ones(cache.gdata_cache,kwargs...)
 
 """
+    ones_gridgrad(::BasicILMCache,dim)
+
+Get an instance of the gradient of the grid data in the cache, in direction `dim`,
+with values set to unity. If the data are of type `TensorGridData`, then
+`dim` takes values from 1 to 2^2.
+"""
+@inline ones_gridgrad(cache::BasicILMCache,kwargs...) = ones(cache.gsnorm_cache,kwargs...)
+
+
+"""
+    ones_gridcurl(::BasicILMCache)
+
+Get an instance of the grid curl field data in the cache, with values set to unity.
+"""
+@inline ones_gridcurl(cache::BasicILMCache,kwargs...) = ones(cache.gcurl_cache,kwargs...)
+
+
+"""
     ones_surface(::BasicILMCache)
 
-Get an instance of the basic surface point data in the cache, with values set to one.
+Get an instance of the basic surface point data in the cache, with values set to unity.
 """
 @inline ones_surface(cache::BasicILMCache,kwargs...) = ones(cache.sdata_cache,kwargs...)
 
@@ -299,6 +345,18 @@ function x_grid(cache::BasicILMCache)
 end
 
 """
+    x_gridcurl(::BasicILMCache)
+
+Return basic grid curl field data filled with the grid `x` coordinate
+"""
+function x_gridcurl(cache::BasicILMCache)
+    xc, _ = coordinates(cache.gcurl_cache,cache.g)
+    p = zeros_gridcurl(cache)
+    p .= xc
+end
+
+
+"""
     y_grid(::BasicILMCache)
 
 Return basic grid data filled with the grid `y` coordinate
@@ -306,6 +364,17 @@ Return basic grid data filled with the grid `y` coordinate
 function y_grid(cache::BasicILMCache)
     _,yc = coordinates(cache.gdata_cache,cache.g)
     p = zeros_grid(cache)
+    p .= yc'
+end
+
+"""
+    y_gridcurl(::BasicILMCache)
+
+Return basic grid curl field data filled with the grid `y` coordinate
+"""
+function y_gridcurl(cache::BasicILMCache)
+    _,yc = coordinates(cache.gcurl_cache,cache.g)
+    p = zeros_gridcurl(cache)
     p .= yc'
 end
 
@@ -424,6 +493,15 @@ cases, the surface element areas are used.
 """
 @inline integrate(u::PointData{N},cache::BasicILMCache{N},i::Int) where {N} = integrate(u,cache.ds,cache.bl,i)
 
+
+# Extending some operations on body lists to the enclosing cache
+"""
+    view(u::PointData,cache::BasicILMCache,i::Int)
+
+Provide a `view` of point data `u` corresponding to body `i` in the
+list of bodies in `cache`.
+"""
+view(u::PointData,cache::BasicILMCache,i::Int) = view(u,cache.bl,i)
 
 """
     copyto!(u::PointData,v::PointData,cache::BasicILMCache,i::Int)

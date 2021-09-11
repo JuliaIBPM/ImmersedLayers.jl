@@ -38,7 +38,7 @@ with Neumann boundary conditions on the immersed surface. The Schur complement o
 $S = R_n^T R_n - G_s L^{-1} D_s$. Each of the matrices in this are individually
 provided by the package, by the functions [`create_nRTRn`](@ref) and [`create_GLinvD`](@ref),
 respectively. However, it is useful to know that the sum of these two
-matrices is exactly the matrix $C_s L^{-1}C_s^T$, where $C_s$ and $C_s^T$ are
+matrices is exactly the matrix $-C_s L^{-1}C_s^T$, where $C_s$ and $C_s^T$ are
 surface curl operators [`surface_curl!`](@ref). This complete matrix is provided by
 [`create_CLinvCT`](@ref).
 

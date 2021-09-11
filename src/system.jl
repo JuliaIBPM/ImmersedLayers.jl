@@ -39,7 +39,8 @@ function solve(prob::AbstractILMProblem,sys::ILMSystem) end
 # Extend functions on `BasicILMCache` type to `ILMSystem`
 for f in [:zeros_surface,:zeros_grid,:zeros_gridcurl,:zeros_gridgrad,
           :similar_surface,:similar_grid,:similar_gridcurl,:similar_gridgrad,
-          :ones_surface,:ones_grid,:x_grid,:y_grid,
+          :ones_surface,:ones_grid,:ones_gridgrad,:ones_gridcurl,
+          :x_grid,:y_grid,:x_gridcurl,:y_gridcurl,
           :normals,:areas,:points]
    @eval $f(sys::ILMSystem) = $f(sys.base_cache)
 end
@@ -47,10 +48,17 @@ end
 for f in [:norm,:integrate]
    @eval $f(a,sys::ILMSystem) = $f(a,sys.base_cache)
    @eval $f(a,sys::ILMSystem,i::Int) = $f(a,sys.base_cache,i)
+end
 
+for f in [:view]
+  @eval $f(a::PointData,sys::ILMSystem,i::Int) = $f(a,sys.base_cache,i)
 end
 
 for f in [:dot,:copyto!]
    @eval $f(a,b,sys::ILMSystem) = $f(a,b,sys.base_cache)
    @eval $f(a,b,sys::ILMSystem,i::Int) = $f(a,b,sys.base_cache,i)
+end
+
+for f in [:RegularizationMatrix,:InterpolationMatrix]
+  @eval CartesianGrids.$f(sys::ILMSystem,args...) = $f(sys.base_cache,args...)
 end

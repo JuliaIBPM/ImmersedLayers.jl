@@ -178,9 +178,13 @@ zeros_gridgrad
 zeros_gridcurl
 zeros_surface
 ones_grid
+ones_gridgrad
+ones_gridcurl
 ones_surface
 x_grid
 y_grid
+x_gridcurl
+y_gridcurl
 ```
 
 ## Utilities for accessing surface information
@@ -202,6 +206,14 @@ integrate(::ScalarData{N},::BasicILMCache{N}) where {N}
 dot(::PointData,::PointData,::BasicILMCache,::Int)
 norm(::PointData,::BasicILMCache,::Int)
 integrate(::ScalarData{N},::BasicILMCache{N},::Int) where {N}
+```
+
+## Other cache utilities
+
+```@docs
+view(::PointData,::BasicILMCache,::Int)
+RegularizationMatrix(::BasicILMCache,::PointData,::GridData)
+InterpolationMatrix(::BasicILMCache,::GridData,::PointData)
 ```
 
 [^1]: Yang, X., et al., (2009) "A smoothing technique for discrete delta functions with application to immersed boundary method in moving boundary simulations," J. Comput. Phys., 228, 7821--7836.
