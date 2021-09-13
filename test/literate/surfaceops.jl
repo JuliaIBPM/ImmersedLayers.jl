@@ -215,9 +215,14 @@ plot(xmask,cache)
 #md # interpolate!
 #md # regularize_normal!
 #md # normal_interpolate!
+#md # regularize_normal_cross!
+#md # normal_cross_interpolate!
 #md # surface_divergence!
 #md # surface_grad!
 #md # surface_curl!
+#md # surface_divergence_cross!
+#md # surface_grad_cross!
+#md # surface_curl_cross!
 #md # mask!
 #md # mask
 #md # complementary_mask!
