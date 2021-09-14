@@ -29,14 +29,17 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         ConvectiveDerivativeCache,convective_derivative, convective_derivative!,
         regularize!, interpolate!,
         regularize_normal!,normal_interpolate!,
+        regularize_normal_cross!,normal_cross_interpolate!,
         surface_curl!,surface_divergence!,surface_grad!,inverse_laplacian!,
+        surface_curl_cross!,surface_divergence_cross!,surface_grad_cross!,
         mask,mask!,complementary_mask,complementary_mask!,
         create_CLinvCT,create_GLinvD,create_nRTRn,create_RTLinvR,
-        create_surface_filter,
+        create_GLinvD_cross,create_surface_filter,
         solve
 
 abstract type LayerType{N} end
 
+include("cartesian_extensions.jl")
 include("tools.jl")
 include("cache.jl")
 include("problem.jl")

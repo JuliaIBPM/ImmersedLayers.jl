@@ -227,9 +227,14 @@ regularize!
 interpolate!
 regularize_normal!
 normal_interpolate!
+regularize_normal_cross!
+normal_cross_interpolate!
 surface_divergence!
 surface_grad!
 surface_curl!
+surface_divergence_cross!
+surface_grad_cross!
+surface_curl_cross!
 mask!
 mask
 complementary_mask!

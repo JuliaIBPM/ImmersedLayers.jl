@@ -36,13 +36,25 @@ end
 # Create the basic solve function, to be extended
 function solve(prob::AbstractILMProblem,sys::ILMSystem) end
 
-# Extend functions on `BasicILMCache` type to `ILMSystem`
+
+
+## Extend functions on `BasicILMCache` type to `ILMSystem`
 for f in [:zeros_surface,:zeros_grid,:zeros_gridcurl,:zeros_gridgrad,
           :similar_surface,:similar_grid,:similar_gridcurl,:similar_gridgrad,
           :ones_surface,:ones_grid,:ones_gridgrad,:ones_gridcurl,
           :x_grid,:y_grid,:x_gridcurl,:y_gridcurl,
-          :normals,:areas,:points]
+          :normals,:areas,:points,
+          :create_nRTRn,:create_GLinvD,:create_CLinvCT,:create_RTLinvR,
+          :create_GLinvD_cross,:create_surface_filter]
    @eval $f(sys::ILMSystem) = $f(sys.base_cache)
+end
+
+for f in [:regularize!, :interpolate!, :regularize_normal!,
+          :normal_interpolate!,:regularize_normal_cross!,
+          :normal_cross_interpolate!,
+          :surface_curl!,:surface_divergence!,:surface_grad!,
+          :surface_curl_cross!,:surface_divergence_cross!,:surface_grad_cross!]
+  @eval $f(a,b,sys::ILMSystem) = $f(a,b,sys.base_cache)
 end
 
 for f in [:norm,:integrate]

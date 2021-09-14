@@ -16,12 +16,27 @@ using ColorTypes
     w, cache.g
   end
 
+
   if layers
-    #pts = points(cache)
-    @series begin
-      cache
+    if typeof(w) <: ScalarGridData
+      @series begin
+        cache
+      end
+    else
+      if typeof(w) <: VectorGridData
+        nsub = 2
+      elseif typeof(w) <: TensorGridData
+        nsub = 4
+      end
+      for i in 1:nsub
+        @series begin
+          subplot := i
+          cache
+        end
+      end
     end
   end
+
 
 end
 
