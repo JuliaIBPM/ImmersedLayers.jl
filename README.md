@@ -6,18 +6,19 @@ _Tools for immersing surfaces and their operations in Cartesian grids_
 | [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaIBPM.github.io/ImmersedLayers.jl/stable) [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaIBPM.github.io/ImmersedLayers.jl/dev) | [![Build Status](https://github.com/JuliaIBPM/ImmersedLayers.jl/workflows/CI/badge.svg)](https://github.com/JuliaIBPM/ImmersedLayers.jl/actions) [![Coverage](https://codecov.io/gh/JuliaIBPM/ImmersedLayers.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaIBPM/ImmersedLayers.jl) |
 
 
-<img src="https://raw.githubusercontent.com/JuliaIBPM/ImmersedLayers.jl/je/extend-caches/PoissonDiamonds.svg" width="400">
+<img src="https://raw.githubusercontent.com/JuliaIBPM/ImmersedLayers.jl/master/PoissonDiamonds.svg" width="400">
 
 
 ## Package objective
 
-The objective of this package is to implement
+The objective of this package is to implement tools to support the solution of partial differential equations in domains with complex geometries.
+These tools include:
 * the tools for regularizing and interpolating data between discretely-represented surfaces and Cartesian grids
 * discrete Heaviside functions that mask the regions interior or exterior of surfaces
-* discrete differential operators that immerse surface data into the grid (i.e.,
-  "layers")
+* discrete differential operators that immerse surface data into the grid (i.e., "layers")
+* caches and constructors that can be easily extended to address user-specific problems 
 
-At this time, the package only implements these in two spatial dimensions. The operators and tools are described in detail in [1], but a summary is given below.
+The documentation presents the package in detail and provides several illustrative examples. At this time, the package only implements these in two spatial dimensions. The operators and tools are described in detail in [1], but a summary is given below.
 
 
 ## Background
