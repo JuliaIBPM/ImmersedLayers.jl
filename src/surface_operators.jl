@@ -176,6 +176,28 @@ function _unscaled_surface_curl!(w::Nodes{Dual,NX,NY},f::ScalarData{N},nrm::Vect
 end
 
 """
+    surface_curl!(w::Nodes{Dual},v::VectorData,cache::BasicILMCache)
+    surface_curl!(w::Nodes{Dual},v::VectorData,sys::ILMSystem)
+
+The operation ``w = C_s^T v = C^T R_f v``, which maps vector surface data `v` (like
+velocity) to grid data `w` (like vorticity). This is the adjoint
+to ``C_s``, also given by `surface_curl!` (but with arguments switched). Note that
+the differential operations are divided either by 1 or by the grid cell size,
+depending on whether `sys` has been designated with `IndexScaling` or `GridScaling`,
+respectively.
+"""
+function surface_curl!(w::Nodes{Dual},v::VectorData,cache::BasicILMCache)
+  _unscaled_surface_curl!(w,v,cache.R,cache.gdata_cache)
+  _scale_derivative!(w,cache)
+end
+
+function _unscaled_surface_curl!(w::Nodes{Dual,NX,NY},v::VectorData{N},Rf::RegularizationMatrix,q_cache::Edges{Primal,NX,NY}) where {NX,NY,N}
+    fill!(q_cache,0.0)
+    regularize!(q_cache,v,Rf)
+    curl!(w,q_cache)
+end
+
+"""
     surface_curl!(vn::ScalarData,s::Nodes{Dual},cache::BasicILMCache)
     surface_curl!(vn::ScalarData,s::Nodes{Dual},sys::ILMSystem)
 
@@ -198,6 +220,28 @@ function _unscaled_surface_curl!(vn::ScalarData{N},s::Nodes{Dual,NX,NY},nrm::Vec
     normal_interpolate!(vn,q_cache,nrm,Ef,snorm_cache)
 end
 
+"""
+    surface_curl!(v::VectorData,s::Nodes{Dual},cache::BasicILMCache)
+    surface_curl!(v::VectorData,s::Nodes{Dual},sys::ILMSystem)
+
+The operation ``v = C_s s = R_f^T C s``, which maps grid data `s` (like
+streamfunction) to vector surface data `v` (like normal component of velocity).
+This is the adjoint to ``C_s^T``, also given by `surface_curl!`, but with
+arguments switched.  Note that
+the differential operations are divided either by 1 or by the grid cell size,
+depending on whether `sys` has been designated with `IndexScaling` or `GridScaling`,
+respectively.
+"""
+function surface_curl!(v::VectorData,s::Nodes{Dual},cache::BasicILMCache)
+  _unscaled_surface_curl!(v,s,cache.E,cache.gdata_cache)
+  _scale_derivative!(v,cache)
+end
+
+function _unscaled_surface_curl!(v::VectorData{N},s::Nodes{Dual,NX,NY},Ef::InterpolationMatrix,q_cache::Edges{Primal,NX,NY}) where {NX,NY,N}
+    fill!(q_cache,0.0)
+    curl!(q_cache,s)
+    interpolate!(v,q_cache,Ef)
+end
 
 
 
