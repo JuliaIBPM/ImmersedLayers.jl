@@ -1,5 +1,5 @@
 # ImmersedLayers.jl
-_Tools for immersing surfaces and their operations in Cartesian grids_
+_Tools for solving partial differential equations by immersing surfaces and their operations in Cartesian grids_
 
 | Documentation | Build Status |
 |:---:|:---:|
