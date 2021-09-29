@@ -24,7 +24,7 @@ function divergence!(p::Nodes{Primal,NX,NY},q::Edges{Primal,NX,NY},cache::BasicI
     _scale_derivative!(p,cache)
 end
 
-_unscaled_divergence!(p,q,cache::BasicILMCache) = divergence!(p,q)
+_unscaled_divergence!(p,q,cache::BasicILMCache) = (fill!(p,0.0); divergence!(p,q))
 
 """
     grad!(v::Edges{Primal},p::Nodes{Primal},cache::BasicILMCache)
@@ -39,7 +39,7 @@ function grad!(q::Edges{Primal,NX,NY},p::Nodes{Primal,NX,NY},cache::BasicILMCach
     _scale_derivative!(q,cache)
 end
 
-_unscaled_grad!(q,p,cache::BasicILMCache) = grad!(q,p)
+_unscaled_grad!(q,p,cache::BasicILMCache) = (fill!(q,0.0); grad!(q,p))
 
 """
     curl!(v::Edges{Primal},s::Nodes{Dual},cache::BasicILMCache)
@@ -54,7 +54,7 @@ function curl!(q::Edges{Primal,NX,NY},s::Nodes{Dual,NX,NY},cache::BasicILMCache)
     _scale_derivative!(q,cache)
 end
 
-_unscaled_curl!(q::Edges,s::Nodes,cache::BasicILMCache) = curl!(q,s)
+_unscaled_curl!(q::Edges,s::Nodes,cache::BasicILMCache) = (fill!(q,0.0); curl!(q,s))
 
 """
     curl!(w::Nodes{Dual},v::Edges{Primal},cache::BasicILMCache)
@@ -69,7 +69,7 @@ function curl!(w::Nodes{Dual,NX,NY},q::Edges{Primal,NX,NY},cache::BasicILMCache)
     _scale_derivative!(w,cache)
 end
 
-_unscaled_curl!(w::Nodes,q::Edges,cache::BasicILMCache) = curl!(w,q)
+_unscaled_curl!(w::Nodes,q::Edges,cache::BasicILMCache) = (fill!(w,0.0); curl!(w,q))
 
 
 """
@@ -149,6 +149,7 @@ end
 function _unscaled_convective_derivative!(udu::Edges{Primal},u::Edges{Primal},extra_cache::ConvectiveDerivativeCache)
     @unpack vt1_cache, vt2_cache, vt3_cache = extra_cache
 
+    fill!(vt1_cache,0.0)
     grid_interpolate!(vt1_cache,u)
     CartesianGrids.transpose!(vt2_cache,vt1_cache)
     fill!(vt1_cache,0.0)

@@ -118,7 +118,7 @@ function ImmersedLayers.solve(vnplus,vnminus,prob::NeumannPoissonProblem,sys::IL
     vn .= 0.5*(vnplus+vnminus)
     dvn .= vnplus - vnminus
 
-    # Find the potential
+    ## Find the potential
     regularize!(fstar,dvn,base_cache)
     inverse_laplacian!(fstar,base_cache)
 
@@ -130,7 +130,7 @@ function ImmersedLayers.solve(vnplus,vnminus,prob::NeumannPoissonProblem,sys::IL
     inverse_laplacian!(f,base_cache)
     f .+= fstar
 
-    # Find the streamfunction
+    ## Find the streamfunction
     surface_curl!(sstar,df,base_cache)
 
     surface_grad_cross!(ds,fstar,base_cache)
