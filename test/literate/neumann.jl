@@ -98,6 +98,7 @@ function ImmersedLayers.prob_cache(prob::NeumannPoissonProblem,base_cache::Basic
     NeumannPoissonCache(S,dvn,vn,fstar,sstar)
 end
 nothing #hide
+
 #=
 And finally, here's the steps we outlined above, used to
 extend the `solve` function
@@ -117,6 +118,7 @@ function ImmersedLayers.solve(vnplus,vnminus,prob::NeumannPoissonProblem,sys::IL
     vn .= 0.5*(vnplus+vnminus)
     dvn .= vnplus - vnminus
 
+    ## Find the potential
     regularize!(fstar,dvn,base_cache)
     inverse_laplacian!(fstar,base_cache)
 
@@ -128,6 +130,7 @@ function ImmersedLayers.solve(vnplus,vnminus,prob::NeumannPoissonProblem,sys::IL
     inverse_laplacian!(f,base_cache)
     f .+= fstar
 
+    ## Find the streamfunction
     surface_curl!(sstar,df,base_cache)
 
     surface_grad_cross!(ds,fstar,base_cache)
@@ -150,6 +153,9 @@ with $v_n^+ = n_x$ and $v_n^- = 0$. This is actually the set of conditions
 used to compute the unit scalar potential field (and, as we will see, the added mass) in potential flow.
 =#
 
+#=
+Set up the grid
+=#
 Δx = 0.01
 Lx = 4.0
 xlim = (-Lx/2,Lx/2)
@@ -189,7 +195,18 @@ plot(s,sys,layers=true,levels=30,title="ψ"))
 #=
 and the Lagrange multiplier field, $[\phi]$, on the surface
 =#
-plot(ds)
+plot(df)
+
+#=
+If, instead, we set the inner boundary condition to $n_x$ and the
+outer to zero, then we get the flow *inside* of a translating circle
+=#
+vnplus = zeros_surface(sys)
+vnminus = zeros_surface(sys)
+vnminus .= nrm.u
+f, df, s, ds = solve(vnplus,vnminus,prob,sys);
+plot(plot(f,sys,layers=true,levels=30,title="ϕ"),
+plot(s,sys,layers=true,levels=30,title="ψ"))
 
 #=
 ## Multiple bodies

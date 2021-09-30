@@ -44,7 +44,8 @@ for f in [:zeros_surface,:zeros_grid,:zeros_gridcurl,:zeros_gridgrad,
           :ones_surface,:ones_grid,:ones_gridgrad,:ones_gridcurl,
           :x_grid,:y_grid,:x_gridcurl,:y_gridcurl,
           :normals,:areas,:points,
-          :create_nRTRn,:create_GLinvD,:create_CLinvCT,:create_RTLinvR,
+          :create_nRTRn,:create_GLinvD,:create_CLinvCT,:create_CL2invCT,
+          :create_RTLinvR,
           :create_GLinvD_cross,:create_surface_filter]
    @eval $f(sys::ILMSystem) = $f(sys.base_cache)
 end

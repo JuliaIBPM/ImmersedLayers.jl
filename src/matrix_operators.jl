@@ -32,8 +32,8 @@ end
 """
     create_CLinvCT(cache::BasicILMCache[;scale=1.0])
 
-Using the provided cache `cache`, construct the square matrix ``-C_s L^{-1}C_s^T``, which maps data of type `ScalarData`
-to data of the same type. The operators `C_s` and `C_s^T` correspond to [`surface_curl!`](@ref)
+Using the provided cache `cache`, construct the square matrix ``-C_s L^{-1}C_s^T``, which maps
+data of the primary point data type of the cache to data of the same type. The operators `C_s` and `C_s^T` correspond to [`surface_curl!`](@ref)
 and `L` is the grid Laplacian. The optional keyword `scale` multiplies the
 matrix by the designated value.
 """
@@ -49,6 +49,39 @@ function create_CLinvCT(cache::BasicILMCache{N};scale=1.0) where {N}
         fill!(gcurl_cache,0.0)
         surface_curl!(gcurl_cache,sdata_cache,cache)
 
+        inverse_laplacian!(gcurl_cache,cache)
+        surface_curl!(sdata_cache,gcurl_cache,cache)
+
+        A[:,col] = -scale*sdata_cache
+        fill!(sdata_cache,0.0)
+    end
+
+    return A
+
+end
+
+"""
+    create_CL2invCT(cache::BasicILMCache[;scale=1.0])
+
+Using the provided cache `cache`, construct the square matrix ``-C_s L^{-2} C_s^T``, which maps
+data of the primary point data type of the cache to data of the same type. The operators `C_s` and `C_s^T` correspond to [`surface_curl!`](@ref)
+and `L` is the grid Laplacian. The optional keyword `scale` multiplies the
+matrix by the designated value.
+"""
+function create_CL2invCT(cache::BasicILMCache{N};scale=1.0) where {N}
+    @unpack L, sdata_cache, gdata_cache, gcurl_cache = cache
+
+    len = length(sdata_cache)
+    A = Matrix{eltype(sdata_cache)}(undef,len,len)
+    fill!(sdata_cache,0.0)
+
+    for col in 1:len
+        sdata_cache[col] = 1.0
+        fill!(gdata_cache,0.0)
+        fill!(gcurl_cache,0.0)
+
+        surface_curl!(gcurl_cache,sdata_cache,cache)
+        inverse_laplacian!(gcurl_cache,cache)
         inverse_laplacian!(gcurl_cache,cache)
         surface_curl!(sdata_cache,gcurl_cache,cache)
 
@@ -162,7 +195,9 @@ function create_surface_filter(cache::BasicILMCache{N,SCA}) where {N,SCA}
     regfilt = _get_regularization(points(cache),areas(cache),g,
                                   _ddf_type(cache),SCA,filter=true)
     Ef = InterpolationMatrix(regfilt,gdata_cache,sdata_cache)
-    C = zeros(N,N)
+    
+    len = length(sdata_cache)
+    C = Matrix{eltype(sdata_cache)}(undef,len,len)
     return mul!(C,Ef,R)
 
 end

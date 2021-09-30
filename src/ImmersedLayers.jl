@@ -33,7 +33,7 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         surface_curl!,surface_divergence!,surface_grad!,inverse_laplacian!,
         surface_curl_cross!,surface_divergence_cross!,surface_grad_cross!,
         mask,mask!,complementary_mask,complementary_mask!,
-        create_CLinvCT,create_GLinvD,create_nRTRn,create_RTLinvR,
+        create_CLinvCT,create_CL2invCT,create_GLinvD,create_nRTRn,create_RTLinvR,
         create_GLinvD_cross,create_surface_filter,
         solve
 

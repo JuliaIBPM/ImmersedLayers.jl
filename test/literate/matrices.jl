@@ -61,7 +61,9 @@ obtain this matrix with [`create_surface_filter`](@ref).
 #md # ```@docs
 #md # create_RTLinvR
 #md # create_CLinvCT
+#md # create_CL2invCT
 #md # create_GLinvD
+#md # create_GLinvD_cross
 #md # create_nRTRn
 #md # create_surface_filter
 #md # ```
