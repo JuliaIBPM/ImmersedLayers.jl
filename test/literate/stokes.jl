@@ -46,14 +46,9 @@ using UnPack
 ## Set up the extra cache and solve function
 =#
 #=
-The problem type takes the usual basic form
+The problem type is generated with the usual macro call, but now with `vector` type
 =#
-struct StokesFlowProblem{DT,ST} <: ImmersedLayers.AbstractVectorILMProblem{DT,ST}
-   g :: PhysicalGrid
-   bodies :: BodyList
-   StokesFlowProblem(g::PT,bodies::BodyList;ddftype=CartesianGrids.Yang3,scaling=IndexScaling) where {PT} = new{ddftype,scaling}(g,bodies)
-   StokesFlowProblem(g::PT,body::Body;ddftype=CartesianGrids.Yang3,scaling=IndexScaling) where {PT} = new{ddftype,scaling}(g,BodyList([body]))
-end
+@ilmproblem StokesFlow vector
 
 #=
 As with other cases, the extra cache holds additional intermediate data, as well as

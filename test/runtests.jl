@@ -25,9 +25,8 @@ if GROUP == "All" || GROUP == "Literate"
   end
 end
 
-
 #=
-if GROUP == "All" || GROUP == "Notebooks"
+if GROUP == "Notebooks"
   for (root, dirs, files) in walkdir(litdir)
     for file in files
       #endswith(file,".jl") && startswith(file,"3") && Literate.notebook(joinpath(root, file),notebookdir)

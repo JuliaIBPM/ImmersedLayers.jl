@@ -15,42 +15,57 @@ When defining a problem type with vector data, make it a subtype of this.
 abstract type AbstractVectorILMProblem{DT,ST} <: AbstractILMProblem{DT,ST} end
 
 """
-$(TYPEDEF)
+The `@ilmproblem` macro is used to automatically generate a type
+particular to an immersed-layer problem, which can then be used for dispatch on
+those types of problems. It takes two arguments: the name of the problem
+(to which `Problem` will be automatically appended), and whether the problem
+is of scalar or vector type. For example,
 
-Generic problem type with scalar-type data. This type generates no extra cache.
+    @ilmproblem(StokesFlow,vector)
+
+would generate a type `StokesFlowProblem` dealing with vector-valued data. The
+resulting type then automatically has a constructor that allows one to pass
+in the grid information and bodies, as well as optional choices for the
+DDF function and the scaling type. For the example, this constructor would be
+
+    `StokesFlowProblem(grid,bodies[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling])`
+
 """
-struct BasicScalarILMProblem{DT,ST} <: AbstractScalarILMProblem{DT,ST}
-   g :: PhysicalGrid
-   bodies :: BodyList
-   BasicScalarILMProblem(g::PT,bodies::BodyList;ddftype=CartesianGrids.Yang3,scaling=IndexScaling) where {PT} = new{ddftype,scaling}(g,bodies)
-   BasicScalarILMProblem(g::PT,body::Body;ddftype=CartesianGrids.Yang3,scaling=IndexScaling) where {PT} = new{ddftype,scaling}(g,BodyList([body]))
+macro ilmproblem(name,vector_or_scalar)
+    vs_string = string(vector_or_scalar)
+    abtype = Symbol("Abstract"*uppercasefirst(vs_string)*"ILMProblem")
+    typename = Symbol(string(name)*"Problem")
+    return esc(quote
+
+          @doc """
+              $($typename)
+
+          ILM problem type dealing with $($vs_string)-type data.
+          """
+          struct $typename{DT,ST} <: $abtype{DT,ST}
+             g :: PhysicalGrid
+             bodies :: BodyList
+             $typename(g::PT,bodies::BodyList;ddftype=CartesianGrids.Yang3,scaling=IndexScaling) where {PT} = new{ddftype,scaling}(g,bodies)
+             $typename(g::PT,body::Body;ddftype=CartesianGrids.Yang3,scaling=IndexScaling) where {PT} = new{ddftype,scaling}(g,BodyList([body]))
+          end
+
+     end)
 end
+
+@ilmproblem BasicScalarILM scalar
+@ilmproblem BasicVectorILM vector
+
 
 # Extend this function for other problem types in order to create an extra cache
 # of variables and operators for the problem
 """
-    prob_type(prob,base_cache::BasicILMCache)
+    prob_cache(prob,base_cache::BasicILMCache)
 
 This function is called by [`__init`](@ref) to generate a problem-specific extra
 cache. Extend this function in order to generate an extra cache for a
-user-defined problem type.
-"""
-function prob_cache(prob::BasicScalarILMProblem,base_cache::BasicILMCache)
-    return nothing
-end
+user-defined problem type. The user must define the cache type itself.
+""" prob_cache
 
-"""
-$(TYPEDEF)
 
-Generic problem type with vector-type data. This type generates no extra cache.
-"""
-struct BasicVectorILMProblem{DT,ST} <: AbstractVectorILMProblem{DT,ST}
-   g :: PhysicalGrid
-   bodies :: BodyList
-   BasicVectorILMProblem(g::PT,bodies::BodyList;ddftype=CartesianGrids.Yang3,scaling=IndexScaling) where {PT} = new{ddftype,scaling}(g,bodies)
-   BasicVectorILMProblem(g::PT,body::Body;ddftype=CartesianGrids.Yang3,scaling=IndexScaling) where {PT} = new{ddftype,scaling}(g,BodyList([body]))
-end
-
-function prob_cache(prob::BasicVectorILMProblem,base_cache::BasicILMCache)
-    return nothing
-end
+prob_cache(prob::BasicScalarILMProblem,base_cache::BasicILMCache) = nothing
+prob_cache(prob::BasicVectorILMProblem,base_cache::BasicILMCache) = nothing
