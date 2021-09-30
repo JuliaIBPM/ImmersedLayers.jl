@@ -67,12 +67,7 @@ using UnPack
 #=
 The problem type takes the usual basic form
 =#
-struct NeumannPoissonProblem{DT,ST} <: AbstractScalarILMProblem{DT,ST}
-   g :: PhysicalGrid
-   bodies :: BodyList
-   NeumannPoissonProblem(g::PT,bodies::BodyList;ddftype=CartesianGrids.Yang3,scaling=IndexScaling) where {PT} = new{ddftype,scaling}(g,bodies)
-   NeumannPoissonProblem(g::PT,body::Body;ddftype=CartesianGrids.Yang3,scaling=IndexScaling) where {PT} = new{ddftype,scaling}(g,BodyList([body]))
-end
+@ilmproblem NeumannPoisson scalar
 
 #=
 The extra cache holds additional intermediate data, as well as

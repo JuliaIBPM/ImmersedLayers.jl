@@ -18,6 +18,7 @@ using UnPack
 export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         DoubleLayer!, SingleLayer!, Mask!,
         SurfaceCache,SurfaceScalarCache,SurfaceVectorCache,
+        @ilmproblem,
         BasicScalarILMProblem,BasicVectorILMProblem,prob_cache,
         AbstractScalingType,GridScaling,IndexScaling,
         BasicILMCache,ILMSystem,
