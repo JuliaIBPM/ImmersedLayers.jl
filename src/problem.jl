@@ -28,7 +28,7 @@ resulting type then automatically has a constructor that allows one to pass
 in the grid information and bodies, as well as optional choices for the
 DDF function and the scaling type. For the example, this constructor would be
 
-    `StokesFlowProblem(grid,bodies[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling])`
+    StokesFlowProblem(grid,bodies[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling])
 
 """
 macro ilmproblem(name,vector_or_scalar)

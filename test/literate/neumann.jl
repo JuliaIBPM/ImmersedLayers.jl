@@ -1,4 +1,4 @@
-# # A Neumann Poisson problem
+# # Poisson with Neumann conditions
 
 #md # ```@meta
 #md # CurrentModule = ImmersedLayers

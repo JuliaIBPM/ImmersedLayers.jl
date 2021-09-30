@@ -2,7 +2,7 @@
 EditURL = "<unknown>/literate/neumann.jl"
 ```
 
-# A Neumann Poisson problem
+# Poisson with Neumann conditions
 
 ```@meta
 CurrentModule = ImmersedLayers
