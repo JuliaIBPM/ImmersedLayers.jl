@@ -146,6 +146,7 @@ plot(s)
 ```@docs
 AbstractScalarILMProblem
 AbstractVectorILMProblem
+@ilmproblem
 BasicScalarILMProblem
 BasicVectorILMProblem
 prob_cache

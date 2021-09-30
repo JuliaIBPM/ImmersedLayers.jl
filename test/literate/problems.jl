@@ -139,6 +139,7 @@ plot(s)
 #md # ```@docs
 #md # AbstractScalarILMProblem
 #md # AbstractVectorILMProblem
+#md # @ilmproblem
 #md # BasicScalarILMProblem
 #md # BasicVectorILMProblem
 #md # prob_cache
