@@ -9,15 +9,16 @@ makedocs(
     modules = [ImmersedLayers],
     pages = [
         "Home" => "index.md",
-        "Manual" => ["manual/caches.md",
-                     "manual/surfaceops.md",
-                     "manual/multbodies.md",
-                     "manual/gridops.md",
-                     "manual/matrices.md",
-                     "manual/dirichlet.md",
-                     "manual/problems.md",
-                     "manual/neumann.md",
-                     "manual/utilities.md"
+        "Manual" => [#"manual/caches.md",
+                     #"manual/surfaceops.md",
+                     #"manual/multbodies.md",
+                     #"manual/gridops.md",
+                     #"manual/matrices.md",
+                     #"manual/dirichlet.md",
+                     #"manual/problems.md",
+                     #"manual/neumann.md",
+                     "manual/stokes.md"
+                     #"manual/utilities.md"
                      ]
         #"Internals" => [ "internals/properties.md"]
     ],
