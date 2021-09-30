@@ -195,7 +195,9 @@ function create_surface_filter(cache::BasicILMCache{N,SCA}) where {N,SCA}
     regfilt = _get_regularization(points(cache),areas(cache),g,
                                   _ddf_type(cache),SCA,filter=true)
     Ef = InterpolationMatrix(regfilt,gdata_cache,sdata_cache)
-    C = zeros(N,N)
+    
+    len = length(sdata_cache)
+    C = Matrix{eltype(sdata_cache)}(undef,len,len)
     return mul!(C,Ef,R)
 
 end

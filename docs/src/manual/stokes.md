@@ -13,9 +13,10 @@ with Dirichlet (i.e. no-slip) boundary conditions on a surface.
 The purpose of this case is to demonstrate the use of the tools with
 vector-valued data -- in this case, the fluid velocity field.
 
-The governing equations for this problem can be written as
+After taking the curl of the velocity-pressure form of the Stokes equations, the governing
+equations for this problem can be written as
 
-$$\mu \nabla^2 \omega - \nabla \times (\delta(\chi) \sigma) = \nabla\times \nabla \cdot (\delta(\chi)\mathbf{\Sigma})$$
+$$\mu \nabla^2 \omega - \nabla \times (\delta(\chi) \mathbf{\sigma}) = \nabla\times \nabla \cdot (\delta(\chi)\mathbf{\Sigma})$$
 $$\delta^T(\chi) \mathbf{v} = \overline{\mathbf{v}}_b$$
 $$\mathbf{v} = \nabla \phi + \nabla\times \psi$$
 
@@ -25,14 +26,18 @@ $$\nabla^2 \psi = -\omega$$
 $$\nabla^2 \phi = \delta(\chi) \mathbf{n}\cdot [\mathbf{v}_b]$$
 
 and $\mathbf{\Sigma} = \mu ([\mathbf{v}_b]\mathbf{n} + \mathbf{n} [\mathbf{v}_b])$ is a surface viscous flux tensor;
-and $[\mathbf{v}_b] = \mathbf{v}_b^+ - \mathbf{v}_b^-$ and $\overline{v}_b = (\mathbf{v}_b^+ + \mathbf{v}_b^-)/2$ are
+and $[\mathbf{v}_b] = \mathbf{v}_b^+ - \mathbf{v}_b^-$ and $\overline{\mathbf{v}}_b = (\mathbf{v}_b^+ + \mathbf{v}_b^-)/2$ are
 the jump and average of the surface velocities on either side of a surface.
 
 We can discretize and combine these equations into a saddle-point form for $\psi$ and $\sigma$:
 
-$$\begin{bmatrix}L^2 & C_s^T \\ C_s & 0 \end{bmatrix}\begin{pmatrix} \psi \\ \sigma \end{pmatrix} = \begin{pmatrix} -C D_s [\mathbf{v}_b]  \\ \overline{v}_b - G_s L^{-1} R \mathbf{n}\cdot [\mathbf{v}_b]  \end{pmatrix}$$
+$$\begin{bmatrix}L^2 & C_s^T \\ C_s & 0 \end{bmatrix}\begin{pmatrix} \psi \\ \mathbf{\sigma} \end{pmatrix} = \begin{pmatrix} -C D_s [\mathbf{v}_b]  \\ \overline{v}_b - G_s L^{-1} R \mathbf{n}\cdot [\mathbf{v}_b]  \end{pmatrix}$$
 
-This saddle-point system has a form similar to the one we got
+Note that $L^2$ represents the discrete biharmonic operator. (We have absorbed the
+viscosity $\mu$ into the scaling of the problem.)
+
+We can easily break this down into algorithmic form by the same block-LU decomposition
+of other problems. The difference here is that $\mathbf{\sigma}$ is vector-valued.
 
 ````@example stokes
 using ImmersedLayers
@@ -54,11 +59,13 @@ end
 ````
 
 As with other cases, the extra cache holds additional intermediate data, as well as
-the Schur complement. We don't bother creating a filtering matrix here.
+the Schur complement. We need a few more intermediate variable for this problem.
+We'll also construct the filtering matrix for showing the traction field.
 
 ````@example stokes
-struct StokesFlowCache{SMT,RCT,DVT,VNT,ST,VFT,FT} <: AbstractExtraILMCache
+struct StokesFlowCache{SMT,CMT,RCT,DVT,VNT,ST,VFT,FT} <: AbstractExtraILMCache
    S :: SMT
+   C :: CMT
    Rc :: RCT
    dv :: DVT
    vb :: DVT
@@ -68,9 +75,14 @@ struct StokesFlowCache{SMT,RCT,DVT,VNT,ST,VFT,FT} <: AbstractExtraILMCache
    vϕ :: VFT
    ϕ :: FT
 end
+````
 
+Extend the `prob_cache` function to construct the extra cache
+
+````@example stokes
 function ImmersedLayers.prob_cache(prob::StokesFlowProblem,base_cache::BasicILMCache)
     S = create_CL2invCT(base_cache)
+    C = create_surface_filter(base_cache)
 
     dv = zeros_surface(base_cache)
     vb = zeros_surface(base_cache)
@@ -83,19 +95,20 @@ function ImmersedLayers.prob_cache(prob::StokesFlowProblem,base_cache::BasicILMC
 
     Rc = RegularizationMatrix(base_cache,dvn,ϕ)
 
-    StokesFlowCache(S,Rc,dv,vb,vprime,dvn,sstar,vϕ,ϕ)
+    StokesFlowCache(S,C,Rc,dv,vb,vprime,dvn,sstar,vϕ,ϕ)
 end
+````
 
-Δx = 0.01
-Lx = 4.0
-xlim = (-Lx/2,Lx/2)
-ylim = (-Lx/2,Lx/2)
-g = PhysicalGrid(xlim,ylim,Δx)
-Δs = 1.4*cellsize(g);
+And finally, extend the `solve` function to do the actual solving.
+This form takes as input the the external and internal velocities on the
+surface and returns the velocity field, streamfunction field, and surface
+traction
 
+````@example stokes
 function ImmersedLayers.solve(vsplus,vsminus,prob::StokesFlowProblem,sys::ILMSystem)
     @unpack extra_cache, base_cache = sys
-    @unpack S, Rc, dv, vb, vprime, sstar, dvn, vϕ, ϕ  = extra_cache
+    @unpack nrm = base_cache
+    @unpack S, C, Rc, dv, vb, vprime, sstar, dvn, vϕ, ϕ  = extra_cache
 
     σ = zeros_surface(sys)
     s = zeros_gridcurl(sys)
@@ -141,58 +154,93 @@ function ImmersedLayers.solve(vsplus,vsminus,prob::StokesFlowProblem,sys::ILMSys
     curl!(v,s,sys)
     v .+= vϕ
 
-    return v, s, σ, vprime
+    # Filter the traction twice to clean it up a bit
+    σ .= C^2*σ
+
+    return v, s, σ
 end
+````
 
-body = Circle(0.5,Δs)
+## Set up a grid and body
+We'll consider a rectangle here
 
+````@example stokes
+Δx = 0.01
+Lx = 4.0
+xlim = (-Lx/2,Lx/2)
+ylim = (-Lx/2,Lx/2)
+g = PhysicalGrid(xlim,ylim,Δx)
+Δs = 1.4*cellsize(g)
+body = Rectangle(0.5,0.25,Δs,shifted=true)
+````
+
+Set up the problem and the system
+
+````@example stokes
 prob = StokesFlowProblem(g,body,scaling=GridScaling)
+sys = ImmersedLayers.__init(prob)
+````
 
-sys = ImmersedLayers.__init(prob);
+## Solve the problem
+We will consider the flow generated by two basic motions of the body.
+In the first, we will simply translate the body to the right at unit velocity.
+We set the external $x$ velocity to 1 and $y$ velocity to zero. The
+internal velocity we set to zero.
 
-pts = points(sys);
-nrm = normals(sys);
+````@example stokes
+vsplus = zeros_surface(sys)
+vsminus = zeros_surface(sys)
+vsplus.u .= 1.0
+vsplus.v .= 0.0
+nothing #hide
+````
 
-vsplus = zeros_surface(sys);
-vsminus = zeros_surface(sys);
-vsplus.u .= -nrm.v;
-vsplus.v .= nrm.u;
-##vsplus.u .= 1.0;
-##vsplus.v .= 0.0;
+Now solve it (and time it)
 
-vsminus.u .= 0.0;
+````@example stokes
+solve(vsplus,vsminus,prob,sys) #hide
+@time v, s, σ = solve(vsplus,vsminus,prob,sys)
+nothing #hide
+````
 
-@time v, s, σ, vprime = solve(vsplus,vsminus,prob,sys);
+Let's look at the velocity components
 
+````@example stokes
 plot(v,sys)
+````
 
+Note that the velocity is zero inside, as desired. Let's look at the streamlines here
+
+````@example stokes
 plot(s,sys)
+````
 
-vb = zeros_surface(sys);
-vb .= 0.5*(vsplus + vsminus);
-vs = zeros_surface(sys);
+We'll plot the surface traction components, too.
 
-interpolate!(vs,v,sys);
+````@example stokes
+plot(σ.u,label="σx")
+plot!(σ.v,label="σy")
+````
 
-plot(vs)
+Now, let's apply a different motion, where we rotate it counter-clockwise
+at unit angular velocity
 
-plot(σ.u)
+````@example stokes
+pts = points(sys)
+vsplus.u .= -pts.v
+vsplus.v .= pts.u
+nothing #hide
+````
 
-F = svd(sys.extra_cache.S);
+Solve it again and plot the velocity and streamlines
 
-plot(1.0./F.S,yscale=:log10)
-plot!(F.S./(F.S.^2 .+ 1e-6))
+````@example stokes
+v, s, σ = solve(vsplus,vsminus,prob,sys)
+plot(v,sys)
+````
 
-σ2 = zeros_surface(sys);
-
-Σ⁺ = Diagonal(F.S./(F.S.^2 .+ 1e-6))
-S⁺ = F.Vt'*Σ⁺*F.U';
-σ2 .= S⁺*vprime;
-
-plot(σ.u)
-plot!(σ2.u)
-
-norm(sys.extra_cache.S*σ2-vprime)
+````@example stokes
+plot(s,sys)
 ````
 
 ---
