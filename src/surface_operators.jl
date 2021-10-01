@@ -170,6 +170,7 @@ function surface_curl!(w::Nodes{Dual},f::ScalarData,cache::BasicILMCache)
 end
 
 function _unscaled_surface_curl!(w::Nodes{Dual,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::Edges{Primal,NX,NY},snorm_cache::VectorData{N}) where {NX,NY,N}
+    fill!(w,0.0)
     fill!(q_cache,0.0)
     regularize_normal!(q_cache,f,nrm,Rf,snorm_cache)
     curl!(w,q_cache)
@@ -192,6 +193,7 @@ function surface_curl!(w::Nodes{Dual},v::VectorData,cache::BasicILMCache)
 end
 
 function _unscaled_surface_curl!(w::Nodes{Dual,NX,NY},v::VectorData{N},Rf::RegularizationMatrix,q_cache::Edges{Primal,NX,NY}) where {NX,NY,N}
+    fill!(w,0.0)
     fill!(q_cache,0.0)
     regularize!(q_cache,v,Rf)
     curl!(w,q_cache)
@@ -215,6 +217,7 @@ function surface_curl!(vn::ScalarData,s::Nodes{Dual},cache::BasicILMCache)
 end
 
 function _unscaled_surface_curl!(vn::ScalarData{N},s::Nodes{Dual,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,q_cache::Edges{Primal,NX,NY},snorm_cache::VectorData{N}) where {NX,NY,N}
+    fill!(vn,0.0)
     fill!(q_cache,0.0)
     curl!(q_cache,s)
     normal_interpolate!(vn,q_cache,nrm,Ef,snorm_cache)
@@ -262,6 +265,7 @@ function surface_curl_cross!(w::Nodes{Dual},f::ScalarData,cache::BasicILMCache)
 end
 
 function _unscaled_surface_curl_cross!(w::Nodes{Dual,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::Edges{Primal,NX,NY},snorm_cache::VectorData{N}) where {NX,NY,N}
+    fill!(w,0.0)
     fill!(q_cache,0.0)
     regularize_normal_cross!(q_cache,f,nrm,Rf,snorm_cache)
     curl!(w,q_cache)
@@ -285,6 +289,7 @@ function surface_curl_cross!(vn::ScalarData,s::Nodes{Dual},cache::BasicILMCache)
 end
 
 function _unscaled_surface_curl_cross!(vn::ScalarData{N},s::Nodes{Dual,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,q_cache::Edges{Primal,NX,NY},snorm_cache::VectorData{N}) where {NX,NY,N}
+    fill!(vn,0.0)
     fill!(q_cache,0.0)
     curl!(q_cache,s)
     normal_cross_interpolate!(vn,q_cache,nrm,Ef,snorm_cache)
@@ -309,6 +314,7 @@ function surface_divergence!(θ::Nodes{Primal},f::ScalarData,cache::BasicILMCach
 end
 
 function _unscaled_surface_divergence!(θ::Nodes{Primal,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::Edges{Primal,NX,NY},snorm_cache::VectorData{N}) where {NX,NY,N}
+    fill!(θ,0.0)
     fill!(q_cache,0.0)
     regularize_normal!(q_cache,f,nrm,Rf,snorm_cache)
     divergence!(θ,q_cache)
@@ -330,6 +336,7 @@ function surface_divergence!(θ::Edges{Primal},f::VectorData,cache::BasicILMCach
 end
 
 function _unscaled_surface_divergence!(θ::Edges{Primal,NX,NY},f::VectorData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::EdgeGradient{Primal,Dual,NX,NY},snorm_cache::TensorData{N},snorm2_cache::TensorData{N}) where {NX,NY,N}
+    fill!(θ,0.0)
     fill!(q_cache,0.0)
     regularize_normal!(q_cache,f,nrm,Rf,snorm_cache,snorm2_cache)
     divergence!(θ,q_cache)
@@ -352,6 +359,7 @@ function surface_grad!(vn::ScalarData,ϕ::Nodes{Primal},cache::BasicILMCache)
 end
 
 function _unscaled_surface_grad!(vn::ScalarData{N},ϕ::Nodes{Primal,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,q_cache::Edges{Primal,NX,NY},snorm_cache::VectorData{N}) where {NX,NY,N}
+    fill!(vn,0.0)
     fill!(q_cache,0.0)
     grad!(q_cache,ϕ)
     normal_interpolate!(vn,q_cache,nrm,Ef,snorm_cache)
@@ -373,6 +381,7 @@ function surface_grad!(vn::VectorData,ϕ::Edges{Primal},cache::BasicILMCache)
 end
 
 function _unscaled_surface_grad!(vn::VectorData{N},ϕ::Edges{Primal,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,gsnorm_cache::EdgeGradient{Primal,Dual,NX,NY},gsnorm2_cache::EdgeGradient{Primal,Dual,NX,NY},snorm_cache::TensorData{N}) where {NX,NY,N}
+    fill!(vn,0.0)
     fill!(gsnorm_cache,0.0)
     grad!(gsnorm_cache,ϕ)
     normal_interpolate!(vn,gsnorm_cache,nrm,Ef,gsnorm2_cache,snorm_cache)
@@ -397,6 +406,7 @@ function surface_divergence_cross!(θ::Nodes{Primal},f::ScalarData,cache::BasicI
 end
 
 function _unscaled_surface_divergence_cross!(θ::Nodes{Primal,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::Edges{Primal,NX,NY},snorm_cache::VectorData{N}) where {NX,NY,N}
+    fill!(θ,0.0)
     fill!(q_cache,0.0)
     regularize_normal_cross!(q_cache,f,nrm,Rf,snorm_cache)
     divergence!(θ,q_cache)
@@ -419,6 +429,7 @@ function surface_grad_cross!(vn::ScalarData,ϕ::Nodes{Primal},cache::BasicILMCac
 end
 
 function _unscaled_surface_grad_cross!(vn::ScalarData{N},ϕ::Nodes{Primal,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,q_cache::Edges{Primal,NX,NY},snorm_cache::VectorData{N}) where {NX,NY,N}
+    fill!(vn,0.0)
     fill!(q_cache,0.0)
     grad!(q_cache,ϕ)
     normal_cross_interpolate!(vn,q_cache,nrm,Ef,snorm_cache)

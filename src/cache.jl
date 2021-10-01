@@ -170,7 +170,9 @@ function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},d
   R = _regularization_matrix(regop,sdata_cache,gdata_cache )
   E = _interpolation_matrix(regop, gdata_cache,sdata_cache)
 
-  L = plan_laplacian(size(gcurl_cache),with_inverse=true)
+  #L = plan_laplacian(size(gcurl_cache),with_inverse=true)
+  L = _get_laplacian(gcurl_cache,g,scaling)
+
   return BasicILMCache{N,scaling,ND,typeof(bl),typeof(nrm),typeof(a),typeof(regop),typeof(Rsn),typeof(Esn),typeof(R),typeof(E),typeof(L),
                        typeof(gsnorm_cache),typeof(gcurl_cache),typeof(gdata_cache),typeof(snorm_cache),typeof(sdata_cache)}(
                        g,bl,nrm,a,regop,Rsn,Esn,R,E,L,
@@ -191,6 +193,11 @@ _get_regularization(X::VectorData{N},a::ScalarData{N},g::PhysicalGrid,ddftype,::
      Regularize(X,cellsize(g),I0=origin(g),issymmetric=true,ddftype=ddftype,filter=filter)
 
 _get_regularization(body::Union{Body,BodyList},args...;kwargs...) = _get_regularization(VectorData(collect(body)),areas(body),args...;kwargs...)
+
+# Standardize the Laplacian
+_get_laplacian(a,g::PhysicalGrid,::Type{IndexScaling}) = plan_laplacian(size(a),with_inverse=true)
+_get_laplacian(a,g::PhysicalGrid,::Type{GridScaling}) = plan_laplacian(size(a),with_inverse=true,factor=1.0/cellsize(g)^2)
+
 
 # This is needed to stabilize the type-unstable `RegularizationMatrix` function in
 # CartesianGrids

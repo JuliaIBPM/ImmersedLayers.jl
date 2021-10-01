@@ -8,8 +8,11 @@ end
 _scale_derivative!(w,cache::BasicILMCache{N,IndexScaling}) where {N} = w
 _scale_derivative!(w,cache::BasicILMCache{N,GridScaling}) where {N} = w ./= cellsize(cache)
 
+_scale_laplacian!(w,cache::BasicILMCache{N,IndexScaling}) where {N} = w
+_scale_laplacian!(w,cache::BasicILMCache{N,GridScaling}) where {N} = w # ./= cellsize(cache)^2
+
 _scale_inverse_laplacian!(w,cache::BasicILMCache{N,IndexScaling}) where {N} = w
-_scale_inverse_laplacian!(w,cache::BasicILMCache{N,GridScaling}) where {N} = w .*= cellsize(cache)^2
+_scale_inverse_laplacian!(w,cache::BasicILMCache{N,GridScaling}) where {N} = w  #.*= cellsize(cache)^2
 
 """
     divergence!(p::Nodes{Primal},v::Edges{Primal},cache::BasicILMCache)
@@ -70,6 +73,31 @@ function curl!(w::Nodes{Dual,NX,NY},q::Edges{Primal,NX,NY},cache::BasicILMCache)
 end
 
 _unscaled_curl!(w::Nodes,q::Edges,cache::BasicILMCache) = (fill!(w,0.0); curl!(w,q))
+
+
+"""
+    laplacian!(w::GridData,s::GridData,sys::ILMSystem)
+
+Compute the Laplacian of grid data `s`, and divide the result
+by unity or by the grid cell size, depending on whether `sys` has `IndexScaling` or `GridScaling`,
+respectively, and return the result as `w`.
+"""
+laplacian!(w,s,sys::ILMSystem) = laplacian!(w,s,sys.base_cache)
+
+"""
+    laplacian!(w::GridData,s::GridData,cache::BasicILMCache)
+
+Compute the Laplacian of grid data `s`, and divide the result
+by unity or by the grid cell size, depending on whether `cache` has `IndexScaling` or `GridScaling`,
+respectively, and return the result as `w`.
+"""
+function laplacian!(w::GridData,s::GridData,cache::BasicILMCache)
+    @unpack L = cache
+    _unscaled_laplacian!(w,s,L)
+    _scale_laplacian!(w,cache)
+end
+
+_unscaled_laplacian!(w::GridData,s::GridData,L::CartesianGrids.Laplacian) = w .= L*s
 
 
 """
