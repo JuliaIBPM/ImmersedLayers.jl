@@ -130,5 +130,15 @@ end
 
   @test typeof(vsys.base_cache) == typeof(vcache)
 
+  p = rand()
+  prob = BasicScalarILMProblem(g,body,scaling=GridScaling,phys_params=p)
+  sys = ImmersedLayers.__init(prob)
+  @test sys.base_cache.phys_params == p
+
+  Re = rand()
+  p = Dict("Re"=>Re)
+  prob = BasicScalarILMProblem(g,body,scaling=GridScaling,phys_params=p)
+  sys = ImmersedLayers.__init(prob)
+  @test sys.base_cache.phys_params["Re"] == Re
 
 end

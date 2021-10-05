@@ -42,11 +42,16 @@ macro ilmproblem(name,vector_or_scalar)
 
           ILM problem type dealing with $($vs_string)-type data.
           """
-          struct $typename{DT,ST} <: $abtype{DT,ST}
+          struct $typename{DT,ST,PHT} <: $abtype{DT,ST}
              g :: PhysicalGrid
              bodies :: BodyList
-             $typename(g::PT,bodies::BodyList;ddftype=CartesianGrids.Yang3,scaling=IndexScaling) where {PT} = new{ddftype,scaling}(g,bodies)
-             $typename(g::PT,body::Body;ddftype=CartesianGrids.Yang3,scaling=IndexScaling) where {PT} = new{ddftype,scaling}(g,BodyList([body]))
+             phys_params :: PHT
+             $typename(g::PT,bodies::BodyList;ddftype=CartesianGrids.Yang3,
+                                              scaling=IndexScaling,
+                                              phys_params=nothing) where {PT} = new{ddftype,scaling,typeof(phys_params)}(g,bodies,phys_params)
+             $typename(g::PT,body::Body;ddftype=CartesianGrids.Yang3,
+                                        scaling=IndexScaling,
+                                        phys_params=nothing) where {PT} = new{ddftype,scaling,typeof(phys_params)}(g,BodyList([body]),phys_params)
           end
 
      end)

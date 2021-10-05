@@ -19,12 +19,12 @@ Depending on the type of problem, this sets up a base cache of scalar or
 vector type, as well as an optional extra cache
 """
 function __init(prob::AbstractILMProblem{DT,ST}) where {DT,ST}
-    @unpack g, bodies = prob
+    @unpack g, bodies, phys_params = prob
 
     if typeof(prob) <: AbstractScalarILMProblem
-        base_cache = SurfaceScalarCache(bodies,g,ddftype=DT,scaling=ST)
+        base_cache = SurfaceScalarCache(bodies,g,ddftype=DT,scaling=ST,phys_params=phys_params)
     elseif typeof(prob) <: AbstractVectorILMProblem
-        base_cache = SurfaceVectorCache(bodies,g,ddftype=DT,scaling=ST)
+        base_cache = SurfaceVectorCache(bodies,g,ddftype=DT,scaling=ST,phys_params=phys_params)
     end
 
     extra_cache = prob_cache(prob,base_cache)
