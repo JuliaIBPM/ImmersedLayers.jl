@@ -25,7 +25,7 @@ struct BasicILMCache{N,SCA<:AbstractScalingType,ND,PHT,BCF,FF,BLT<:BodyList,NT<:
 
     g :: PhysicalGrid{ND}
     phys_params :: PHT
-    bc_funcs :: BCF
+    bc :: BCF
     f_funcs :: FF
     bl :: BLT
     nrm :: NT
@@ -65,7 +65,7 @@ for f in [:SurfaceScalarCache, :SurfaceVectorCache]
 
 end
 """
-    SurfaceScalarCache(g::PhysicalGrid[,scaling=IndexScaling][,phys_params=nothing])
+    SurfaceScalarCache(g::PhysicalGrid[,scaling=IndexScaling][,phys_params=nothing][,bc=nothing][,f_funcs=nothing])
 
 Create a cache of type `BasicILMCache` with scalar grid data, using the grid specified
 in `g`, with no immersed points. The keyword `scaling`
@@ -77,14 +77,14 @@ to be only differencing operators. By using `scaling = GridScaling`, then the gr
 """ SurfaceScalarCache(::PhysicalGrid)
 
 """
-    SurfaceVectorCache(g::PhysicalGrid[,scaling=IndexScaling][,phys_params=nothing])
+    SurfaceVectorCache(g::PhysicalGrid[,scaling=IndexScaling][,phys_params=nothing][,bc=nothing][,f_funcs=nothing])
 
 Create a cache of type `BasicILMCache` with vector grid data, with no immersed points.
 See [`SurfaceScalarCache`](@ref) for details.
 """ SurfaceVectorCache(::PhysicalGrid)
 
 """
-    SurfaceVectorCache(body::Body/BodyList,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling][,phys_params=nothing])
+    SurfaceVectorCache(body::Body/BodyList,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling][,phys_params=nothing][,bc=nothing][,f_funcs=nothing])
 
 Create a cache of type `BasicILMCache`, holding operators and storage data
 for use in immersed layer operations on vector data. See [`SurfaceScalarCache`](@ref)
@@ -92,7 +92,7 @@ for details.
 """ SurfaceVectorCache(::Union{Body,BodyList},::PhysicalGrid)
 
 """
-    SurfaceScalarCache(body::Body/BodyList,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling][,phys_params=nothing])
+    SurfaceScalarCache(body::Body/BodyList,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling][,phys_params=nothing][,bc=nothing][,f_funcs=nothing])
 
 Create a cache of type `BasicILMCache`, holding operators and storage data
 for use in immersed layer operations on scalar data. This is sometimes called from within`ILMSystem` rather than directly.
@@ -108,7 +108,7 @@ be symmetric matrices (i.e., interpolation is the adjoint of regularization with
 """ SurfaceScalarCache(::Union{Body,BodyList},::PhysicalGrid)
 
 """
-    SurfaceScalarCache(X::VectorData,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling][,phys_params=nothing])
+    SurfaceScalarCache(X::VectorData,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling][,phys_params=nothing][,bc=nothing][,f_funcs=nothing])
 
 Create a cache of type `BasicILMCache`, holding operators and storage data
 for use in immersed layer operations on scalar data. The `X` specifies the
@@ -116,7 +116,7 @@ immersed point coordinates, and `g` the physical grid.
 """ SurfaceScalarCache(::VectorData,::ScalarData,::VectorData,::PhysicalGrid)
 
 """
-    SurfaceVectorCache(X::VectorData,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling][,phys_params=nothing])
+    SurfaceVectorCache(X::VectorData,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling][,phys_params=nothing][,bc=nothing][,f_funcs=nothing])
 
 Create a cache of type `BasicILMCache`, holding operators and storage data
 for use in immersed layer operations on vector data. See [`SurfaceScalarCache`](@ref)
@@ -129,7 +129,7 @@ function SurfaceScalarCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::
                               ddftype = CartesianGrids.Yang3,
                               scaling = IndexScaling,
                               phys_params = nothing,
-                              bc_funcs = nothing,
+                              bc = nothing,
                               f_funcs = nothing) where {N}
 
    X = points(bl)
@@ -140,7 +140,7 @@ function SurfaceScalarCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::
    gcurl_cache = Nodes(Dual,size(g))
    gdata_cache = Nodes(Primal,size(g))
 
-   _surfacecache(bl,X,a,nrm,g,ddftype,scaling,phys_params,bc_funcs,f_funcs,sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdata_cache)
+   _surfacecache(bl,X,a,nrm,g,ddftype,scaling,phys_params,bc,f_funcs,sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdata_cache)
 
 end
 
@@ -150,7 +150,7 @@ function SurfaceVectorCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::
                               ddftype = CartesianGrids.Yang3,
                               scaling = IndexScaling,
                               phys_params = nothing,
-                              bc_funcs = nothing,
+                              bc = nothing,
                               f_funcs = nothing) where {N}
 
    X = points(bl)
@@ -161,7 +161,7 @@ function SurfaceVectorCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::
    gcurl_cache = Nodes(Dual,size(g))
    gdata_cache = Edges(Primal,size(g))
 
-   _surfacecache(bl,X,a,nrm,g,ddftype,scaling,phys_params,bc_funcs,f_funcs,sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdata_cache)
+   _surfacecache(bl,X,a,nrm,g,ddftype,scaling,phys_params,bc,f_funcs,sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdata_cache)
 
 end
 
@@ -171,7 +171,7 @@ function Base.show(io::IO, H::BasicILMCache{N,SCA}) where {N,SCA}
     println(io, "  Grid data of type $(typeof(H.gdata_cache))")
 end
 
-function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},ddftype,scaling,phys_params,bc_funcs,f_funcs,
+function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},ddftype,scaling,phys_params,bc,f_funcs,
                       sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdata_cache) where {N,ND}
 
   regop = _get_regularization(X,a,g,ddftype,scaling)
@@ -184,9 +184,9 @@ function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},d
   #L = plan_laplacian(size(gcurl_cache),with_inverse=true)
   L = _get_laplacian(gcurl_cache,g,scaling)
 
-  return BasicILMCache{N,scaling,ND,typeof(phys_params),typeof(bc_funcs),typeof(f_funcs),typeof(bl),typeof(nrm),typeof(a),typeof(regop),typeof(Rsn),typeof(Esn),typeof(R),typeof(E),typeof(L),
+  return BasicILMCache{N,scaling,ND,typeof(phys_params),typeof(bc),typeof(f_funcs),typeof(bl),typeof(nrm),typeof(a),typeof(regop),typeof(Rsn),typeof(Esn),typeof(R),typeof(E),typeof(L),
                        typeof(gsnorm_cache),typeof(gcurl_cache),typeof(gdata_cache),typeof(snorm_cache),typeof(sdata_cache)}(
-                       g,phys_params,bc_funcs,f_funcs,bl,nrm,a,regop,Rsn,Esn,R,E,L,
+                       g,phys_params,bc,f_funcs,bl,nrm,a,regop,Rsn,Esn,R,E,L,
                        similar(gsnorm_cache),similar(gsnorm_cache),similar(gcurl_cache),similar(gdata_cache),
                        similar(snorm_cache),similar(snorm_cache),similar(sdata_cache))
 

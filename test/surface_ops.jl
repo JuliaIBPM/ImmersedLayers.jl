@@ -142,9 +142,9 @@ end
   @test sys.base_cache.phys_params["Re"] == Re
 
   my_bc_func(x) = x
-  prob = BasicScalarILMProblem(g,body,scaling=GridScaling,bc_funcs=my_bc_func)
+  prob = BasicScalarILMProblem(g,body,scaling=GridScaling,bc=my_bc_func)
   sys = ImmersedLayers.__init(prob)
-  @test sys.base_cache.bc_funcs == my_bc_func
+  @test sys.base_cache.bc == my_bc_func
 
   my_f_func(x) = x
   prob = BasicScalarILMProblem(g,body,scaling=GridScaling,f_funcs=my_f_func)

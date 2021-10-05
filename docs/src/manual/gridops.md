@@ -83,6 +83,7 @@ curl!
 convective_derivative!
 convective_derivative
 ConvectiveDerivativeCache
+laplacian!
 inverse_laplacian!
 ```
 

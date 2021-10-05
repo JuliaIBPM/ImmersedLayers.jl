@@ -134,6 +134,74 @@ plot(f,sys)
 #-
 plot(s)
 
+#=
+In this example, we supplied the surface data as an argument directly to
+the `solve` function. However, sometimes we need to supply surface data with a little
+more complexity (as in time-varying cases). For this purpose, we can create
+functions that supply the boundary data when called, e.g.,
+=#
+get_fbplus(base_cache) = points(base_cache).u
+get_fbminus(base_cache) = zeros_surface(base_cache)
+
+#=
+We can pass these along to the problem specification by various means.
+It's at the user's discretion how to do it, and how to make use of them
+in the solution. Here's an example, using a `Dict`
+=#
+bcdict = Dict("fbplus"=>get_fbplus,"fbminus"=>get_fbminus)
+
+#=
+We redefine the `solve` function and use these functions in place of
+the original argument:
+=#
+function ImmersedLayers.solve(prob::DirichletPoissonProblem,sys::ILMSystem)
+    @unpack extra_cache, base_cache = sys
+    @unpack bc = base_cache
+    @unpack S, C, fb, fstar = extra_cache
+
+    f = zeros_grid(base_cache)
+    s = zeros_surface(base_cache)
+
+    ## Get the boundary data on each side of the interface
+    fbplus = bc["fbplus"](base_cache)
+    fbminus = bc["fbminus"](base_cache)
+
+    surface_divergence!(fstar,fbplus-fbminus,base_cache)
+    fb .= 0.5*(fbplus+fbminus)
+
+    inverse_laplacian!(fstar,base_cache)
+
+    interpolate!(s,fstar,base_cache)
+    s .= fb - s
+    s .= -(S\s);
+
+    regularize!(f,s,base_cache)
+    inverse_laplacian!(f,base_cache)
+    f .+= fstar;
+
+    return f, C^6*s
+end
+
+#=
+Now we specify the problem, create the system, and solve it, as before,
+but now supplying the boundary condition functions with the `bc` keyword:
+=#
+prob = DirichletPoissonProblem(g,body,scaling=GridScaling,bc=bcdict)
+sys = ImmersedLayers.__init(prob)
+f, s = solve(prob,sys)
+plot(f,sys)
+
+#=
+Same solution, of course. But suppose we wish to change the
+the boundary conditions? We can do it easily without regenerating the
+cache and system, simply by redefining our bc functions, e.g.
+to create an internal solution, with surface data equal to the $y$ coordinate,
+=#
+get_fbplus(base_cache) = zeros_surface(base_cache)
+get_fbminus(base_cache) = points(base_cache).v
+f, s = solve(prob,sys)
+plot(f,sys)
+
 #md # ## Problem types and functions
 #md #
 #md # ```@docs
