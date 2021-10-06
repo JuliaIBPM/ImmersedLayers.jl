@@ -72,5 +72,6 @@ plot(vdv,cache)
 #md # convective_derivative!
 #md # convective_derivative
 #md # ConvectiveDerivativeCache
+#md # laplacian!
 #md # inverse_laplacian!
 #md # ```

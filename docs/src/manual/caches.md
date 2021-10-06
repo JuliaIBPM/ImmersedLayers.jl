@@ -74,10 +74,18 @@ the simple matrix transpose of interpolation.
 
 * **What discrete Dirac delta function (DDF) do we wish to use?**
 
-This is specified with the `ddftype = ` keyword argument. The default is
-`CartesianGrids.Yang3` [^1]. However, there are
+This is specified with the `ddftype` keyword argument. The default is
+`ddftype=CartesianGrids.Yang3` [^1]. However, there are
 other choices, such as `CartesianGrids.Roma`, `CartesianGrids.Goza`, `CartesianGrids.Witchhat`,
 `CartesianGrids.M3`, `CartesianGrids.M4prime`.
+
+* **Are there other data or functions you need to pass along?**
+
+In more complicated cases, you might want to pass along some physical
+parameters, in which case you can supply these with the `phys_params`
+keyword. Boundary conditions can be provided with the `bc` keyword,
+and forcing functions with the `f_funcs` keyword. These are all optional,
+of course. We will see examples later in [Problems and the system](@ref)
 
 ````@example caches
 cache = SurfaceScalarCache(body,g,scaling=GridScaling)
