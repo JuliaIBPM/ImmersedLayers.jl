@@ -135,7 +135,7 @@ plot(f,sys)
 plot(s)
 
 #=
-In this example, we supplied the surface data as an argument directly to
+In the previous example, we supplied the surface data as an argument directly to
 the `solve` function. However, sometimes we need to supply surface data with a little
 more complexity (as in time-varying cases). For this purpose, we can create
 functions that supply the boundary data when called, e.g.,
@@ -151,12 +151,31 @@ in the solution. Here's an example, using a `Dict`
 bcdict = Dict("fbplus"=>get_fbplus,"fbminus"=>get_fbminus)
 
 #=
+We can also pass along physical parameters and forcing functions.
+Let's use the latter feature in order to set some point sources at
+a few locations. For this, we create a function that will take in
+the base cache and the right-hand side data vector, and populate
+this vector with the point sources. We use the `Regularize` function
+in the `CartesianGrids.jl` package to immerse the point sources
+into the grid. In the example shown here, two points: one at (-1.0,1.5)
+and the other at (1.0,1.5), with respective strengths -1 and 1,
+are placed.
+=#
+function rhs_func!(rhs,base_cache)
+    X = VectorData([-1.0,1.0],[1.5,1.5])
+    str = ScalarData([-1.0,1.0])
+    reg = Regularize(X,cellsize(base_cache.g),I0=origin(base_cache.g),ddftype=CartesianGrids.M4prime)
+    return reg(rhs,str)
+end
+
+
+#=
 We redefine the `solve` function and use these functions in place of
 the original argument:
 =#
 function ImmersedLayers.solve(prob::DirichletPoissonProblem,sys::ILMSystem)
     @unpack extra_cache, base_cache = sys
-    @unpack bc = base_cache
+    @unpack bc, f_funcs, gdata_cache = base_cache
     @unpack S, C, fb, fstar = extra_cache
 
     f = zeros_grid(base_cache)
@@ -166,7 +185,13 @@ function ImmersedLayers.solve(prob::DirichletPoissonProblem,sys::ILMSystem)
     fbplus = bc["fbplus"](base_cache)
     fbminus = bc["fbminus"](base_cache)
 
+    ## Evaluate the forcing field
+    f_funcs(gdata_cache,base_cache)
+
+    ## Evaluate the right-hand side of Poisson equation
     surface_divergence!(fstar,fbplus-fbminus,base_cache)
+    fstar .+= gdata_cache
+
     fb .= 0.5*(fbplus+fbminus)
 
     inverse_laplacian!(fstar,base_cache)
@@ -186,20 +211,30 @@ end
 Now we specify the problem, create the system, and solve it, as before,
 but now supplying the boundary condition functions with the `bc` keyword:
 =#
-prob = DirichletPoissonProblem(g,body,scaling=GridScaling,bc=bcdict)
+prob = DirichletPoissonProblem(g,body,scaling=GridScaling,bc=bcdict,f_funcs=rhs_func!)
 sys = ImmersedLayers.__init(prob)
 f, s = solve(prob,sys)
 plot(f,sys)
 
 #=
 Same solution, of course. But suppose we wish to change the
-the boundary conditions? We can do it easily without regenerating the
-cache and system, simply by redefining our bc functions, e.g.
+the boundary conditions or source points? We can do it easily without regenerating the
+cache and system, simply by redefining our bc and forcing functions, e.g.
 to create an internal solution, with surface data equal to the $y$ coordinate,
 =#
 get_fbplus(base_cache) = zeros_surface(base_cache)
 get_fbminus(base_cache) = points(base_cache).v
-f, s = solve(prob,sys)
+function rhs_func!(rhs,base_cache)
+    X = VectorData([-0.2,0.2],[0.0,0.0])
+    str = ScalarData([-1.0,1.0])
+    reg = Regularize(X,cellsize(base_cache.g),I0=origin(base_cache.g),ddftype=CartesianGrids.M4prime)
+    return reg(rhs,str)
+end
+#=
+We can solve immediately without having to reconstruct the system, so
+it's very fast.
+=#
+@time f, s = solve(prob,sys)
 plot(f,sys)
 
 #md # ## Problem types and functions
