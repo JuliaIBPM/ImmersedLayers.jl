@@ -217,7 +217,7 @@ f, s = solve(prob,sys)
 plot(f,sys)
 
 #=
-Same solution, of course. But suppose we wish to change the
+So we get the additional features from the sources. Now, suppose we wish to change the
 the boundary conditions or source points? We can do it easily without regenerating the
 cache and system, simply by redefining our bc and forcing functions, e.g.
 to create an internal solution, with surface data equal to the $y$ coordinate,
