@@ -82,7 +82,7 @@ other choices, such as `CartesianGrids.Roma`, `CartesianGrids.Goza`, `CartesianG
 In more complicated cases, you might want to pass along some physical
 parameters, in which case you can supply these with the `phys_params`
 keyword. Boundary conditions can be provided with the `bc` keyword,
-and forcing functions with the `f_funcs` keyword. These are all optional,
+and forcing functions with the `forcing` keyword. These are all optional,
 of course. We will see examples later in [Problems and the system](@ref)
 =#
 

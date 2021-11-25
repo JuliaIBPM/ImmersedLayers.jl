@@ -8,6 +8,8 @@ using Reexport
 using DocStringExtensions
 @reexport using CartesianGrids
 @reexport using RigidBodyTools
+@reexport using ConstrainedSystems
+
 #using CartesianGrids
 #using RigidBodyTools
 
@@ -50,6 +52,7 @@ include("layers.jl")
 include("grid_operators.jl")
 include("surface_operators.jl")
 include("matrix_operators.jl")
+include("timemarching.jl")
 
 include("plot_recipes.jl")
 

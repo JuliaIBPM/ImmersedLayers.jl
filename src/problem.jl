@@ -42,24 +42,29 @@ macro ilmproblem(name,vector_or_scalar)
 
           ILM problem type dealing with $($vs_string)-type data.
           """
-          struct $typename{DT,ST,PHT,BCF,FF} <: $abtype{DT,ST}
+          struct $typename{DT,ST,PHT,BCF,FF,DTF} <: $abtype{DT,ST}
              g :: PhysicalGrid
              bodies :: BodyList
              phys_params :: PHT
              bc :: BCF
-             f_funcs :: FF
+             forcing :: FF
+             timestep_func :: DTF
              $typename(g::PT,bodies::BodyList;ddftype=CartesianGrids.Yang3,
                                               scaling=IndexScaling,
                                               phys_params=nothing,
                                               bc=nothing,
-                                              f_funcs=nothing) where {PT} =
-                    new{ddftype,scaling,typeof(phys_params),typeof(bc),typeof(f_funcs)}(g,bodies,phys_params,bc,f_funcs)
+                                              forcing=nothing,
+                                              timestep_func=nothing) where {PT} =
+                    new{ddftype,scaling,typeof(phys_params),typeof(bc),typeof(forcing),typeof(timestep_func)}(
+                                              g,bodies,phys_params,bc,forcing,timestep_func)
              $typename(g::PT,body::Body;ddftype=CartesianGrids.Yang3,
                                         scaling=IndexScaling,
                                         phys_params=nothing,
                                         bc=nothing,
-                                        f_funcs=nothing) where {PT} =
-                    new{ddftype,scaling,typeof(phys_params),typeof(bc),typeof(f_funcs)}(g,BodyList([body]),phys_params,bc,f_funcs)
+                                        forcing=nothing,
+                                        timestep_func=nothing) where {PT} =
+                    new{ddftype,scaling,typeof(phys_params),typeof(bc),typeof(forcing),typeof(timestep_func)}(
+                                              g,BodyList([body]),phys_params,bc,forcing,timestep_func)
           end
 
      end)

@@ -147,8 +147,8 @@ end
   @test sys.base_cache.bc == my_bc_func
 
   my_f_func(x) = x
-  prob = BasicScalarILMProblem(g,body,scaling=GridScaling,f_funcs=my_f_func)
+  prob = BasicScalarILMProblem(g,body,scaling=GridScaling,forcing=my_f_func)
   sys = ImmersedLayers.__init(prob)
-  @test sys.base_cache.f_funcs == my_f_func
+  @test sys.base_cache.forcing == my_f_func
 
 end
