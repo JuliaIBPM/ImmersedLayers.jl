@@ -117,7 +117,7 @@ end
 @testset "Problem specification" begin
 
   prob = BasicScalarILMProblem(g,scaling=GridScaling)
-  @test typeof(prob.bodies) <: Nothing
+  @test typeof(prob.bodies) <: BodyList
 
   prob = BasicScalarILMProblem(g,body,scaling=GridScaling)
   @test typeof(prob.bodies) <: BodyList

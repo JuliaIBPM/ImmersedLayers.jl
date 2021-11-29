@@ -49,18 +49,18 @@ macro ilmproblem(name,vector_or_scalar)
              bc :: BCF
              forcing :: FF
              timestep_func :: DTF
-             $typename(g::PT,bodies;ddftype=CartesianGrids.Yang3,
+             $typename(g::PT,bodies::BodyList;ddftype=CartesianGrids.Yang3,
                                               scaling=IndexScaling,
                                               phys_params=nothing,
                                               bc=nothing,
                                               forcing=nothing,
-                                              timestep_func=nothing) where {PT} =
+                                              timestep_func=nothing) where {PT <: PhysicalGrid} =
                     new{ddftype,scaling,typeof(bodies),typeof(phys_params),typeof(bc),typeof(forcing),typeof(timestep_func)}(
                                               g,bodies,phys_params,bc,forcing,timestep_func)
           end
 
-          $typename(g,body::Body;kwargs...) = $typename(g,BodyList([body]); kwargs...)
-          $typename(g;kwargs...) = $typename(g,nothing; kwargs...)
+          $typename(g::PhysicalGrid,body::Body;kwargs...) = $typename(g,BodyList([body]); kwargs...)
+          $typename(g::PhysicalGrid;kwargs...) = $typename(g,BodyList(); kwargs...)
 
 
      end)
