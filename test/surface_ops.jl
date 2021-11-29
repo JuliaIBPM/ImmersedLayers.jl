@@ -138,22 +138,22 @@ end
   p = rand()
   prob = BasicScalarILMProblem(g,body,scaling=GridScaling,phys_params=p)
   sys = ImmersedLayers.__init(prob)
-  @test sys.base_cache.phys_params == p
+  @test sys.phys_params == p
 
   Re = rand()
   p = Dict("Re"=>Re)
   prob = BasicScalarILMProblem(g,body,scaling=GridScaling,phys_params=p)
   sys = ImmersedLayers.__init(prob)
-  @test sys.base_cache.phys_params["Re"] == Re
+  @test sys.phys_params["Re"] == Re
 
   my_bc_func(x) = x
   prob = BasicScalarILMProblem(g,body,scaling=GridScaling,bc=my_bc_func)
   sys = ImmersedLayers.__init(prob)
-  @test sys.base_cache.bc == my_bc_func
+  @test sys.bc == my_bc_func
 
   my_f_func(x) = x
   prob = BasicScalarILMProblem(g,body,scaling=GridScaling,forcing=my_f_func)
   sys = ImmersedLayers.__init(prob)
-  @test sys.base_cache.forcing == my_f_func
+  @test sys.forcing == my_f_func
 
 end

@@ -174,8 +174,8 @@ We redefine the `solve` function and use these functions in place of
 the original argument:
 =#
 function ImmersedLayers.solve(prob::DirichletPoissonProblem,sys::ILMSystem)
-    @unpack extra_cache, base_cache = sys
-    @unpack bc, forcing, gdata_cache = base_cache
+    @unpack bc, forcing, extra_cache, base_cache = sys
+    @unpack gdata_cache = base_cache
     @unpack S, C, fb, fstar = extra_cache
 
     f = zeros_grid(base_cache)

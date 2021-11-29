@@ -1,11 +1,25 @@
+#=
+An instance of `ILMSystem` holds the base cache, any problem-specific extra cache,
+and containers for physical parameters, boundary condition data/functions, forcing data/functions,
+a timestep function (which returns the timestep) and motion data/functions.
+
+If the system needs to be regenerated because of surface motion, only the two
+caches will need to be regenerated.
+=#
+
 """
 $(TYPEDEF)
 
 A system of operators and caches for immersed layer problems. This is constructed
 by [`__init`](@ref)
 """
-struct ILMSystem{PT,BCT<:BasicILMCache,ECT<:Union{AbstractExtraILMCache,Nothing}}
+struct ILMSystem{PT,PHT,BCF,FF,DTF,MTF,BCT<:BasicILMCache,ECT<:Union{AbstractExtraILMCache,Nothing}}
 
+  phys_params :: PHT
+  bc :: BCF
+  forcing :: FF
+  timestep_func :: DTF
+  motions :: MTF
   base_cache :: BCT
   extra_cache :: ECT
 
@@ -22,16 +36,16 @@ function __init(prob::AbstractILMProblem{DT,ST}) where {DT,ST}
     @unpack g, bodies, phys_params, bc, forcing, timestep_func, motions = prob
 
     if typeof(prob) <: AbstractScalarILMProblem
-        base_cache = SurfaceScalarCache(bodies,g,ddftype=DT,scaling=ST,phys_params=phys_params,
-                                        bc=bc,forcing=forcing,timestep_func=timestep_func,motions=motions)
+        base_cache = SurfaceScalarCache(bodies,g,ddftype=DT,scaling=ST)
     elseif typeof(prob) <: AbstractVectorILMProblem
-        base_cache = SurfaceVectorCache(bodies,g,ddftype=DT,scaling=ST,phys_params=phys_params,
-                                        bc=bc,forcing=forcing,timestep_func=timestep_func,motions=motions)
+        base_cache = SurfaceVectorCache(bodies,g,ddftype=DT,scaling=ST)
     end
 
     extra_cache = prob_cache(prob,base_cache)
 
-    return ILMSystem{typeof(prob),typeof(base_cache),typeof(extra_cache)}(base_cache,extra_cache)
+    return ILMSystem{typeof(prob),typeof(phys_params),typeof(bc),typeof(forcing),
+                    typeof(timestep_func),typeof(motions),typeof(base_cache),typeof(extra_cache)}(
+              phys_params,bc,forcing,timestep_func,motions,base_cache,extra_cache)
 
 end
 
