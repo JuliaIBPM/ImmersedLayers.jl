@@ -116,7 +116,12 @@ end
 
 @testset "Problem specification" begin
 
+  prob = BasicScalarILMProblem(g,scaling=GridScaling)
+  @test typeof(prob.bodies) <: Nothing
+
   prob = BasicScalarILMProblem(g,body,scaling=GridScaling)
+  @test typeof(prob.bodies) <: BodyList
+
   sys = ImmersedLayers.__init(prob)
 
   scache = SurfaceScalarCache(body,g,scaling=GridScaling)
