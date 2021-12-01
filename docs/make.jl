@@ -18,11 +18,10 @@ makedocs(
                      "manual/utilities.md"
                      ],
          "Setting up PDEs" => ["manual/problems.md",
+                                "manual/neumann.md",
+                                "manual/stokes.md",
                                 "manual/heatconduction.md"
                                 ],
-         "Solving PDEs" => ["manual/neumann.md",
-                            "manual/stokes.md"
-                            ]
         #"Internals" => [ "internals/properties.md"]
     ],
     #format = Documenter.HTML(assets = ["assets/custom.css"])
