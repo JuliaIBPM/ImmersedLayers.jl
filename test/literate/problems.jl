@@ -174,8 +174,8 @@ We redefine the `solve` function and use these functions in place of
 the original argument:
 =#
 function ImmersedLayers.solve(prob::DirichletPoissonProblem,sys::ILMSystem)
-    @unpack extra_cache, base_cache = sys
-    @unpack bc, f_funcs, gdata_cache = base_cache
+    @unpack bc, forcing, extra_cache, base_cache = sys
+    @unpack gdata_cache = base_cache
     @unpack S, C, fb, fstar = extra_cache
 
     f = zeros_grid(base_cache)
@@ -186,7 +186,7 @@ function ImmersedLayers.solve(prob::DirichletPoissonProblem,sys::ILMSystem)
     fbminus = bc["fbminus"](base_cache)
 
     ## Evaluate the forcing field
-    f_funcs(gdata_cache,base_cache)
+    forcing(gdata_cache,base_cache)
 
     ## Evaluate the right-hand side of Poisson equation
     surface_divergence!(fstar,fbplus-fbminus,base_cache)
@@ -211,13 +211,13 @@ end
 Now we specify the problem, create the system, and solve it, as before,
 but now supplying the boundary condition functions with the `bc` keyword:
 =#
-prob = DirichletPoissonProblem(g,body,scaling=GridScaling,bc=bcdict,f_funcs=rhs_func!)
+prob = DirichletPoissonProblem(g,body,scaling=GridScaling,bc=bcdict,forcing=rhs_func!)
 sys = ImmersedLayers.__init(prob)
 f, s = solve(prob,sys)
 plot(f,sys)
 
 #=
-Same solution, of course. But suppose we wish to change the
+So we get the additional features from the sources. Now, suppose we wish to change the
 the boundary conditions or source points? We can do it easily without regenerating the
 cache and system, simply by redefining our bc and forcing functions, e.g.
 to create an internal solution, with surface data equal to the $y$ coordinate,

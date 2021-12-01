@@ -83,9 +83,6 @@ function of `CartesianGrids.jl`, which gets the coordinates of the grid,
 and set the values of grid data to the $x$ coordinate. We interpolate and plot,
 comparing to the actual $x$ coordinate of the points on the body:
 =#
-#x, y = coordinates(oc,g)
-#xg = similar(oc)
-#xg .= x
 xg = x_grid(cache)
 interpolate!(f,xg,cache)
 plot(f,ylim=(-2,2),label="Interpolated from grid",ylabel="x",xlabel="Index")
@@ -112,7 +109,7 @@ plot(dl,cache)
 If the surface data are vectors, $\mathbf{f}$, then this operation is a little
 different:
 
-$$D_s \mathbf{f} = \nabla\cdot \delta(\chi) \left(  \mathbf{n} \mathbf{f} + \mathbf{f} \mathbf{n} \right)$$
+$$D_s \mathbf{f} = \nabla\cdot \left[\delta(\chi) \left(  \mathbf{n} \mathbf{f} + \mathbf{f} \mathbf{n} \right) \right]$$
 
 This maps $\mathbf{f}$ to a vector field. We use this in conjunction with a cache
 generated with [`SurfaceVectorCache`](@ref).

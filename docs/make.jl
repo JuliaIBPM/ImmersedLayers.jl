@@ -9,18 +9,19 @@ makedocs(
     modules = [ImmersedLayers],
     pages = [
         "Home" => "index.md",
-        "Manual" => ["manual/caches.md",
+        "Basics" => ["manual/caches.md",
                      "manual/surfaceops.md",
                      "manual/multbodies.md",
                      "manual/gridops.md",
                      "manual/matrices.md",
                      "manual/dirichlet.md",
-                     "manual/problems.md",
                      "manual/utilities.md"
                      ],
-         "Solving PDEs" => ["manual/neumann.md",
-                            "manual/stokes.md"
-                            ]
+         "Setting up PDEs" => ["manual/problems.md",
+                                "manual/neumann.md",
+                                "manual/stokes.md",
+                                "manual/heatconduction.md"
+                                ],
         #"Internals" => [ "internals/properties.md"]
     ],
     #format = Documenter.HTML(assets = ["assets/custom.css"])

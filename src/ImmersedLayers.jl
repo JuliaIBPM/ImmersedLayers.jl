@@ -8,6 +8,10 @@ using Reexport
 using DocStringExtensions
 @reexport using CartesianGrids
 @reexport using RigidBodyTools
+@reexport using ConstrainedSystems
+
+import CartesianGrids: Laplacian
+
 #using CartesianGrids
 #using RigidBodyTools
 
@@ -32,7 +36,7 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         regularize_normal!,normal_interpolate!,
         regularize_normal_cross!,normal_cross_interpolate!,
         surface_curl!,surface_divergence!,surface_grad!,inverse_laplacian!,
-        laplacian!,
+        laplacian!,Laplacian,
         surface_curl_cross!,surface_divergence_cross!,surface_grad_cross!,
         mask,mask!,complementary_mask,complementary_mask!,
         create_CLinvCT,create_CL2invCT,create_GLinvD,create_nRTRn,create_RTLinvR,
@@ -50,6 +54,7 @@ include("layers.jl")
 include("grid_operators.jl")
 include("surface_operators.jl")
 include("matrix_operators.jl")
+include("timemarching.jl")
 
 include("plot_recipes.jl")
 
