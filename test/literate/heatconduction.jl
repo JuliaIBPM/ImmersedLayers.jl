@@ -14,9 +14,10 @@ We seek to solve the heat conduction equation with Dirichlet boundary conditions
 
 $$\dfrac{\partial T}{\partial t} = \kappa \nabla^2 T + q + \sigma \delta(\chi) - \nabla\cdot \left( \kappa [T] \delta(\chi)\right)$$
 
-subject to $T = T_b$ on the immersed surface.
+subject to $T = T_b$ on the immersed surface. We might be solving this external
+to a surface, or it might be internal.
 
-In our discrete formulation, the problem takes the form
+In the spatially discrete formulation, the problem takes the form
 
 $$\begin{bmatrix}
 \mathcal{L}_C^\kappa & R_C \\ R_C^T & 0
@@ -24,13 +25,18 @@ $$\begin{bmatrix}
 T \\ -\sigma
 \end{pmatrix} =
 \begin{pmatrix}
-q - \kappa D_s [T] \\ T_b
+q - \kappa D_s [T] \\ (T^+_b + T^-_b)/2
 \end{pmatrix}$$
 
-where $\mathcal{L}_C^\kappa = \mathrm{d}/\mathrm{d}t - \kappa L_C$. This has the form required of a
-*constrained ODE system*, which the `ConstrainedSystems.jl` package treats.
+where $\mathcal{L}_C^\kappa = \mathrm{d}/\mathrm{d}t - \kappa L_C$, where $[T] = T_b^+ - T_b^-$
+is the jump in temperature across the surface. As in the time-independent problems,
+we can specify whether we are solving it external or internal to a surface by setting
+the boundary value to zero in the other region. However, in contrast to the
+time-independent problems, we have to advance this problem in time.
+The system above has the form of a *constrained ODE system*, which the `ConstrainedSystems.jl` package treats.
+We will make use of this package in the example below.
 
-The main differences from previous examples is that
+To support this, there are a few additional steps in our setup of the problem:
 - we (as the implementers of the PDE) need to specify the functions that calculate the
    various parts of this constrained ODE system.
 - we (as the users of this implementation) need to specify the time step size,
@@ -39,7 +45,8 @@ The main differences from previous examples is that
 
 The latter of these is very easy, as we'll find. Most of our attention will
 be on the first part: how to set up the constrained ODE system. For this,
-we will make use of the `ConstrainedODEFunction` constructor in the
+we will make use of the `ODEFunctionList`, which assembles the
+various functions and operators into a `ConstrainedODEFunction`, to be used by the
 `ConstrainedSystems.jl` package.
 =#
 
@@ -138,23 +145,22 @@ end
 ## Set up the extra cache and extend `prob_cache`
 Here, we construct an extra cache that holds a few extra intermediate
 variables, used in the routines above. But this cache also, crucially, holds
-the constrained ODE function.
+the functions and operators of the constrained ODE function. We call
+the function `ODEFunctionList` to assemble these together.
 
 The `prob_cache` function creates this ODE function, supplying the functions that we just defined. We
 also create a Laplacian operator with the heat diffusivity built into it.
 (This operator is singled out from the other terms in the heat conduction
 equation, because we account for it separately in the time marching
-using a matrix exponential.) We also create a *prototype* of the solution
-vector (using `solvector`). This solution vector holds the *state* (which
-is the grid temperature data) and *constraint* (the Lagrange multipliers on
-the boundary).
+using a matrix exponential.) We also create *prototypes* of the *state* and *constraint
+force* vectors. Here, the state is the grid temperature data and the constraint
+is the Lagrange multipliers on the boundary.
 =#
-struct DirichletHeatConductionCache{DTT,TBT,TBP,TBM,SPT,FT} <: AbstractExtraILMCache
+struct DirichletHeatConductionCache{DTT,TBT,TBP,TBM,FT} <: AbstractExtraILMCache
    dTb :: DTT
    Tb :: TBT
    Tbplus :: TBP
    Tbminus :: TBM
-   sol_prototype :: SPT
    f :: FT
 end
 
@@ -172,19 +178,16 @@ function ImmersedLayers.prob_cache(prob::DirichletHeatConductionProblem,
     κ = phys_params["diffusivity"]
     heat_L = Laplacian(base_cache,gdata_cache,κ)
 
-    ## Solution prototype vector, containing the state (grid temperature data)
-    ## and constraint (surface Lagrange multipliers)
-    sol_prototype = solvector(state=zeros_grid(base_cache),
-                              constraint=zeros_surface(base_cache))
+    ## State (grid temperature data) and constraint (surface Lagrange multipliers)
+    f = ODEFunctionList(state = zeros_grid(base_cache),
+                        constraint = zeros_surface(base_cache),
+                        ode_rhs=heatconduction_rhs!,
+                        lin_op=heat_L,
+                        bc_rhs=heatconduction_bc_constraint_rhs!,
+                        constraint_force = heatconduction_op_constraint_force!,
+                        bc_op = heatconduction_bc_constraint_op!)
 
-    f = ConstrainedODEFunction(heatconduction_rhs!,
-                               heatconduction_bc_constraint_rhs!,
-                               heatconduction_op_constraint_force!,
-                               heatconduction_bc_constraint_op!,
-                               heat_L,
-                               _func_cache=sol_prototype)
-
-    DirichletHeatConductionCache(dTb,Tb,Tbplus,Tbminus,sol_prototype,f)
+    DirichletHeatConductionCache(dTb,Tb,Tbplus,Tbminus,f)
 end
 
 #=
@@ -271,7 +274,7 @@ Set an initial condition. Here, we just get a zeroed copy of the
 solution prototype that we have stored in the extra cache. We also
 get the time step size for our own use.
 =#
-u0 = zero(sys.extra_cache.sol_prototype)
+u0 = zeros_sol(sys)
 Δt = timestep_fourier(g,phys_params)
 
 
@@ -297,3 +300,11 @@ step!(integrator,100Δt)
 Here, we plot the state of the system at the end of the interval.
 =#
 plot(state(integrator.u),sys)
+
+#md # ## Time-varying PDE functions
+
+#md # ```@docs
+#md # ODEFunctionList
+#md # zeros_sol
+#md # init
+#md # ```
