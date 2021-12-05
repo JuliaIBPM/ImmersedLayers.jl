@@ -37,13 +37,13 @@ requires that the grid information be passed, e.g.,
 
 There are several keyword arguments for the problem constructor
 
-- `ddftype = ` : To set the DDF type. The default is `Yang3`.
-- `scaling = ` : To set the scaling type, `IndexScaling` (default) or `GridScaling`.
-- `phys_params = ` : To pass in physical parameters
-- `bc = ` : To pass in boundary condition data or functions
-- `forcing = ` : To pass in forcing functions or data
-- `motions = ` : To provide functions or data that can update the immersed surfaces
-- `timestep_func =` : To pass in a function for time-dependent problems that provides the time-step size.
+- `ddftype = ` to set the DDF type. The default is `Yang3`.
+- `scaling = ` to set the scaling type, `IndexScaling` (default) or `GridScaling`.
+- `phys_params = ` to pass in physical parameters
+- `bc = ` to pass in boundary condition data or functions
+- `forcing = ` to pass in forcing functions or data
+- `motions = ` to provide functions or data that can update the immersed surfaces. Note: if this keyword is used, it is assumed that surfaces will move.
+- `timestep_func =` to pass in a function for time-dependent problems that provides the time-step size.
                   It is expected that this function takes in two arguments,
                   the `grid::PhysicalGrid` and `phys_params`, and returns the time step. It is up to the
                   user to decide how to determine this. It could also simply return a

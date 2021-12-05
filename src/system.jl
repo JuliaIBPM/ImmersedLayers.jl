@@ -13,7 +13,7 @@ $(TYPEDEF)
 A system of operators and caches for immersed layer problems. This is constructed
 by [`__init`](@ref)
 """
-struct ILMSystem{PT,PHT,BCF,FF,DTF,MTF,BCT<:BasicILMCache,ECT<:Union{AbstractExtraILMCache,Nothing}}
+struct ILMSystem{static,PT,PHT,BCF,FF,DTF,MTF,BCT<:BasicILMCache,ECT<:Union{AbstractExtraILMCache,Nothing}}
 
   phys_params :: PHT
   bc :: BCF
@@ -43,11 +43,15 @@ function __init(prob::AbstractILMProblem{DT,ST}) where {DT,ST}
 
     extra_cache = prob_cache(prob,base_cache)
 
-    return ILMSystem{typeof(prob),typeof(phys_params),typeof(bc),typeof(forcing),
+    return ILMSystem{_static_surfaces(motions),typeof(prob),typeof(phys_params),typeof(bc),typeof(forcing),
                     typeof(timestep_func),typeof(motions),typeof(base_cache),typeof(extra_cache)}(
               phys_params,bc,forcing,timestep_func,motions,base_cache,extra_cache)
 
 end
+
+_static_surfaces(::Nothing) = true
+_static_surfaces(::Any) = false
+
 
 # Create the basic solve function, to be extended
 function solve(prob::AbstractILMProblem,sys::ILMSystem) end
