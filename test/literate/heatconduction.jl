@@ -81,7 +81,7 @@ and the boundary data via functions in `bc`. The functions for the boundary
 data supply the boundary values. Also, note that the function returns `dT`
 in the first argument. This represents this function's contribution to $dT/dt$.
 =#
-function heatconduction_rhs!(dT,T,sys::ILMSystem,t)
+function heatconduction_ode_rhs!(dT,T,sys::ILMSystem,t)
     @unpack bc, forcing, phys_params, extra_cache, base_cache = sys
     @unpack dTb, Tbplus, Tbminus = extra_cache
 
@@ -102,7 +102,7 @@ Now, we create the function that calculates the RHS of the boundary condition.
 For this Dirichlet condition, we simply take the average of the interior
 and exterior prescribed values. The first argument `dTb` holds the result.
 =#
-function heatconduction_bc_constraint_rhs!(dTb,sys::ILMSystem,t)
+function heatconduction_bc_rhs!(dTb,sys::ILMSystem,t)
     @unpack bc, extra_cache, base_cache = sys
     @unpack Tb, Tbplus, Tbminus = extra_cache
 
@@ -118,7 +118,7 @@ This function calculates the contribution to $dT/dt$ from the Lagrange
 multiplier (the input σ). Here, we simply regularize the negative of this
 to the grid.
 =#
-function heatconduction_op_constraint_force!(dT,σ,sys::ILMSystem)
+function heatconduction_constraint_force!(dT,σ,sys::ILMSystem)
     @unpack extra_cache, base_cache = sys
 
     fill!(dT,0.0)
@@ -132,7 +132,7 @@ Now, we provide the transpose term of the previous function: a function that
 interpolates the temperature (state vector) onto the boundary. The first argument `dTb`
 holds the result.
 =#
-function heatconduction_bc_constraint_op!(dTb,T,sys::ILMSystem)
+function heatconduction_bc_op!(dTb,T,sys::ILMSystem)
     @unpack extra_cache, base_cache = sys
 
     fill!(dTb,0.0)
@@ -181,11 +181,11 @@ function ImmersedLayers.prob_cache(prob::DirichletHeatConductionProblem,
     ## State (grid temperature data) and constraint (surface Lagrange multipliers)
     f = ODEFunctionList(state = zeros_grid(base_cache),
                         constraint = zeros_surface(base_cache),
-                        ode_rhs=heatconduction_rhs!,
+                        ode_rhs=heatconduction_ode_rhs!,
                         lin_op=heat_L,
-                        bc_rhs=heatconduction_bc_constraint_rhs!,
-                        constraint_force = heatconduction_op_constraint_force!,
-                        bc_op = heatconduction_bc_constraint_op!)
+                        bc_rhs=heatconduction_bc_rhs!,
+                        constraint_force = heatconduction_constraint_force!,
+                        bc_op = heatconduction_bc_op!)
 
     DirichletHeatConductionCache(dTb,Tb,Tbplus,Tbminus,f)
 end

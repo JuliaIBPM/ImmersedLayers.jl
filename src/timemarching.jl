@@ -49,6 +49,9 @@ end
 function ODEFunctionList(;ode_rhs=nothing,lin_op=nothing,bc_rhs=nothing,constraint_force=nothing,bc_op=nothing,state=nothing,constraint=nothing)
 
     # Audit the supplied information to make sure it is consistent
+    !(state isa Nothing)  || error("need to supply a state vector")
+    !(ode_rhs isa Nothing)  || error("need to supply a rhs function for the ODE")
+    !any(i -> i isa Nothing,[bc_rhs,constraint_force,bc_op,constraint]) || error("incomplete set of functions for constrained system")
 
     ODEFunctionList{typeof(ode_rhs),typeof(lin_op),typeof(bc_rhs),typeof(constraint_force),
                     typeof(bc_op),typeof(state),typeof(constraint)}(ode_rhs,lin_op,bc_rhs,constraint_force,bc_op,state,constraint)
@@ -80,6 +83,12 @@ _norm_sq(u) = dot(u,u)
 _norm_sq(u::ConstrainedSystems.ArrayPartition) = sum(_norm_sq,u.x)
 state_norm(u,t) = sqrt(_norm_sq(u))
 
+"""
+    ConstrainedSystems.init(u0,tspan,sys::ILMSystem,[alg=ConstrainedSystems.LiskaIFHERK()])
+
+Initialize the integrator for a time-varying immersed-layer system of PDEs,
+described in `sys`.
+"""
 function init(u0,tspan,sys::ILMSystem;alg=ConstrainedSystems.LiskaIFHERK(),kwargs...)
     @unpack timestep_func, phys_params, extra_cache,base_cache = sys
     @unpack g = base_cache
