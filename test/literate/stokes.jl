@@ -160,7 +160,7 @@ xlim = (-Lx/2,Lx/2)
 ylim = (-Lx/2,Lx/2)
 g = PhysicalGrid(xlim,ylim,Δx)
 Δs = 1.4*cellsize(g)
-body = Rectangle(0.5,0.25,Δs,shifted=true)
+body = Rectangle(0.5,0.25,Δs)
 
 
 #=

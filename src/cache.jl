@@ -109,7 +109,7 @@ be symmetric matrices (i.e., interpolation is the adjoint of regularization with
 
 Create a cache of type `BasicILMCache`, holding operators and storage data
 for use in immersed layer operations on scalar data. The `X` specifies the
-immersed point coordinates, and `g` the physical grid.
+is assumed to hold the endpoints of the immersed surface segments, and `g` the physical grid.
 """ SurfaceScalarCache(::VectorData,::ScalarData,::VectorData,::PhysicalGrid)
 
 """

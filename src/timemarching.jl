@@ -57,13 +57,23 @@ function ODEFunctionList(;ode_rhs=nothing,lin_op=nothing,bc_rhs=nothing,constrai
                     typeof(bc_op),typeof(state),typeof(constraint)}(ode_rhs,lin_op,bc_rhs,constraint_force,bc_op,state,constraint)
 end
 
-function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem)
+function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{true})
     @unpack extra_cache = sys
     @unpack f = extra_cache
 
-    # Here is where we would add the additional RHS for moving bodies
-    # along with the auxiliary state
     ConstrainedODEFunction(f.ode_rhs,f.bc_rhs,f.constraint_force,
+                           f.bc_op,f.lin_op,_func_cache=zeros_sol(sys))
+end
+
+function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{false})
+    @unpack extra_cache = sys
+    @unpack f = extra_cache
+
+    rhs! = ConstrainedSystems.r1vector(state_r1 = f.ode_rhs,
+                                       aux_r1 = body_rhs!)
+
+    # Need to provide the system update function here
+    ConstrainedODEFunction(rhs!,f.bc_rhs,f.constraint_force,
                            f.bc_op,f.lin_op,_func_cache=zeros_sol(sys))
 end
 
@@ -72,11 +82,47 @@ end
 
 Return a zeroed version of the solution vector.
 """
-function zeros_sol(sys::ILMSystem)
-    # Need another version of this for moving bodies
+function zeros_sol(sys::ILMSystem{true})
     @unpack extra_cache = sys
     @unpack f = extra_cache
     return solvector(state=zero(f.state),constraint=zero(f.constraint))
+end
+
+function zeros_sol(sys::ILMSystem{false})
+    @unpack motions, extra_cache, base_cache = sys
+    @unpack bl  = base_cache
+    @unpack f = extra_cache
+    return solvector(state=zero(f.state),
+                     constraint=zero(f.constraint),
+                     aux_state=zero(motion_state(bl,motions)))
+end
+
+"""
+    init_sol(sys::ILMSystem)
+
+Return the initial solution vector.
+"""
+function init_sol(sys::ILMSystem{true})
+    @unpack extra_cache = sys
+    @unpack f = extra_cache
+    return solvector(state=zero(f.state),constraint=zero(f.constraint))
+end
+
+function init_sol(sys::ILMSystem{false})
+    @unpack motions, extra_cache, base_cache = sys
+    @unpack bl  = base_cache
+    @unpack f = extra_cache
+    return solvector(state=zero(f.state),
+                     constraint=zero(f.constraint),
+                     aux_state=motion_state(bl,motions))
+end
+
+function body_rhs!(dx::Vector{T},x::Vector{T},sys::ILMSystem,t::Real) where {T<:Real}
+  @unpack motions, base_cache = sys
+  @unpack bl = base_cache
+  length(dx) == length(x) || error("wrong length for vector")
+  dx .= motion_velocity(bl,motions,t)
+  return dx
 end
 
 _norm_sq(u) = dot(u,u)

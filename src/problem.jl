@@ -42,7 +42,7 @@ There are several keyword arguments for the problem constructor
 - `phys_params = ` to pass in physical parameters
 - `bc = ` to pass in boundary condition data or functions
 - `forcing = ` to pass in forcing functions or data
-- `motions = ` to provide functions or data that can update the immersed surfaces. Note: if this keyword is used, it is assumed that surfaces will move.
+- `motions = ` to provide function(s) that specify the velocity of the immersed surface(s). Note: if this keyword is used, it is assumed that surfaces will move.
 - `timestep_func =` to pass in a function for time-dependent problems that provides the time-step size.
                   It is expected that this function takes in two arguments,
                   the `grid::PhysicalGrid` and `phys_params`, and returns the time step. It is up to the
@@ -76,17 +76,40 @@ macro ilmproblem(name,vector_or_scalar)
                                               forcing=nothing,
                                               timestep_func=nothing,
                                               motions=nothing) where {PT <: PhysicalGrid} =
-                    new{ddftype,scaling,typeof(bodies),typeof(phys_params),typeof(bc),typeof(forcing),typeof(timestep_func),typeof(motions)}(
-                                              g,bodies,phys_params,bc,forcing,timestep_func,motions)
+                    new{ddftype,scaling,typeof(bodies),typeof(phys_params),typeof(bc),typeof(forcing),typeof(timestep_func),
+                                        typeof(ImmersedLayers._list(motions))}(
+                                              g,bodies,phys_params,bc,forcing,timestep_func,ImmersedLayers._list(motions))
           end
 
           $typename(g::PhysicalGrid,body::Body;kwargs...) = $typename(g,BodyList([body]); kwargs...)
           $typename(g::PhysicalGrid;kwargs...) = $typename(g,BodyList(); kwargs...)
 
+          regenerate_problem(sys::ILMSystem{S,P},bl::BodyList) where {S,P} =
+                                      $typename(sys.base_cache.g,bl,
+                                                ddftype=ImmersedLayers._ddf_type(P),
+                                                scaling=ImmersedLayers._scaling_type(P),
+                                                phys_params=sys.phys_params,
+                                                bc=sys.bc,
+                                                forcing=sys.forcing,
+                                                timestep_func=sys.timestep_func,
+                                                motions=sys.motions)
 
+           ImmersedLayers.regenerate_problem(sys,body::Body) = regenerate_problem(sys,BodyList(body))                                       
+           nothing
      end)
 
 end
+
+_list(m::RigidBodyTools.AbstractMotion) = MotionList([m])
+_list(m::MotionList) = m
+_list(::Nothing) = nothing
+_list(::Any) = nothing
+
+_ddf_type(::AbstractILMProblem{DT}) where {DT} = DT
+_ddf_type(::Type{P}) where P <: AbstractILMProblem{DT} where {DT} = DT
+_scaling_type(::AbstractILMProblem{DT,ST}) where {DT,ST} = ST
+_scaling_type(::Type{P}) where P <: AbstractILMProblem{DT,ST} where {DT,ST} = ST
+
 
 
 @ilmproblem BasicScalarILM scalar

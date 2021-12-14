@@ -9,7 +9,7 @@ g = PhysicalGrid(xlim,ylim,Δx)
 RadC = 1.0
 Δs = 1.4*cellsize(g)
 body = Circle(RadC,Δs)
-X = VectorData(collect(body))
+X = VectorData(collect(body,endpoints=true))
 
 w = Nodes(Dual,size(g))
 ϕ = Nodes(Primal,size(g))
@@ -21,9 +21,9 @@ angs(n) = range(0,2π,length=n+1)[1:n]
 @testset "Forming a cache" begin
   scache1 = SurfaceScalarCache(body,g,scaling=GridScaling)
   scache2 = SurfaceScalarCache(X,g,scaling=GridScaling)
-  @test normals(scache1) == normals(scache2)
-  @test areas(scache1) == areas(scache2)
-  @test points(scache1) == points(scache2)
+  @test normals(scache1) ≈ normals(scache2)
+  @test areas(scache1) ≈ areas(scache2)
+  @test points(scache1) ≈ points(scache2)
 end
 
 @testset "Scalar surface ops" begin
@@ -155,5 +155,27 @@ end
   prob = BasicScalarILMProblem(g,body,scaling=GridScaling,forcing=my_f_func)
   sys = ImmersedLayers.__init(prob)
   @test sys.forcing == my_f_func
+
+end
+
+@testset "Problem regeneration" begin
+
+  my_f_func(x) = x
+  prob = BasicScalarILMProblem(g,body,scaling=GridScaling,forcing=my_f_func)
+  sys = ImmersedLayers.__init(prob)
+
+  prob2 = regenerate_problem(sys,sys.base_cache.bl)
+  @test prob.g == prob2.g
+  @test prob.bodies == prob2.bodies
+  @test prob.phys_params == prob2.phys_params
+  @test prob.bc == prob2.bc
+  @test prob.forcing == prob2.forcing
+  @test prob.timestep_func == prob2.timestep_func
+
+
+end
+
+@testset "System update" begin
+  
 
 end

@@ -7,23 +7,7 @@ If the system needs to be regenerated because of surface motion, only the two
 caches will need to be regenerated.
 =#
 
-"""
-$(TYPEDEF)
 
-A system of operators and caches for immersed layer problems. This is constructed
-by [`__init`](@ref)
-"""
-struct ILMSystem{static,PT,PHT,BCF,FF,DTF,MTF,BCT<:BasicILMCache,ECT<:Union{AbstractExtraILMCache,Nothing}}
-
-  phys_params :: PHT
-  bc :: BCF
-  forcing :: FF
-  timestep_func :: DTF
-  motions :: MTF
-  base_cache :: BCT
-  extra_cache :: ECT
-
-end
 
 """
     __init(prob::AbstractILMProblem)
@@ -52,6 +36,17 @@ end
 _static_surfaces(::Nothing) = true
 _static_surfaces(::Any) = false
 
+#=
+Need a function of the form update_system(sys,u,sysold,t)
+- Need to create a function that will take the motion_state
+  and update bodies with it
+- Need to be able to regenerate extra_cache with new bodies
+- The latter needs a way to regenerate the problem struct
+  from the system.
+=#
+
+function update_system(sys,u,sysold,t)
+end
 
 # Create the basic solve function, to be extended
 function solve(prob::AbstractILMProblem,sys::ILMSystem) end
