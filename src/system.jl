@@ -7,6 +7,44 @@ If the system needs to be regenerated because of surface motion, only the two
 caches will need to be regenerated.
 =#
 
+"""
+    construct_system(prob::AbstractILMProblem) -> ILMSystem
+
+Return a system of type of type `ILMSystem` from the given problem
+instance `prob`.
+"""
+@inline construct_system(prob::AbstractILMProblem) = __init(prob)
+
+"""
+    update_system(sysold::ILMSystem,body::Body/BodyList)
+
+From an existing system `sysold`, return a new system based on
+the Body or BodyList `body`.
+"""
+function update_system(sysold::ILMSystem,body::Union{Body,BodyList})
+    prob = regenerate_problem(sysold,body)
+    return __init(prob)
+end
+
+"""
+    update_system!(sys::ILMSystem,u,sysold,t)
+
+From an existing system `sysold` at time `t`, return a new system `sys`
+in place, based on the solution vector `u`, whose body state
+information will be used to replace the body information and
+subsequent operators in `sysold`.
+"""
+function update_system!(sys::ILMSystem,u,sysold::ILMSystem,t)
+    @unpack base_cache, motions = sysold
+    @unpack bl = base_cache
+    x = aux_state(u)
+    bodies = deepcopy(bl)
+    update_body!(bodies,x,motions)
+    sysnew = update_system(sysold,bodies)
+    sys.base_cache = sysnew.base_cache
+    sys.extra_cache = sysnew.extra_cache
+    return sys
+end
 
 
 """
@@ -45,8 +83,7 @@ Need a function of the form update_system(sys,u,sysold,t)
   from the system.
 =#
 
-function update_system(sys,u,sysold,t)
-end
+
 
 # Create the basic solve function, to be extended
 function solve(prob::AbstractILMProblem,sys::ILMSystem) end

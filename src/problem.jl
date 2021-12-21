@@ -1,5 +1,7 @@
 abstract type AbstractILMProblem{DT,ST} end
 
+function regenerate_problem() end
+
 """
 $(TYPEDEF)
 
@@ -84,7 +86,7 @@ macro ilmproblem(name,vector_or_scalar)
           $typename(g::PhysicalGrid,body::Body;kwargs...) = $typename(g,BodyList([body]); kwargs...)
           $typename(g::PhysicalGrid;kwargs...) = $typename(g,BodyList(); kwargs...)
 
-          regenerate_problem(sys::ILMSystem{S,P},bl::BodyList) where {S,P} =
+          ImmersedLayers.regenerate_problem(sys::ILMSystem{S,P},bl::BodyList) where {S,P<:$typename} =
                                       $typename(sys.base_cache.g,bl,
                                                 ddftype=ImmersedLayers._ddf_type(P),
                                                 scaling=ImmersedLayers._scaling_type(P),
@@ -94,11 +96,13 @@ macro ilmproblem(name,vector_or_scalar)
                                                 timestep_func=sys.timestep_func,
                                                 motions=sys.motions)
 
-           ImmersedLayers.regenerate_problem(sys,body::Body) = regenerate_problem(sys,BodyList(body))                                       
            nothing
      end)
 
 end
+
+regenerate_problem(sys,body::Body) = regenerate_problem(sys,BodyList([body]))
+
 
 _list(m::RigidBodyTools.AbstractMotion) = MotionList([m])
 _list(m::MotionList) = m

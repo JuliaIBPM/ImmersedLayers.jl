@@ -167,7 +167,7 @@ body = Rectangle(0.5,0.25,Δs)
 Set up the problem and the system
 =#
 prob = StokesFlowProblem(g,body,scaling=GridScaling)
-sys = ImmersedLayers.__init(prob)
+sys = construct_system(prob)
 
 #=
 ## Solve the problem

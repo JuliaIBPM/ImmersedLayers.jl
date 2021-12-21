@@ -22,7 +22,7 @@ using UnPack
 export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         DoubleLayer!, SingleLayer!, Mask!,
         SurfaceCache,SurfaceScalarCache,SurfaceVectorCache,
-        @ilmproblem,regenerate_problem,
+        @ilmproblem,construct_system,update_system,update_system!,
         BasicScalarILMProblem,BasicVectorILMProblem,prob_cache,
         AbstractScalingType,GridScaling,IndexScaling,
         BasicILMCache,ILMSystem,
@@ -52,7 +52,7 @@ $(TYPEDEF)
 A system of operators and caches for immersed layer problems. This is constructed
 by [`__init`](@ref)
 """
-struct ILMSystem{static,PT,PHT,BCF,FF,DTF,MTF,BCT,ECT}
+mutable struct ILMSystem{static,PT,PHT,BCF,FF,DTF,MTF,BCT,ECT}
 
   phys_params :: PHT
   bc :: BCF

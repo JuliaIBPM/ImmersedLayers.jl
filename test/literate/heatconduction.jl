@@ -258,7 +258,7 @@ prob = DirichletHeatConductionProblem(g,body,scaling=GridScaling,
 #=
 Construct the system
 =#
-sys = ImmersedLayers.__init(prob);
+sys = construct_system(prob);
 
 #=
 ### Solving the problem

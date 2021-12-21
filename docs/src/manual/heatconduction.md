@@ -71,7 +71,7 @@ The constrained ODE system requires us to provide functions that calculate
 the RHS of the ODE, the RHS of the constraint equation, the Lagrange multiplier force
 term in the ODE, and the action of the boundary operator on the state vector.
 (You can see the generic form of the system by typing `?ConstrainedODEFunction`)
-As you will see, in this example these are `in-place` operators: their
+As you will see, in this example these are *in-place* operators: their
 first argument holds the result, which is changed (i.e., mutated)
 by the function.
 Below, we construct the function that calculates the RHS of the heat conduction ODE.
@@ -268,7 +268,7 @@ nothing #hide
 Construct the system
 
 ````@example heatconduction
-sys = ImmersedLayers.__init(prob);
+sys = construct_system(prob);
 nothing #hide
 ````
 

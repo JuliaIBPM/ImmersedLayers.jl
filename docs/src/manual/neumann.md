@@ -170,7 +170,7 @@ Create the system
 
 ````@example neumann
 prob = NeumannPoissonProblem(g,body,scaling=GridScaling)
-sys = ImmersedLayers.__init(prob)
+sys = construct_system(prob)
 nothing #hide
 ````
 
@@ -247,7 +247,7 @@ Create the problem and system
 
 ````@example neumann
 prob = NeumannPoissonProblem(g,bl,scaling=GridScaling)
-sys = ImmersedLayers.__init(prob)
+sys = construct_system(prob)
 nothing #hide
 ````
 
