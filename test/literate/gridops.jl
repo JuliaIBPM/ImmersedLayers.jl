@@ -51,7 +51,7 @@ We can then compute the derivative of this data
 =#
 divv = zeros_grid(cache)
 divergence!(divv,v,cache)
-plot(divv,v)
+plot(divv,cache)
 
 #=
 ## Convective derivatives

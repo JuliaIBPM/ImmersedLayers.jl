@@ -101,15 +101,16 @@ end
 end
 
 @testset "Grid operations" begin
-  scache = SurfaceScalarCache(body,g,scaling=GridScaling)
+  vcache = SurfaceVectorCache(body,g,scaling=GridScaling)
 
   q .= randn(size(q))
   cv_cache = ConvectiveDerivativeCache(EdgeGradient(Primal,q))
+  cv_cache2 = ConvectiveDerivativeCache(vcache)
   qdq = similar(q)
   qdq .= 0.0
-  convective_derivative!(qdq,q,scache,cv_cache)
+  convective_derivative!(qdq,q,vcache,cv_cache2)
 
-  qdq2 = convective_derivative(q,scache)
+  qdq2 = convective_derivative(q,vcache)
 
   @test qdq == qdq2
 end
@@ -122,14 +123,14 @@ end
   prob = BasicScalarILMProblem(g,body,scaling=GridScaling)
   @test typeof(prob.bodies) <: BodyList
 
-  sys = ImmersedLayers.__init(prob)
+  sys = construct_system(prob)
 
   scache = SurfaceScalarCache(body,g,scaling=GridScaling)
 
   @test typeof(sys.base_cache) == typeof(scache)
 
   vprob = BasicVectorILMProblem(g,body,scaling=GridScaling)
-  vsys = ImmersedLayers.__init(vprob)
+  vsys = construct_system(vprob)
 
   vcache = SurfaceVectorCache(body,g,scaling=GridScaling)
 
@@ -137,23 +138,23 @@ end
 
   p = rand()
   prob = BasicScalarILMProblem(g,body,scaling=GridScaling,phys_params=p)
-  sys = ImmersedLayers.__init(prob)
+  sys = construct_system(prob)
   @test sys.phys_params == p
 
   Re = rand()
   p = Dict("Re"=>Re)
   prob = BasicScalarILMProblem(g,body,scaling=GridScaling,phys_params=p)
-  sys = ImmersedLayers.__init(prob)
+  sys = construct_system(prob)
   @test sys.phys_params["Re"] == Re
 
   my_bc_func(x) = x
   prob = BasicScalarILMProblem(g,body,scaling=GridScaling,bc=my_bc_func)
-  sys = ImmersedLayers.__init(prob)
+  sys = construct_system(prob)
   @test sys.bc == my_bc_func
 
   my_f_func(x) = x
   prob = BasicScalarILMProblem(g,body,scaling=GridScaling,forcing=my_f_func)
-  sys = ImmersedLayers.__init(prob)
+  sys = construct_system(prob)
   @test sys.forcing == my_f_func
 
 end
@@ -162,9 +163,9 @@ end
 
   my_f_func(x) = x
   prob = BasicScalarILMProblem(g,body,scaling=GridScaling,forcing=my_f_func)
-  sys = ImmersedLayers.__init(prob)
+  sys = construct_system(prob)
 
-  prob2 = regenerate_problem(sys,sys.base_cache.bl)
+  prob2 = ImmersedLayers.regenerate_problem(sys,sys.base_cache.bl)
   @test prob.g == prob2.g
   @test prob.bodies == prob2.bodies
   @test prob.phys_params == prob2.phys_params
@@ -176,6 +177,6 @@ end
 end
 
 @testset "System update" begin
-  
+
 
 end
