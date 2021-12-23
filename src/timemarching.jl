@@ -72,9 +72,9 @@ function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{false})
     rhs! = ConstrainedSystems.r1vector(state_r1 = f.ode_rhs,
                                        aux_r1 = body_rhs!)
 
-    # Need to provide the system update function here
     ConstrainedODEFunction(rhs!,f.bc_rhs,f.constraint_force,
-                           f.bc_op,f.lin_op,_func_cache=zeros_sol(sys))
+                           f.bc_op,f.lin_op,_func_cache=zeros_sol(sys),
+                           param_update_func=update_system!)
 end
 
 """
