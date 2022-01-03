@@ -52,7 +52,7 @@ $(TYPEDEF)
 A system of operators and caches for immersed layer problems. This is constructed
 by [`__init`](@ref)
 """
-mutable struct ILMSystem{static,PT,PHT,BCF,FF,DTF,MTF,BCT,ECT}
+mutable struct ILMSystem{static,PT,N,PHT,BCF,FF,DTF,MTF,BCT,ECT}
 
   phys_params :: PHT
   bc :: BCF

@@ -185,6 +185,7 @@ end
 
 @inline CartesianGrids.cellsize(s::BasicILMCache) = cellsize(s.g)
 
+@inline Base.length(s::BasicILMCache{N}) where {N} = N
 
 
 # Standardize the regularization

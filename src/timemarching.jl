@@ -46,23 +46,38 @@ struct ODEFunctionList{RT,LT,BRT,CFT,BOT,ST,CT}
     constraint :: CT
 end
 
+_has_lin_op(f::ODEFunctionList{RT,LT}) where {RT,LT} = true
+_has_lin_op(f::ODEFunctionList{RT,Nothing}) where {RT} = false
+
+
 function ODEFunctionList(;ode_rhs=nothing,lin_op=nothing,bc_rhs=nothing,constraint_force=nothing,bc_op=nothing,state=nothing,constraint=nothing)
 
     # Audit the supplied information to make sure it is consistent
     !(state isa Nothing)  || error("need to supply a state vector")
     !(ode_rhs isa Nothing)  || error("need to supply a rhs function for the ODE")
-    !any(i -> i isa Nothing,[bc_rhs,constraint_force,bc_op,constraint]) || error("incomplete set of functions for constrained system")
+    constraint_stuff = [bc_rhs,constraint_force,bc_op,constraint]
+    #!any(i -> i isa Nothing,constraint_stuff) || error("incomplete set of functions for constrained system")
 
     ODEFunctionList{typeof(ode_rhs),typeof(lin_op),typeof(bc_rhs),typeof(constraint_force),
                     typeof(bc_op),typeof(state),typeof(constraint)}(ode_rhs,lin_op,bc_rhs,constraint_force,bc_op,state,constraint)
+end
+
+function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{true,SCA,0}) where {SCA}
+    @unpack extra_cache = sys
+    @unpack f = extra_cache
+
+    _constrained_ode_function(f.lin_op,f.ode_rhs;_func_cache=zeros_sol(sys))
+    #ConstrainedODEFunction(f.ode_rhs,f.lin_op,_func_cache=zeros_sol(sys))
 end
 
 function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{true})
     @unpack extra_cache = sys
     @unpack f = extra_cache
 
-    ConstrainedODEFunction(f.ode_rhs,f.bc_rhs,f.constraint_force,
-                           f.bc_op,f.lin_op,_func_cache=zeros_sol(sys))
+    _constrained_ode_function(f.lin_op,f.ode_rhs,f.bc_rhs,f.constraint_force,
+                           f.bc_op;_func_cache=zeros_sol(sys))
+    #ConstrainedODEFunction(f.ode_rhs,f.bc_rhs,f.constraint_force,
+    #                       f.bc_op,f.lin_op,_func_cache=zeros_sol(sys))
 end
 
 function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{false})
@@ -72,16 +87,31 @@ function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{false})
     rhs! = ConstrainedSystems.r1vector(state_r1 = f.ode_rhs,
                                        aux_r1 = body_rhs!)
 
-    ConstrainedODEFunction(rhs!,f.bc_rhs,f.constraint_force,
-                           f.bc_op,f.lin_op,_func_cache=zeros_sol(sys),
-                           param_update_func=update_system!)
+    _constrained_ode_function(f.lin_op,rhs!,f.bc_rhs,f.constraint_force,
+                              f.bc_op;_func_cache=zeros_sol(sys),
+                                      param_update_func=update_system!)
+    #ConstrainedODEFunction(rhs!,f.bc_rhs,f.constraint_force,
+    #                       f.bc_op,f.lin_op,_func_cache=zeros_sol(sys),
+    #                       param_update_func=update_system!)
 end
+
+@inline _constrained_ode_function(lin_op,args...;kwargs...) =
+    ConstrainedODEFunction(args...,lin_op;kwargs...)
+
+@inline _constrained_ode_function(::Nothing,args...;kwargs...) =
+    ConstrainedODEFunction(args...;kwargs...)
 
 """
     zeros_sol(sys::ILMSystem)
 
 Return a zeroed version of the solution vector.
 """
+function zeros_sol(sys::ILMSystem{true,SCA,0}) where {SCA}
+    @unpack extra_cache = sys
+    @unpack f = extra_cache
+    return solvector(state=zero(f.state))
+end
+
 function zeros_sol(sys::ILMSystem{true})
     @unpack extra_cache = sys
     @unpack f = extra_cache
@@ -102,6 +132,12 @@ end
 
 Return the initial solution vector.
 """
+function init_sol(sys::ILMSystem{true,SCA,0}) where {SCA}
+    @unpack extra_cache = sys
+    @unpack f = extra_cache
+    return solvector(state=zero(f.state))
+end
+
 function init_sol(sys::ILMSystem{true})
     @unpack extra_cache = sys
     @unpack f = extra_cache
@@ -138,7 +174,6 @@ described in `sys`.
 function init(u0,tspan,sys::ILMSystem;alg=ConstrainedSystems.LiskaIFHERK(),kwargs...)
     @unpack timestep_func, phys_params, extra_cache,base_cache = sys
     @unpack g = base_cache
-    @unpack f = extra_cache
     fode = ConstrainedODEFunction(sys)
 
     prob = ODEProblem(fode,u0,tspan,sys)

@@ -7,6 +7,8 @@ If the system needs to be regenerated because of surface motion, only the two
 caches will need to be regenerated.
 =#
 
+Base.length(sys::ILMSystem) = length(sys.base_cache)
+
 """
     construct_system(prob::AbstractILMProblem) -> ILMSystem
 
@@ -57,31 +59,39 @@ vector type, as well as an optional extra cache
 function __init(prob::AbstractILMProblem{DT,ST}) where {DT,ST}
     @unpack g, bodies, phys_params, bc, forcing, timestep_func, motions = prob
 
+    #=
     if typeof(prob) <: AbstractScalarILMProblem
         base_cache = SurfaceScalarCache(bodies,g,ddftype=DT,scaling=ST)
     elseif typeof(prob) <: AbstractVectorILMProblem
         base_cache = SurfaceVectorCache(bodies,g,ddftype=DT,scaling=ST)
     end
+    =#
+    base_cache = _construct_base_cache(bodies,g,DT,ST,prob,Val(length(bodies)))
 
     extra_cache = prob_cache(prob,base_cache)
 
-    return ILMSystem{_static_surfaces(motions),typeof(prob),typeof(phys_params),typeof(bc),typeof(forcing),
+    return ILMSystem{_static_surfaces(motions),typeof(prob),length(base_cache),typeof(phys_params),typeof(bc),typeof(forcing),
                     typeof(timestep_func),typeof(motions),typeof(base_cache),typeof(extra_cache)}(
               phys_params,bc,forcing,timestep_func,motions,base_cache,extra_cache)
 
 end
 
+@inline _construct_base_cache(bodies,g,DT,ST,::PT,::Val{0}) where {PT <: AbstractScalarILMProblem} =
+              SurfaceScalarCache(g,ddftype=DT,scaling=ST)
+
+@inline _construct_base_cache(bodies,g,DT,ST,::PT,::Val{N}) where {PT <: AbstractScalarILMProblem,N} =
+              SurfaceScalarCache(bodies,g,ddftype=DT,scaling=ST)
+
+@inline _construct_base_cache(bodies,g,DT,ST,::PT,::Val{0}) where {PT <: AbstractVectorILMProblem} =
+              SurfaceVectorCache(g,ddftype=DT,scaling=ST)
+
+@inline _construct_base_cache(bodies,g,DT,ST,::PT,::Val{N}) where {PT <: AbstractVectorILMProblem,N} =
+              SurfaceVectorCache(bodies,g,ddftype=DT,scaling=ST)
+
+
+
 _static_surfaces(::Nothing) = true
 _static_surfaces(::Any) = false
-
-#=
-Need a function of the form update_system(sys,u,sysold,t)
-- Need to create a function that will take the motion_state
-  and update bodies with it
-- Need to be able to regenerate extra_cache with new bodies
-- The latter needs a way to regenerate the problem struct
-  from the system.
-=#
 
 
 
