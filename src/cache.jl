@@ -23,22 +23,49 @@ struct BasicILMCache{N,SCA<:AbstractScalingType,ND,BLT<:BodyList,NT<:VectorData,
                       RT<:RegularizationMatrix,ET<:InterpolationMatrix,
                       LT<:CartesianGrids.Laplacian,GVT,GNT,GCT,SVT,SST}
 
+    # Grid                  
     g :: PhysicalGrid{ND}
+
+    # Bodies
     bl :: BLT
+
+    # Normals
     nrm :: NT
+
+    # Areas
     ds :: DST
+
+    # Regularization operator
     regop :: REGT
+
+    # Regularization and interpolation of tensor product data (gsnorm/snorm)
     Rsn :: RSNT
     Esn :: ESNT
+
+    # Regularization and interpolation of basic data (gdata/sdata)
     R :: RT
     E :: ET
+
+    # Laplacian (with no coefficient)
     L :: LT
+
+    # For holding the grid data comprised of tensor product of basic grid data
+    # and regularized normals (e.g., scalar -> Edges{Primal}, vector -> EdgeGradient)
     gsnorm_cache :: GVT
     gsnorm2_cache :: GVT
+
+    # For holding the curl of the basic grid data (always Nodes{Dual})
     gcurl_cache :: GNT
+
+    # For holding the basic data type (e.g., scalar -> Nodes{Primal}, vector -> Edges{Primal})
     gdata_cache :: GCT
+
+    # For holding the surface data comprised of tensor product of basic data
+    # and normals (e.g, scalar -> VectorData, vector -> TensorData)
     snorm_cache :: SVT
     snorm2_cache :: SVT
+
+    # For holding the basic surface data (e.g., scalar -> ScalarData, vector -> VectorData)
     sdata_cache :: SST
 end
 
