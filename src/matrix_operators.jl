@@ -124,6 +124,36 @@ function create_GLinvD(cache::BasicILMCache{N};scale=1.0) where {N}
 end
 
 """
+    create_GLinvD_symm(cache::BasicILMCache[;scale=1.0])
+
+Using the provided cache `cache`, construct the square matrix ``-G_s L^{-1}D_s``, which maps data of type `ScalarData`
+to data of the same type. The operators `G_s` and `D_s` correspond to [`surface_grad_symm!`](@ref)
+and [`surface_divergence_symm!`](@ref), and `L` is the grid Laplacian. The optional keyword `scale` multiplies the
+matrix by the designated value.
+"""
+function create_GLinvD_symm(cache::BasicILMCache{N};scale=1.0) where {N}
+    @unpack L, sdata_cache, gdata_cache = cache
+
+    len = length(sdata_cache)
+    A = Matrix{eltype(sdata_cache)}(undef,len,len)
+    fill!(sdata_cache,0.0)
+
+    for col in 1:len
+        sdata_cache[col] = 1.0
+        fill!(gdata_cache,0.0)
+        surface_divergence_symm!(gdata_cache,sdata_cache,cache)
+        inverse_laplacian!(gdata_cache,cache)
+        surface_grad_symm!(sdata_cache,gdata_cache,cache)
+
+        A[:,col] .= -scale*sdata_cache
+        fill!(sdata_cache,0.0)
+    end
+
+    return A
+
+end
+
+"""
     create_GLinvD_cross(cache::BasicILMCache[;scale=1.0])
 
 Using the provided cache `cache`, construct the square matrix ``-\\hat{G}_s L^{-1}\\hat{D}_s``, which maps data of type `ScalarData`
@@ -195,7 +225,7 @@ function create_surface_filter(cache::BasicILMCache{N,SCA}) where {N,SCA}
     regfilt = _get_regularization(points(cache),areas(cache),g,
                                   _ddf_type(cache),SCA,filter=true)
     Ef = InterpolationMatrix(regfilt,gdata_cache,sdata_cache)
-    
+
     len = length(sdata_cache)
     C = Matrix{eltype(sdata_cache)}(undef,len,len)
     return mul!(C,Ef,R)

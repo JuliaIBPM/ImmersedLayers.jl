@@ -211,7 +211,9 @@ plot(xmask,cache)
 #md # regularize!
 #md # interpolate!
 #md # regularize_normal!
+#md # regularize_normal_symm!
 #md # normal_interpolate!
+#md # normal_interpolate_symm!
 #md # regularize_normal_cross!
 #md # normal_cross_interpolate!
 #md # surface_divergence!

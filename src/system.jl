@@ -107,15 +107,17 @@ for f in [:zeros_surface,:zeros_grid,:zeros_gridcurl,:zeros_gridgrad,
           :x_grid,:y_grid,:x_gridcurl,:y_gridcurl,
           :normals,:areas,:points,
           :create_nRTRn,:create_GLinvD,:create_CLinvCT,:create_CL2invCT,
-          :create_RTLinvR,
+          :create_RTLinvR,:create_GLinvD_symm,
           :create_GLinvD_cross,:create_surface_filter]
    @eval $f(sys::ILMSystem) = $f(sys.base_cache)
 end
 
 for f in [:regularize!, :interpolate!, :regularize_normal!,
-          :normal_interpolate!,:regularize_normal_cross!,
-          :normal_cross_interpolate!,
+          :normal_interpolate!,
+          :regularize_normal_cross!,:normal_cross_interpolate!,
+          :regularize_normal_symm!,:normal_interpolate_symm!,
           :surface_curl!,:surface_divergence!,:surface_grad!,
+          :surface_divergence_symm!,:surface_grad_symm!,
           :surface_curl_cross!,:surface_divergence_cross!,:surface_grad_cross!]
   @eval $f(a,b,sys::ILMSystem) = $f(a,b,sys.base_cache)
 end

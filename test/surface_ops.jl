@@ -70,14 +70,22 @@ vs = VectorData(X)
 
   regularize_normal!(dq,vs,vcache)
   normal_interpolate!(vs,dq,vcache)
-  @test minimum(vs.u) ≈ -39 atol = 1e-0
-  @test maximum(vs.u) ≈ 39 atol = 1e-0
+
+  fill!(dq,0.0)
+  vs.u .= sin.(angs(length(body)) .- π/4)
+  regularize_normal_symm!(dq,vs,vcache)
+  normal_interpolate_symm!(vs,dq,vcache)
+  @test minimum(vs.u) ≈ -22.5 atol = 1e-0
+  @test maximum(vs.u) ≈ 22.5 atol = 1e-0
 
   surface_divergence!(q,vs,vcache)
   surface_grad!(vs,q,vcache)
 
+  surface_divergence_symm!(q,vs,vcache)
+  surface_grad_symm!(vs,q,vcache)
+
   A = create_GLinvD(vcache,scale=cellsize(g))
-  @test maximum(abs.(eigvals(A))) ≈ 1.7 atol = 1e-1
+  @test maximum(abs.(eigvals(A))) ≈ 0.45 atol = 1e-1
 
 
 end
