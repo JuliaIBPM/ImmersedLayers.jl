@@ -23,7 +23,7 @@ struct BasicILMCache{N,SCA<:AbstractScalingType,ND,BLT<:BodyList,NT<:VectorData,
                       RT<:RegularizationMatrix,ET<:InterpolationMatrix,
                       LT<:CartesianGrids.Laplacian,GVT,GNT,GCT,SVT,SST}
 
-    # Grid                  
+    # Grid
     g :: PhysicalGrid{ND}
 
     # Bodies
@@ -200,7 +200,8 @@ function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},d
   E = _interpolation_matrix(regop, gdata_cache,sdata_cache)
 
   coeff_factor = 1.0
-  L = _get_laplacian(gcurl_cache,coeff_factor,g,scaling)
+  with_inverse = true
+  L = _get_laplacian(gcurl_cache,coeff_factor,g,with_inverse,scaling)
 
   return BasicILMCache{N,scaling,ND,typeof(bl),typeof(nrm),typeof(a),typeof(regop),typeof(Rsn),typeof(Esn),typeof(R),typeof(E),typeof(L),
                        typeof(gsnorm_cache),typeof(gcurl_cache),typeof(gdata_cache),typeof(snorm_cache),typeof(sdata_cache)}(
@@ -225,8 +226,8 @@ _get_regularization(X::VectorData{N},a::ScalarData{N},g::PhysicalGrid,ddftype,::
 _get_regularization(body::Union{Body,BodyList},args...;kwargs...) = _get_regularization(VectorData(collect(body)),areas(body),args...;kwargs...)
 
 # Standardize the Laplacian
-_get_laplacian(a,coeff_factor::Real,g::PhysicalGrid,::Type{IndexScaling}) = plan_laplacian(size(a),with_inverse=true,factor=coeff_factor)
-_get_laplacian(a,coeff_factor::Real,g::PhysicalGrid,::Type{GridScaling}) = plan_laplacian(size(a),with_inverse=true,factor=coeff_factor/cellsize(g)^2)
+_get_laplacian(a,coeff_factor::Real,g::PhysicalGrid,with_inverse,::Type{IndexScaling}) = plan_laplacian(size(a),with_inverse=with_inverse,factor=coeff_factor)
+_get_laplacian(a,coeff_factor::Real,g::PhysicalGrid,with_inverse,::Type{GridScaling}) =  plan_laplacian(size(a),with_inverse=with_inverse,factor=coeff_factor/cellsize(g)^2)
 
 
 # This is needed to stabilize the type-unstable `RegularizationMatrix` function in
@@ -267,14 +268,14 @@ CartesianGrids.InterpolationMatrix(cache::BasicILMCache,src::GridData,trg::Point
     _interpolation_matrix(cache.regop,src,trg)
 
 """
-    Laplacian(cache::BasicILMCache,src::GridData,coeff_factor::Real)
+    Laplacian(cache::BasicILMCache,src::GridData,coeff_factor::Real[,with_inverse=true])
 
 Create an invertible Laplacian operator for data `src` (of the same size as the grid in `cache`),
 using the index or grid scaling associated with `cache`. The operator is pre-multiplied
 by the factor `coeff_factor`.
 """
-Laplacian(cache::BasicILMCache{N,SCA},src::GridData,coeff_factor) where {N,SCA} =
-    _get_laplacian(src,coeff_factor,cache.g,SCA)
+Laplacian(cache::BasicILMCache{N,SCA},src::GridData,coeff_factor; with_inverse=true) where {N,SCA} =
+    _get_laplacian(src,coeff_factor,cache.g,with_inverse,SCA)
 
 
 # Some utilities to get the DDF type of the cache

@@ -188,3 +188,19 @@ end
 
 
 end
+
+@testset "Forcing regions" begin
+  Δs = 1.4*cellsize(g)
+  region = Square(0.5,Δs)
+
+  cache = SurfaceScalarCache(body,g,scaling=GridScaling)
+
+  ar = AreaRegion(region,cache)
+
+  @test typeof(ar.mask) <: ScalarGridData
+
+  lr = LineRegion(region,cache)
+
+
+
+end

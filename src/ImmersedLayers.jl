@@ -44,6 +44,7 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         mask,mask!,complementary_mask,complementary_mask!,
         create_CLinvCT,create_CL2invCT,create_GLinvD,create_nRTRn,create_RTLinvR,
         create_GLinvD_cross,create_surface_filter,
+        AreaRegion,LineRegion,
         solve
 
 abstract type LayerType{N} end
@@ -52,7 +53,7 @@ abstract type LayerType{N} end
 $(TYPEDEF)
 
 A system of operators and caches for immersed layer problems. This is constructed
-by [`__init`](@ref)
+by [`construct_system`](@ref)
 """
 mutable struct ILMSystem{static,PT,N,PHT,BCF,FF,DTF,MTF,BCT,ECT}
 
@@ -74,6 +75,7 @@ include("system.jl")
 include("layers.jl")
 include("grid_operators.jl")
 include("surface_operators.jl")
+include("forcing.jl")
 include("matrix_operators.jl")
 include("timemarching.jl")
 
