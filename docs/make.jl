@@ -20,7 +20,8 @@ makedocs(
          "Setting up PDEs" => ["manual/problems.md",
                                 "manual/neumann.md",
                                 "manual/stokes.md",
-                                "manual/heatconduction.md"
+                                "manual/heatconduction.md",
+                                "manual/heatconduction-unbounded.md"
                                 ],
         #"Internals" => [ "internals/properties.md"]
     ],
