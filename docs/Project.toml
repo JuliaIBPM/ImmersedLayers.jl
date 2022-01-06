@@ -9,7 +9,7 @@ RigidBodyTools = "befc5f09-81d5-499c-a4b2-d0464ba9f9c8"
 UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 
 [compat]
-CartesianGrids = "0.1.16"
+CartesianGrids = "0.1.19"
 LaTeXStrings = "^1.0, 1.1"
 Plots = "1.12, 1.13, 1.14, 1.15"
 RigidBodyTools = "0.3.1"
