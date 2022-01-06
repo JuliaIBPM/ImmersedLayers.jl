@@ -8,6 +8,7 @@ EditURL = "<unknown>/literate/gridops.jl"
 CurrentModule = ImmersedLayers
 ```
 
+## Basic differential operations
 There are a variety of (purely) grid-based operators that are useful for carrying
 out calculations in immersed layer problems. We will demonstrate a few of them
 here.
@@ -53,29 +54,60 @@ grad!(v,p,cache)
 plot(v,cache)
 ````
 
-And finally, let's compute the convective derivative,
+We can then compute the derivative of this data
 
-$$\mathbf{v}\cdot\nabla\mathbf{v}$$
+````@example gridops
+divv = zeros_grid(cache)
+divergence!(divv,v,cache)
+plot(divv,cache)
+````
 
-For this, we create a separate cache, using [`ConvectiveDerivativeCache`](@ref), which
-can be constructed from the existing `cache`. This extra cache holds additional
-memory for making the calculation of the convective derivative faster. We will
+## Convective derivatives
+And finally, let's compute convective derivatives. First, we will compute
+
+$$\mathbf{v}\cdot\nabla p$$
+
+For this operation, we create a special additional cache using [`ConvectiveDerivativeCache`](@ref).
+This extra cache holds additional memory for making the calculation of the convective derivative faster
+if we compute it often.
 
 ````@example gridops
 cdcache = ConvectiveDerivativeCache(cache)
-vdv = zeros_gridgrad(cache)
-convective_derivative!(vdv,v,cache,cdcache) #hide
-@time convective_derivative!(vdv,v,cache,cdcache)
+vdp = zeros_grid(cache)
+convective_derivative!(vdp,v,p,cache,cdcache) #hide
+@time convective_derivative!(vdp,v,p,cache,cdcache)
 nothing #hide
 ````
 
 Plot it
 
 ````@example gridops
-plot(vdv,cache)
+plot(vdp,cache)
 ````
 
-## Surface-grid operator functions
+Now, let's compute
+
+$$\mathbf{v}\cdot\nabla\mathbf{v}$$
+
+For this, we create a cache for `VectorGridData`, and a new instance of
+`ConvectiveDerivativeCache` to go along with it.
+
+````@example gridops
+vcache = SurfaceVectorCache(g,scaling=GridScaling)
+vdv = zeros_grid(vcache)
+cdvcache = ConvectiveDerivativeCache(vcache)
+convective_derivative!(vdv,v,vcache,cdvcache) #hide
+@time convective_derivative!(vdv,v,vcache,cdvcache)
+nothing #hide
+````
+
+Plot it
+
+````@example gridops
+plot(vdv,vcache)
+````
+
+## Grid operator functions
 ```@docs
 divergence!
 grad!
