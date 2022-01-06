@@ -27,6 +27,8 @@ struct LineRegion{ACT,CT} <: AbstractRegion
     cache :: CT
 end
 
+
+
 for f in [:Scalar,:Vector]
     cname = Symbol("Surface"*string(f)*"Cache")
     gdtype = Symbol(string(f)*"GridData")
@@ -52,3 +54,31 @@ for f in [:AreaRegion,:LineRegion]
     @eval $f(shape::Union{Body,BodyList},cache::BasicILMCache{N,SCA};scaling=SCA,kwargs...) where {N,SCA} = $f(cache.g,shape,similar_grid(cache);scaling=scaling,kwargs...)
     @eval $f(g,shape::Body,a...;kwargs...) = $f(g,BodyList([shape]),a...;kwargs...)
 end
+
+"""
+    AreaRegion(shape::Body/BodyList,cache::BasicILMCache)
+
+Create an area region (basically, a mask) of the shape(s) `shape`, using
+the data in `cache` to provide the details of the regularization.
+""" AreaRegion(::Union{Body,BodyList},::BasicILMCache)
+
+"""
+    LineRegion(shape::Body/BodyList,cache::BasicILMCache)
+
+Create a line region of the shape(s) `shape`, using
+the data in `cache` to provide the details of the regularization.
+""" LineRegion(::Union{Body,BodyList},::BasicILMCache)
+
+"""
+    mask(ar::AreaRegion)
+
+Return the mask for the given area region `ar`.
+"""
+mask(ar::AreaRegion) = ar.mask
+
+"""
+    arccoord(lr::LineRegion)
+
+Return the vector of arc length coordinates for the given line region `lr`.
+"""
+arccoord(lr::LineRegion) = lr.arccoord

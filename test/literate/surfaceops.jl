@@ -227,3 +227,11 @@ plot(xmask,cache)
 #md # complementary_mask!
 #md # complementary_mask
 #md # ```
+
+
+#md # ## Regions
+#md # ```@docs
+#md # AreaRegion
+#md # LineRegion
+#md # arccoord
+#md # ```
