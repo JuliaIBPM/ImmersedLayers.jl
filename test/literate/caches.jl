@@ -172,6 +172,8 @@ dot(os,os,cache)
 #md # y_grid
 #md # x_gridcurl
 #md # y_gridcurl
+#md # x_gridgrad
+#md # y_gridgrad
 #md # ```
 
 #md # ## Utilities for accessing surface information

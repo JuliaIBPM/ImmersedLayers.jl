@@ -17,11 +17,11 @@ $(TYPEDEF)
 A cache of operators and storage data for use in surface operations. Constructed
 with [`SurfaceScalarCache`](@ref) or [`SurfaceVectorCache`](@ref).
 """
-struct BasicILMCache{N,SCA<:AbstractScalingType,ND,BLT<:BodyList,NT<:VectorData,
+struct BasicILMCache{N,SCA<:AbstractScalingType,GCT,ND,BLT<:BodyList,NT<:VectorData,
                       DST<:ScalarData,REGT<:Regularize,
                       RSNT<:RegularizationMatrix,ESNT<:InterpolationMatrix,
                       RT<:RegularizationMatrix,ET<:InterpolationMatrix,
-                      LT<:CartesianGrids.Laplacian,GVT,GNT,GCT,SVT,SST}
+                      LT<:CartesianGrids.Laplacian,GVT,GNT,SVT,SST}
 
     # Grid
     g :: PhysicalGrid{ND}
@@ -203,8 +203,8 @@ function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},d
   with_inverse = true
   L = _get_laplacian(gcurl_cache,coeff_factor,g,with_inverse,scaling)
 
-  return BasicILMCache{N,scaling,ND,typeof(bl),typeof(nrm),typeof(a),typeof(regop),typeof(Rsn),typeof(Esn),typeof(R),typeof(E),typeof(L),
-                       typeof(gsnorm_cache),typeof(gcurl_cache),typeof(gdata_cache),typeof(snorm_cache),typeof(sdata_cache)}(
+  return BasicILMCache{N,scaling,typeof(gdata_cache),ND,typeof(bl),typeof(nrm),typeof(a),typeof(regop),typeof(Rsn),typeof(Esn),typeof(R),typeof(E),typeof(L),
+                       typeof(gsnorm_cache),typeof(gcurl_cache),typeof(snorm_cache),typeof(sdata_cache)}(
                        g,bl,nrm,a,regop,Rsn,Esn,R,E,L,
                        similar(gsnorm_cache),similar(gsnorm_cache),similar(gcurl_cache),similar(gdata_cache),
                        similar(snorm_cache),similar(snorm_cache),similar(sdata_cache))
@@ -385,12 +385,26 @@ Get an instance of the basic surface point data in the cache, with values set to
 """
     x_grid(::BasicILMCache)
 
-Return basic grid data filled with the grid `x` coordinate
+Return basic grid data filled with the grid `x` coordinate.
+If the grid data is scalar, then the output of this function is
+of the same type. If the grid
+data is vector, then the output is of type `Edges{Primal}`,
+and the coordinates of each component are in `u`, `v` fields.
 """
-function x_grid(cache::BasicILMCache)
+function x_grid(cache::BasicILMCache{N,SCA,GT}) where {N,SCA,GT<:Nodes{Primal}}
     xc, _ = coordinates(cache.gdata_cache,cache.g)
     p = zeros_grid(cache)
     p .= xc
+    return p
+end
+
+function x_grid(cache::BasicILMCache{N,SCA,GT}) where {N,SCA,GT<:Edges{Primal}}
+    p = zeros_grid(cache)
+    xu, _ = coordinates(p.u,cache.g)
+    xv, _ = coordinates(p.v,cache.g)
+    p.u .= xu
+    p.v .= xv
+    return p
 end
 
 """
@@ -404,16 +418,59 @@ function x_gridcurl(cache::BasicILMCache)
     p .= xc
 end
 
+"""
+    x_gridgrad(::BasicILMCache)
+
+Return basic grid gradient field data filled with the grid `x` coordinate.
+If the grid data is scalar, then the output of this function is
+of `Edges{Primal}` type and the coordinate field for each component
+can be accessed with the `u` and `v` field, respectively. If the grid
+data is vector, then the output is of type `EdgeGradient{Primal}`,
+and the coordinates are in `dudx`, `dudy`, `dvdx`, and `dvdy` fields.
+"""
+function x_gridgrad(cache::BasicILMCache{N,SCA,GT}) where {N,SCA,GT<:Nodes{Primal}}
+    p = zeros_gridgrad(cache)
+    xu, _ = coordinates(p.u,cache.g)
+    xv, _ = coordinates(p.v,cache.g)
+    p.u .= xu
+    p.v .= xv
+    return p
+end
+
+function x_gridgrad(cache::BasicILMCache{N,SCA,GT}) where {N,SCA,GT<:Edges{Primal}}
+    p = zeros_gridgrad(cache)
+    xdudx, _ = coordinates(p.dudx,cache.g)
+    xdudy, _ = coordinates(p.dudy,cache.g)
+    p.dudx .= xdudx
+    p.dudy .= xdudy
+    p.dvdx .= xdudy
+    p.dvdy .= xdudx
+    return p
+end
 
 """
     y_grid(::BasicILMCache)
 
-Return basic grid data filled with the grid `y` coordinate
+Return basic grid data filled with the grid `y` coordinate.
+If the grid data is scalar, then the output of this function is
+of the same type. If the grid
+data is vector, then the output is of type `Edges{Primal}`,
+and the coordinates of each component are in `u`, `v` fields.
 """
-function y_grid(cache::BasicILMCache)
-    _,yc = coordinates(cache.gdata_cache,cache.g)
+function y_grid(cache::BasicILMCache{N,SCA,GT}) where {N,SCA,GT<:Nodes{Primal}}
+    _, yc  = coordinates(cache.gdata_cache,cache.g)
     p = zeros_grid(cache)
-    p .= yc'
+    p .= yc
+    return p
+end
+
+function y_grid(cache::BasicILMCache{N,SCA,GT}) where {N,SCA,GT<:Edges{Primal}}
+    p = zeros_grid(cache)
+    _, yu  = coordinates(p.u,cache.g)
+    _, yv  = coordinates(p.v,cache.g)
+    p.u .= yu'
+    p.v .= yv'
+    return p
 end
 
 """
@@ -425,6 +482,36 @@ function y_gridcurl(cache::BasicILMCache)
     _,yc = coordinates(cache.gcurl_cache,cache.g)
     p = zeros_gridcurl(cache)
     p .= yc'
+end
+
+"""
+    y_gridgrad(::BasicILMCache)
+
+Return basic grid gradient field data filled with the grid `y` coordinate.
+If the grid data is scalar, then the output of this function is
+of `Edges{Primal}` type and the coordinate field for each component
+can be accessed with the `u` and `v` field, respectively. If the grid
+data is vector, then the output is of type `EdgeGradient{Primal}`,
+and the coordinates are in `dudx`, `dudy`, `dvdx`, and `dvdy` fields.
+"""
+function y_gridgrad(cache::BasicILMCache{N,SCA,GT}) where {N,SCA,GT<:Nodes{Primal}}
+    p = zeros_gridgrad(cache)
+    _, yu = coordinates(p.u,cache.g)
+    _, yv = coordinates(p.v,cache.g)
+    p.u .= yu'
+    p.v .= yv'
+    return p
+end
+
+function y_gridgrad(cache::BasicILMCache{N,SCA,GT}) where {N,SCA,GT<:Edges{Primal}}
+    p = zeros_gridgrad(cache)
+    _, ydudx = coordinates(p.dudx,cache.g)
+    _, ydudy = coordinates(p.dudy,cache.g)
+    p.dudx .= ydudx'
+    p.dudy .= ydudy'
+    p.dvdx .= ydudy'
+    p.dvdy .= ydudx'
+    return p
 end
 
 

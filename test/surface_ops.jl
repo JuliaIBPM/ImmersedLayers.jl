@@ -123,6 +123,38 @@ end
   @test qdq == qdq2
 end
 
+@testset "Convenience fields" begin
+  scache = SurfaceScalarCache(body,g,scaling=GridScaling)
+
+  x = x_grid(scache)
+  y = y_grid(scache)
+  @test typeof(x) == typeof(y) == typeof(scache.gdata_cache)
+
+  x = x_gridcurl(scache)
+  y = y_gridcurl(scache)
+  @test typeof(x) == typeof(y) == typeof(scache.gcurl_cache)
+
+  x = x_gridgrad(scache)
+  y = y_gridgrad(scache)
+  @test typeof(x) == typeof(y) == typeof(scache.gsnorm_cache)
+
+  vcache = SurfaceVectorCache(body,g,scaling=GridScaling)
+
+  x = x_grid(vcache)
+  y = y_grid(vcache)
+  @test typeof(x) == typeof(y) == typeof(vcache.gdata_cache)
+
+  x = x_gridcurl(vcache)
+  y = y_gridcurl(vcache)
+  @test typeof(x) == typeof(y) == typeof(vcache.gcurl_cache)
+
+  x = x_gridgrad(vcache)
+  y = y_gridgrad(vcache)
+  @test typeof(x) == typeof(y) == typeof(vcache.gsnorm_cache)
+
+
+end
+
 @testset "Problem specification" begin
 
   prob = BasicScalarILMProblem(g,scaling=GridScaling)

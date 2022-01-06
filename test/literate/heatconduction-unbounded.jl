@@ -191,14 +191,14 @@ prob = UnboundedHeatConductionProblem(g,scaling=GridScaling,
                                         forcing=forcing,
                                         timestep_func=timestep_fourier_cfl)
 
-sys = ImmersedLayers.construct_system(prob);
+sys = construct_system(prob);
 
 #=
 ## Solve the problem
 As before, we first initialize the state, then we create an integrator,
 and finally, advance the solution in time
 =#
-u0 = ImmersedLayers.init_sol(sys)
+u0 = init_sol(sys)
 tspan = (0.0,2.0)
 integrator = init(u0,tspan,sys)
 
@@ -208,16 +208,20 @@ Run the problem for one time unit
 step!(integrator,1.0)
 
 #=
-Let's see what this looks like
+Let's see what this looks like. First, we will define the temperature
+function, like we did last time:
 =#
-plot(state(integrator.u),sys)
+temperature(u,sys::ILMSystem,t) = state(u)
+@snapshotoutput temperature
+
+plot(temperature(integrator),sys)
 
 #=
 We can also make a movie
 =#
 sol = integrator.sol
-@gif for i in eachindex(sol.t)
-    plot(state(sol[i]),sys)
+@gif for t in sol.t
+    plot(temperature(sol,sys,t),sys)
 end every 5
 
 
@@ -240,6 +244,6 @@ integrator = init(u0,tspan,sys)
 step!(integrator,1.0)
 
 sol = integrator.sol
-@gif for i in eachindex(sol.t)
-    plot(state(sol[i]),sys)
+@gif for t in sol.t
+    plot(temperature(sol,sys,t),sys)
 end every 5

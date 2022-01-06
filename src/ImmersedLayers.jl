@@ -30,7 +30,7 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         similar_grid,similar_gridgrad,similar_gridcurl,similar_surface,
         zeros_grid,zeros_gridgrad,zeros_gridcurl,zeros_surface,
         ones_grid,ones_gridgrad,ones_gridcurl,ones_surface,
-        x_grid,y_grid,x_gridcurl,y_gridcurl,
+        x_grid,y_grid,x_gridcurl,y_gridcurl,x_gridgrad,y_gridgrad,
         AbstractExtraILMCache,AbstractScalarILMProblem,AbstractVectorILMProblem,
         ConvectiveDerivativeCache,convective_derivative, convective_derivative!,
         regularize!, interpolate!,
@@ -45,7 +45,7 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         create_CLinvCT,create_CL2invCT,create_GLinvD,create_nRTRn,create_RTLinvR,
         create_GLinvD_cross,create_surface_filter,
         AreaRegion,LineRegion,arccoord,
-        solve
+        solve, @snapshotoutput
 
 abstract type LayerType{N} end
 
@@ -78,6 +78,7 @@ include("surface_operators.jl")
 include("forcing.jl")
 include("matrix_operators.jl")
 include("timemarching.jl")
+include("output.jl")
 
 include("plot_recipes.jl")
 
