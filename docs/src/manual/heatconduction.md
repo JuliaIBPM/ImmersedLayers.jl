@@ -15,10 +15,11 @@ temperature.
 
 We seek to solve the heat conduction equation with Dirichlet boundary conditions
 
-$$\dfrac{\partial T}{\partial t} = \kappa \nabla^2 T + q + \sigma \delta(\chi) - \nabla\cdot \left( \kappa [T] \delta(\chi)\right)$$
+$$\dfrac{\partial T}{\partial t} = \kappa \nabla^2 T + q + \delta(\chi) \sigma  - \kappa \nabla\cdot \left( \delta(\chi) \mathbf{n} [T] \right)$$
 
 subject to $T = T_b$ on the immersed surface. We might be solving this external
-to a surface, or it might be internal.
+to a surface, or it might be internal. The quantity $\sigma$ is the Lagrange
+multiplier. In this context, it is the heat flux through the surface.
 
 In the spatially discrete formulation, the problem takes the form
 
@@ -288,6 +289,18 @@ u0 = zeros_sol(sys)
 Δt = timestep_fourier(g,phys_params)
 ````
 
+It is instructive to note that `u0` has two parts: a *state* and a *constraint*,
+each obtained respectively with a convenience function. The state in this
+case is the temperature; the constraint is the Lagrange multiplier.
+
+````@example heatconduction
+state(u0)
+````
+
+````@example heatconduction
+constraint(u0)
+````
+
 Now, create the integrator, with a time interval of 0 to 1. We have not
 specified the algorithm here explicitly; it defaults to the `LiskaIFHERK`
 time-marching algorithm, which is a second-order algorithm for constrained
@@ -300,18 +313,52 @@ tspan = (0.0,1.0)
 integrator = init(u0,tspan,sys)
 ````
 
-Now advance the solution by 100 time steps, by using the `step!` function,
+Now advance the solution by 1 convective time unit, by using the `step!` function,
 which steps through the solution.
 
 ````@example heatconduction
-step!(integrator,100Δt)
+step!(integrator,1.0)
 ````
 
 ### Plot the solution
-Here, we plot the state of the system at the end of the interval.
+The integrator holds the most recent solution in the field `u`, which
+has the same type as our initial condition `u0`. Here, we plot the state of the system at the end of the interval.
 
 ````@example heatconduction
 plot(state(integrator.u),sys)
+````
+
+It would be nice to just define a function called `temperature` to get this
+more explicitly. We will do that here, and also apply a macro `@snapshotoutput` that
+automatically extends this function with some convenient interfaces. For example,
+if we simply pass in the integrator to `temperature`, it will pick off the `u`
+field for us.
+
+````@example heatconduction
+temperature(u,sys::ILMSystem,t) = state(u)
+@snapshotoutput temperature
+````
+
+Now we can write
+
+````@example heatconduction
+plot(temperature(integrator),sys)
+````
+
+The solution history is in the field `integrator.sol`. The macro we
+called earlier enables temperature to work for this, as well, and
+we can obtain the temperature at *any* time in the interval of our solution.
+For example, to get the solution at time 0.51:
+
+````@example heatconduction
+sol = integrator.sol
+plot(temperature(sol,sys,0.51),sys)
+````
+
+We can also get it for an array of times:
+
+````@example heatconduction
+temperature(sol,sys,0.5:0.01:0.6)
 ````
 
 ## Time-varying PDE functions
@@ -320,6 +367,8 @@ plot(state(integrator.u),sys)
 ODEFunctionList
 zeros_sol
 init
+state
+constraint
 ```
 
 ---

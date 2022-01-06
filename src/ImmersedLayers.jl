@@ -26,7 +26,7 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         BasicScalarILMProblem,BasicVectorILMProblem,prob_cache,
         AbstractScalingType,GridScaling,IndexScaling,
         BasicILMCache,ILMSystem,
-        ODEFunctionList,zeros_sol,
+        ODEFunctionList,zeros_sol,init_sol,
         similar_grid,similar_gridgrad,similar_gridcurl,similar_surface,
         zeros_grid,zeros_gridgrad,zeros_gridcurl,zeros_surface,
         ones_grid,ones_gridgrad,ones_gridcurl,ones_surface,
@@ -44,7 +44,7 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         mask,mask!,complementary_mask,complementary_mask!,
         create_CLinvCT,create_CL2invCT,create_GLinvD,create_nRTRn,create_RTLinvR,
         create_GLinvD_cross,create_surface_filter,
-        AreaRegion,LineRegion,arccoord,
+        AreaRegion,LineRegion,arccoord
         solve, @snapshotoutput
 
 abstract type LayerType{N} end

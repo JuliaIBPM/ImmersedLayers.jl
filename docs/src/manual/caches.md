@@ -185,6 +185,8 @@ x_grid
 y_grid
 x_gridcurl
 y_gridcurl
+x_gridgrad
+y_gridgrad
 ```
 
 ## Utilities for accessing surface information
