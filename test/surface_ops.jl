@@ -264,10 +264,7 @@ end
    pfm = PointForcingModel(pts,model4!;ddftype=CartesianGrids.M4prime);
 
 
-   fcache = [ForcingModelAndRegion(afm,scache),
-             ForcingModelAndRegion(lfm,scache),
-             ForcingModelAndRegion(afm2,scache),
-             ForcingModelAndRegion(pfm,scache)];
+   fcache = ForcingModelAndRegion([afm,lfm,afm2,pfm],scache)
 
    @test typeof(fcache[1].region_cache.mask) <: ScalarGridData
 

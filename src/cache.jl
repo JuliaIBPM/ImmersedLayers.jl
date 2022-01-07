@@ -1,3 +1,6 @@
+abstract type AbstractBasicCache{N,GCT} end
+
+
 abstract type AbstractScalingType end
 
 abstract type GridScaling <: AbstractScalingType end
@@ -21,7 +24,7 @@ struct BasicILMCache{N,SCA<:AbstractScalingType,GCT,ND,BLT<:BodyList,NT<:VectorD
                       DST<:ScalarData,REGT<:Regularize,
                       RSNT<:RegularizationMatrix,ESNT<:InterpolationMatrix,
                       RT<:RegularizationMatrix,ET<:InterpolationMatrix,
-                      LT<:CartesianGrids.Laplacian,GVT,GNT,SVT,SST}
+                      LT<:CartesianGrids.Laplacian,GVT,GNT,SVT,SST} <: AbstractBasicCache{N,GCT}
 
     # Grid
     g :: PhysicalGrid{ND}
@@ -211,9 +214,37 @@ function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},d
 
 end
 
-@inline CartesianGrids.cellsize(s::BasicILMCache) = cellsize(s.g)
+#=
+Point collection cache
+=#
 
-@inline Base.length(s::BasicILMCache{N}) where {N} = N
+struct PointCollectionCache{N,GCT,ND,REGT<:Regularize,SST} <: AbstractBasicCache{N,GCT}
+    g :: PhysicalGrid{ND}
+    regop :: REGT
+    gdata_cache :: GCT
+    sdata_cache :: SST
+end
+
+function ScalarPointCollectionCache(X::VectorData{N},g::PhysicalGrid{ND};kwargs...) where {N,ND}
+    gdata_cache = Nodes(Primal,size(g))
+    sdata_cache = ScalarData(X)
+    regop = Regularize(X,cellsize(g),I0=origin(g);kwargs...)
+    return PointCollectionCache{N,typeof(gdata_cache),ND,typeof(regop),typeof(sdata_cache)}(g,regop,gdata_cache,sdata_cache)
+end
+
+function VectorPointCollectionCache(X::VectorData{N},g::PhysicalGrid{ND};kwargs...) where {N,ND}
+    gdata_cache = Edges(Primal,size(g))
+    sdata_cache = VectorData(X)
+    regop = Regularize(X,cellsize(g),I0=origin(g);kwargs...)
+    return PointCollectionCache{N,typeof(gdata_cache),ND,typeof(regop),typeof(sdata_cache)}(g,regop,gdata_cache,sdata_cache)
+end
+
+#=
+Convenience functions
+=#
+
+@inline CartesianGrids.cellsize(s::AbstractBasicCache) = cellsize(s.g)
+@inline Base.length(s::AbstractBasicCache{N}) where {N} = N
 
 
 # Standardize the regularization

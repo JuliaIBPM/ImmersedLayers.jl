@@ -86,27 +86,6 @@ struct PointRegionCache{ST,CT} <: AbstractRegionCache
     cache :: CT
 end
 
-struct PointCollectionCache{N,GCT,ND,REGT<:Regularize,SST}
-    g :: PhysicalGrid{ND}
-    regop :: REGT
-    gdata_cache :: GCT
-    sdata_cache :: SST
-end
-
-function ScalarPointCollectionCache(X::VectorData{N},g::PhysicalGrid{ND};kwargs...) where {N,ND}
-    gdata_cache = Nodes(Primal,size(g))
-    sdata_cache = ScalarData(X)
-    regop = Regularize(X,cellsize(g),I0=origin(g);kwargs...)
-    return PointCollectionCache{N,typeof(gdata_cache),ND,typeof(regop),typeof(sdata_cache)}(g,regop,gdata_cache,sdata_cache)
-end
-
-function VectorPointCollectionCache(X::VectorData{N},g::PhysicalGrid{ND};kwargs...) where {N,ND}
-    gdata_cache = Edges(Primal,size(g))
-    sdata_cache = VectorData(X)
-    regop = Regularize(X,cellsize(g),I0=origin(g);kwargs...)
-    return PointCollectionCache{N,typeof(gdata_cache),ND,typeof(regop),typeof(sdata_cache)}(g,regop,gdata_cache,sdata_cache)
-end
-
 
 for f in [:Scalar,:Vector]
     cname = Symbol("Surface"*string(f)*"Cache")
