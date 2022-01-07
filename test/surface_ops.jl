@@ -223,15 +223,52 @@ end
 
 @testset "Forcing regions" begin
   Δs = 1.4*cellsize(g)
-  region = Square(0.5,Δs)
 
-  cache = SurfaceScalarCache(body,g,scaling=GridScaling)
+  scache = SurfaceScalarCache(body,g,scaling=GridScaling)
 
-  ar = AreaRegion(region,cache)
+  phys_params = Dict("areaheater1_flux" => 3.0,
+                      "lineheater_flux" => -2.0,
+                      "areaheater2_temp" => 1.5,
+                       "areaheater2_coeff" => 2.0)
 
-  @test typeof(ar.mask) <: ScalarGridData
+  fregion1 = Circle(0.2,Δs)
+  T = RigidTransform((0.5,0.0),0.0)
+  T(fregion1)
 
-  lr = LineRegion(region,cache)
+  function model1!(σ,T,t,fr::AreaRegionCache,phys_params)
+      σ .= phys_params["areaheater1_flux"]
+   end
+   afm = AreaForcingModel(fregion1,model1!)
+
+   fregion2 = Square(0.5,Δs)
+   T = RigidTransform((0.0,1.0),0.0)
+   T(fregion2)
+
+   function model2!(σ,T,t,fr::LineRegionCache,phys_params)
+     σ .= phys_params["lineheater_flux"]
+    end
+   lfm = LineForcingModel(fregion2,model2!)
+
+   fregion3 = Polygon([0.0,1.0,0.5],[0.0,0.0,0.5],Δs)
+   T = RigidTransform((-1.0,-1.0),π/4)
+   T(fregion3)
+
+   function model3!(σ,T,t,fr::AreaRegionCache,phys_params)
+     σ .= phys_params["areaheater2_coeff"]*(phys_params["areaheater2_temp"] - T)
+   end
+   afm2 = AreaForcingModel(fregion3,model3!)
+
+   fcache = [ForcingModelAndRegion(afm,scache),
+             ForcingModelAndRegion(lfm,scache),
+             ForcingModelAndRegion(afm2,scache)];
+
+   @test typeof(fcache[1].region_cache.mask) <: ScalarGridData
+
+   T = zeros_grid(scache)
+   dT = similar_grid(scache)
+   t = 0.0
+
+   apply_forcing!(dT,T,t,fcache,phys_params)
 
 
 

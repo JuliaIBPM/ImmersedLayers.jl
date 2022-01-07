@@ -44,7 +44,8 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         mask,mask!,complementary_mask,complementary_mask!,
         create_CLinvCT,create_CL2invCT,create_GLinvD,create_nRTRn,create_RTLinvR,
         create_GLinvD_cross,create_surface_filter,
-        AreaRegion,LineRegion,arccoord,
+        AreaRegionCache,LineRegionCache,AreaForcingModel,LineForcingModel,arccoord,
+        ForcingModelAndRegion,apply_forcing!,
         solve, @snapshotoutput
 
 abstract type LayerType{N} end

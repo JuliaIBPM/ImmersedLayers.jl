@@ -238,12 +238,20 @@ function heatflux_model!(dT,T,fr::AreaRegion,t)
 end
 
 #=
-We don't have to regenerate the system. Just run it again!
+## Line forcing
+Another type of forcing is to distribute it along a line, using the `LineRegion`
+constructor. For this type of forcing
 =#
-integrator = init(u0,tspan,sys)
-step!(integrator,1.0)
+function heatflux_model!(dT,T,fr::LineRegion,t)
+    @unpack cache = fr
+    str = zeros_surface(cache)
+    str .= 1.0
+    regularize!(dT,str,cache)
+end
 
-sol = integrator.sol
-@gif for t in sol.t
-    plot(temperature(sol,sys,t),sys)
-end every 5
+#md # ## Forcing functions
+
+#md # ```@docs
+#md # AreaRegion
+#md # LineRegion
+#md # ```
