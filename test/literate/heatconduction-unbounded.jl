@@ -32,7 +32,7 @@ We will apply the heating inside of a local region. We supply the information ab
 forcing in the `forcing` keyword argument. There are two pieces of information
 we need to supply: the shape of the forcing region and a model to describe how the forcing is to be computed.
 
-Then, in our `prob_cache`, we will use this information to call the `AreaRegion` function.
+Then, in our `prob_cache`, we will use this information to call the `AreaRegionCache` function.
 This creates a mask and other cache for the forcing. This mask is available
 in the forcing model. This structure allows a considerable amount of freedom.
 
@@ -81,7 +81,7 @@ at the end of this example.
 =#
 fregion = Circle(0.2,1.4*Δx)
 
-function heatflux_model!(dT,T,fr::AreaRegion,t)
+function heatflux_model!(dT,T,fr::AreaRegionCache,t)
     dT .= -2.0*mask(fr)
 end
 
@@ -157,7 +157,7 @@ function ImmersedLayers.prob_cache(prob::UnboundedHeatConductionProblem,
     cdcache = ConvectiveDerivativeCache(base_cache)
 
     ## Create cache for the forcing area region
-    frcache = AreaRegion(forcing["heating region"],base_cache)
+    frcache = AreaRegionCache(forcing["heating region"],base_cache)
 
     dT_tmp = zeros_grid(base_cache)
 
@@ -233,16 +233,16 @@ local temperature and some prescribed temperature. Here,
 we set that temperature to 1, and the heat transfer coefficient to 2.
 We still make use of the mask to localize the heating:
 =#
-function heatflux_model!(dT,T,fr::AreaRegion,t)
+function heatflux_model!(dT,T,fr::AreaRegionCache,t)
     dT .= 2.0*mask(fr)*(1.0 .- T)
 end
 
 #=
 ## Line forcing
-Another type of forcing is to distribute it along a line, using the `LineRegion`
+Another type of forcing is to distribute it along a line, using the `LineRegionCache`
 constructor. For this type of forcing
 =#
-function heatflux_model!(dT,T,fr::LineRegion,t)
+function heatflux_model!(dT,T,fr::LineRegionCache,t)
     @unpack cache = fr
     str = zeros_surface(cache)
     str .= 1.0
@@ -252,6 +252,6 @@ end
 #md # ## Forcing functions
 
 #md # ```@docs
-#md # AreaRegion
-#md # LineRegion
+#md # AreaRegionCache
+#md # LineRegionCache
 #md # ```
