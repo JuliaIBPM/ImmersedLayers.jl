@@ -234,7 +234,6 @@ end
   fregion1 = Circle(0.2,Δs)
   T = RigidTransform((0.5,0.0),0.0)
   T(fregion1)
-
   function model1!(σ,T,t,fr::AreaRegionCache,phys_params)
       σ .= phys_params["areaheater1_flux"]
    end
@@ -243,7 +242,6 @@ end
    fregion2 = Square(0.5,Δs)
    T = RigidTransform((0.0,1.0),0.0)
    T(fregion2)
-
    function model2!(σ,T,t,fr::LineRegionCache,phys_params)
      σ .= phys_params["lineheater_flux"]
     end
@@ -252,17 +250,28 @@ end
    fregion3 = Polygon([0.0,1.0,0.5],[0.0,0.0,0.5],Δs)
    T = RigidTransform((-1.0,-1.0),π/4)
    T(fregion3)
-
    function model3!(σ,T,t,fr::AreaRegionCache,phys_params)
      σ .= phys_params["areaheater2_coeff"]*(phys_params["areaheater2_temp"] - T)
    end
    afm2 = AreaForcingModel(fregion3,model3!)
 
+   pts = VectorData([-1.2,0.5],[0.5,0.5])
+   function model4!(σ,T,t,fr::PointRegionCache,phys_params)
+     σ[1] = 1.0
+     σ[2] = -1.0
+     return σ
+   end
+   pfm = PointForcingModel(pts,model4!;ddftype=CartesianGrids.M4prime);
+
+
    fcache = [ForcingModelAndRegion(afm,scache),
              ForcingModelAndRegion(lfm,scache),
-             ForcingModelAndRegion(afm2,scache)];
+             ForcingModelAndRegion(afm2,scache),
+             ForcingModelAndRegion(pfm,scache)];
 
    @test typeof(fcache[1].region_cache.mask) <: ScalarGridData
+
+   @test typeof(fcache[4].region_cache.cache.regop.ddf) == DDF{CartesianGrids.M4prime, 1.0}
 
    T = zeros_grid(scache)
    dT = similar_grid(scache)
