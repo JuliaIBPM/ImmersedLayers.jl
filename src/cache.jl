@@ -205,7 +205,6 @@ function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},d
   E = _interpolation_matrix(regop, gdata_cache,sdata_cache)
 
   coeff_factor = 1.0
-  with_inverse = true
   L = _get_laplacian(gcurl_cache,coeff_factor,g,scaling;dtype=dtype)
 
   return BasicILMCache{N,scaling,typeof(gdata_cache),ND,typeof(bl),typeof(nrm),typeof(a),typeof(regop),typeof(Rsn),typeof(Esn),typeof(R),typeof(E),typeof(L),
