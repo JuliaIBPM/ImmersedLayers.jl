@@ -8,6 +8,8 @@ using Test
 
 const GROUP = get(ENV, "GROUP", "All")
 
+ENV["GKSwstype"] = "nul" # removes GKS warnings during plotting
+
 notebookdir = "../examples"
 docdir = "../docs/src/manual"
 litdir = "./literate"
