@@ -239,7 +239,7 @@ function VectorPointCollectionCache(X::VectorData{N},g::PhysicalGrid{ND};kwargs.
 end
 
 function _pointcollectioncache(X::VectorData{N},g::PhysicalGrid{ND},gdata_cache::GCT,sdata_cache::SDT,kwargs) where {N,ND,GCT,SDT}
-   regop = Regularize(X,cellsize(g),I0=origin(g); kwargs...)
+  regop = _get_regularization(X,g;kwargs...)
   return PointCollectionCache{N,GCT,ND,typeof(X),typeof(regop),SDT}(X,g,regop,gdata_cache,sdata_cache)
 end
 
@@ -258,6 +258,9 @@ _get_regularization(X::VectorData{N},a::ScalarData{N},g::PhysicalGrid,ddftype,::
      Regularize(X,cellsize(g),I0=origin(g),issymmetric=true,ddftype=ddftype,filter=filter)
 
 _get_regularization(body::Union{Body,BodyList},args...;kwargs...) = _get_regularization(VectorData(collect(body)),areas(body),args...;kwargs...)
+
+_get_regularization(X::VectorData{N},g::PhysicalGrid;kwargs...) where {N} =
+    Regularize(X,cellsize(g),I0=origin(g); kwargs...)
 
 # Standardize the Laplacian
 _get_laplacian(a,coeff_factor::Real,g::PhysicalGrid,with_inverse,::Type{IndexScaling}) = plan_laplacian(size(a),with_inverse=with_inverse,factor=coeff_factor)
