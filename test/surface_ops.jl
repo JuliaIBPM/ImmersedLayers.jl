@@ -256,13 +256,13 @@ end
    afm2 = AreaForcingModel(fregion3,model3!)
 
    pts = VectorData([-1.2,0.5],[0.5,0.5])
+   str = [1.0,-1.0]
+
    function model4!(σ,T,t,fr::PointRegionCache,phys_params)
-     σ[1] = 1.0
-     σ[2] = -1.0
+     σ .= str
      return σ
    end
    pfm = PointForcingModel(pts,model4!;ddftype=CartesianGrids.M4prime);
-
 
    fcache = ForcingModelAndRegion([afm,lfm,afm2,pfm],scache)
 
@@ -275,6 +275,28 @@ end
    t = 0.0
 
    apply_forcing!(dT,T,t,fcache,phys_params)
+
+
+   function point_function(T,t,fr::PointRegionCache,phys_params)
+     return VectorData([-1.2,0.5],[0.5,0.5])
+   end
+   pfm2 = PointForcingModel(point_function,model4!;ddftype=CartesianGrids.M4prime);
+
+   fcache = ForcingModelAndRegion(pfm,scache)
+   fcache2 = ForcingModelAndRegion(pfm2,scache)
+
+   T2 = zeros_grid(scache)
+   dT2 = similar_grid(scache)
+   t = 0.0
+
+   apply_forcing!(dT,T,t,fcache,phys_params)
+   apply_forcing!(dT2,T2,t,fcache2,phys_params)
+
+   @test dT == dT2
+
+   str = [1.0,-1.0,2.0]
+
+   @test_throws DimensionMismatch apply_forcing!(dT2,T2,t,fcache2,phys_params)
 
 
 
