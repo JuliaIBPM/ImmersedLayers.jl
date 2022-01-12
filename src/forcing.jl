@@ -20,11 +20,11 @@ for ftype in [:Area,:Line,:Point]
       export $fmname
 
       @doc """
-            $($fmname)(shape::Union{Body,BodyList},model_function)
+            $($fmname)(shape::Union{Body,BodyList,VectorData},model_function!)
 
-        Bundles a `shape` (i.e., a `Body` or `BodyList`) and a `model_function` (a function
+        Bundles a `shape` (i.e., a `Body`, `BodyList`, or `VectorData`) and a `model_function!` (a function
         that returns the strength of the forcing) for $($typename)-type forcing.
-        `model_function` must have an in-place signature of the form
+        `model_function!` be in-place with a signature of the form
 
             model_function!(str,x,t,fcache,phys_params)
 
@@ -33,7 +33,7 @@ for ftype in [:Area,:Line,:Point]
         and `phys_params` are user-supplied physical parameters. Any of these can
         be utilized to compute the strength.
         """
-        struct $fmname{RT<:Union{Body,BodyList,VectorData},KT,MDT} <: AbstractForcingModel
+        struct $fmname{RT<:Union{Body,BodyList,VectorData,Function},KT,MDT<:Function} <: AbstractForcingModel
           shape :: RT
           kwargs :: KT
           fcn :: MDT
@@ -41,6 +41,28 @@ for ftype in [:Area,:Line,:Point]
         end
       end)
 end
+
+"""
+    PointForcingModel(point_function::Function,model_function!::Function)
+
+Bundles a `point_function` (a function that returns the positions of forcing points)
+and a `model_function` (a function that returns the strength of the forcing) for point-type forcing.
+
+  `point_function` must have an out-of-place signature of the form
+
+      point_function(x,t,fcache,phys_params)
+
+  where `x` the state vector, `t` is time, `fcache` is a corresponding `PointRegionCache`
+  and `phys_params` are user-supplied physical parameters. Any of these can
+  be utilized to compute the positions. It must return either `x` and `y` as
+  a tuple of vectors or `VectorData`.
+
+  `model_function!` must have an in-place signature of the form
+
+      model_function!(str,x,t,fcache,phys_params)
+
+  where `str` is the strength to be returned.
+""" PointForcingModel(::Function,::Function)
 
 #=
 Region caches
@@ -108,6 +130,13 @@ for f in [:Scalar,:Vector]
         return PointRegionCache{typeof(str),typeof(cache)}(str,cache)
     end
 
+    @eval function PointRegionCache(g::PhysicalGrid,pts::Function,data_prototype::$gdtype;kwargs...)
+        cache = $pcname(VectorData(0),g;kwargs...)
+
+        str = similar(cache.sdata_cache)
+        return PointRegionCache{typeof(str),typeof(cache)}(str,cache)
+    end
+
 end
 
 for f in [:AreaRegionCache,:LineRegionCache]
@@ -115,7 +144,7 @@ for f in [:AreaRegionCache,:LineRegionCache]
     @eval $f(g,shape::Body,a...;kwargs...) = $f(g,BodyList([shape]),a...;kwargs...)
 end
 
-PointRegionCache(pts::VectorData,cache::BasicILMCache{N,SCA};kwargs...) where {N,SCA} =
+PointRegionCache(pts::Union{VectorData,Function},cache::AbstractBasicCache;kwargs...) =
       PointRegionCache(cache.g,pts,similar_grid(cache);kwargs...)
 
 
@@ -156,9 +185,11 @@ A type that holds the forcing model function, region, and cache
 This form gets called generally when building the extra cache.
 """ ForcingModelAndRegion(::AbstractForcingModel,::BasicILMCache)
 
-struct ForcingModelAndRegion{RT<:AbstractRegionCache,MT}
+struct ForcingModelAndRegion{RT<:AbstractRegionCache,ST,MT,KT}
     region_cache :: RT
+    shape :: ST
     fcn :: MT
+    kwargs :: KT
 end
 
 for f in [:Area,:Line,:Point]
@@ -166,7 +197,7 @@ for f in [:Area,:Line,:Point]
   regcache = Symbol(string(f)*"RegionCache")
   @eval function ForcingModelAndRegion(model::$modtype,cache::BasicILMCache)
       region_cache = $regcache(model.shape,cache;model.kwargs...)
-      ForcingModelAndRegion(region_cache,model.fcn)
+      ForcingModelAndRegion(region_cache,model.shape,model.fcn,model.kwargs)
   end
 end
 
@@ -231,9 +262,30 @@ function _apply_forcing!(dx,x,t,fcache::ForcingModelAndRegion{<:LineRegionCache}
     return dx
 end
 
-function _apply_forcing!(dx,x,t,fcache::ForcingModelAndRegion{<:PointRegionCache},phys_params)
+function _apply_forcing!(dx,x,t,fcache::ForcingModelAndRegion{<:PointRegionCache,T},phys_params) where T
     @unpack region_cache, fcn = fcache
     @unpack str, cache = region_cache
+    @unpack regop = cache
+
+    fill!(str,0.0)
+    fcn(str,x,t,region_cache,phys_params)
+
+    fill!(cache.gdata_cache,0.0)
+    regop(cache.gdata_cache,str)
+    dx .+= cache.gdata_cache
+    return dx
+end
+
+function _apply_forcing!(dx,x,t,fcache::ForcingModelAndRegion{<:PointRegionCache,<:Function},phys_params)
+    @unpack region_cache, shape, fcn, kwargs = fcache
+    @unpack cache = region_cache
+
+    # `shape` is a function in this case, used to obtain the point coordinates
+    # Use is to to generate an instantaneous PointRegionCache
+    _pts = shape(x,t,region_cache,phys_params)
+    typeof(_pts) <: Tuple ? pts = VectorData(_pts...) : pts = _pts
+    new_region_cache = PointRegionCache(pts,cache;kwargs...)
+    @unpack str, cache = new_region_cache
     @unpack regop = cache
 
     fill!(str,0.0)
