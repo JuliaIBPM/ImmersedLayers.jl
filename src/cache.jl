@@ -218,7 +218,8 @@ end
 Point collection cache
 =#
 
-struct PointCollectionCache{N,GCT,ND,REGT<:Regularize,SST} <: AbstractBasicCache{N,GCT}
+struct PointCollectionCache{N,GCT,ND,PT,REGT<:Regularize,SST} <: AbstractBasicCache{N,GCT}
+    pts :: PT
     g :: PhysicalGrid{ND}
     regop :: REGT
     gdata_cache :: GCT
@@ -228,15 +229,18 @@ end
 function ScalarPointCollectionCache(X::VectorData{N},g::PhysicalGrid{ND};kwargs...) where {N,ND}
     gdata_cache = Nodes(Primal,size(g))
     sdata_cache = ScalarData(X)
-    regop = Regularize(X,cellsize(g),I0=origin(g);kwargs...)
-    return PointCollectionCache{N,typeof(gdata_cache),ND,typeof(regop),typeof(sdata_cache)}(g,regop,gdata_cache,sdata_cache)
+    return _pointcollectioncache(X,g,gdata_cache,sdata_cache,kwargs)
 end
 
 function VectorPointCollectionCache(X::VectorData{N},g::PhysicalGrid{ND};kwargs...) where {N,ND}
     gdata_cache = Edges(Primal,size(g))
     sdata_cache = VectorData(X)
-    regop = Regularize(X,cellsize(g),I0=origin(g);kwargs...)
-    return PointCollectionCache{N,typeof(gdata_cache),ND,typeof(regop),typeof(sdata_cache)}(g,regop,gdata_cache,sdata_cache)
+    return _pointcollectioncache(X,g,gdata_cache,sdata_cache,kwargs)
+end
+
+function _pointcollectioncache(X::VectorData{N},g::PhysicalGrid{ND},gdata_cache::GCT,sdata_cache::SDT,kwargs) where {N,ND,GCT,SDT}
+   regop = Regularize(X,cellsize(g),I0=origin(g); kwargs...)
+  return PointCollectionCache{N,GCT,ND,typeof(X),typeof(regop),SDT}(X,g,regop,gdata_cache,sdata_cache)
 end
 
 #=
@@ -245,7 +249,6 @@ Convenience functions
 
 @inline CartesianGrids.cellsize(s::AbstractBasicCache) = cellsize(s.g)
 @inline Base.length(s::AbstractBasicCache{N}) where {N} = N
-
 
 # Standardize the regularization
 _get_regularization(X::VectorData{N},a::ScalarData{N},g::PhysicalGrid,ddftype,::Type{GridScaling};filter=false) where {N} =
@@ -553,6 +556,13 @@ end
 Return the coordinates (as `VectorData`) of the surface points associated with `cache`
 """
 points(cache::BasicILMCache) = points(cache.bl)
+
+"""
+    points(cache::PointCollectionCache)
+
+Return the coordinates (as `VectorData`) of the surface points associated with `cache`
+"""
+points(cache::PointCollectionCache) = cache.pts
 
 """
     normals(cache::BasicILMCache)

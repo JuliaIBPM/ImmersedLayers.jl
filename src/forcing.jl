@@ -43,50 +43,41 @@ for ftype in [:Area,:Line,:Point]
 end
 
 #=
-"""
-    AreaForcingModel(shape::Union{Body,BodyList},model_function)
-
-Bundles a `shape` (i.e., a `Body` or `BodyList`) and a model_function (a function
-that returns the contribution of the forcing to the right-hand side of the PDE)
-for area-type forcing
-"""
-struct AreaForcingModel{RT<:Union{Body,BodyList},MDT} <: AbstractForcingModel
-    shape :: RT
-    fcn :: MDT
-end
-
-"""
-    LineForcingModel(shape::Union{Body,BodyList},model_function)
-
-Bundles a `shape` (i.e., a `Body` or `BodyList`) and a `model_function` (a function
-that returns the contribution of the forcing to the right-hand side of the PDE)
-for line-type forcing
-"""
-struct LineForcingModel{RT<:Union{Body,BodyList},MDT} <: AbstractForcingModel
-    shape :: RT
-    fcn :: MDT
-end
+Region caches
 =#
 
-
-struct AreaRegionCache{MT,ST,CT} <: AbstractRegionCache
+struct AreaRegionCache{MT,ST,CT<:BasicILMCache} <: AbstractRegionCache
     mask :: MT
     str :: ST
     cache :: CT
 end
 
-struct LineRegionCache{ACT,ST,CT} <: AbstractRegionCache
+struct LineRegionCache{ACT,ST,CT<:BasicILMCache} <: AbstractRegionCache
     arccoord :: ACT
     str :: ST
     cache :: CT
 end
 
-struct PointRegionCache{ST,CT} <: AbstractRegionCache
+struct PointRegionCache{ST,CT<:PointCollectionCache} <: AbstractRegionCache
     str :: ST
     cache :: CT
 end
 
+"""
+    AreaRegionCache(shape::Body/BodyList,cache::BasicILMCache)
 
+Create an area region (basically, a mask) of the shape(s) `shape`, using
+the data in `cache` to provide the details of the regularization.
+""" AreaRegionCache(::Union{Body,BodyList},::BasicILMCache)
+
+"""
+    LineRegionCache(shape::Body/BodyList,cache::BasicILMCache)
+
+Create a line region of the shape(s) `shape`, using
+the data in `cache` to provide the details of the regularization.
+""" LineRegionCache(::Union{Body,BodyList},::BasicILMCache)
+
+# Some constructors of the region caches that distinguish scalar and vector data
 for f in [:Scalar,:Vector]
     cname = Symbol("Surface"*string(f)*"Cache")
     pcname = Symbol(string(f)*"PointCollectionCache")
@@ -127,19 +118,7 @@ end
 PointRegionCache(pts::VectorData,cache::BasicILMCache{N,SCA};kwargs...) where {N,SCA} =
       PointRegionCache(cache.g,pts,similar_grid(cache);kwargs...)
 
-"""
-    AreaRegionCache(shape::Body/BodyList,cache::BasicILMCache)
 
-Create an area region (basically, a mask) of the shape(s) `shape`, using
-the data in `cache` to provide the details of the regularization.
-""" AreaRegionCache(::Union{Body,BodyList},::BasicILMCache)
-
-"""
-    LineRegionCache(shape::Body/BodyList,cache::BasicILMCache)
-
-Create a line region of the shape(s) `shape`, using
-the data in `cache` to provide the details of the regularization.
-""" LineRegionCache(::Union{Body,BodyList},::BasicILMCache)
 
 """
     mask(ar::AreaRegionCache)
@@ -154,6 +133,17 @@ mask(ar::AreaRegionCache) = ar.mask
 Return the vector of arc length coordinates for the given line region `lr`.
 """
 arccoord(lr::LineRegionCache) = lr.arccoord
+
+"""
+    points(pr::PointRegionCache)
+
+Return the vector of coordinates of points associated with `pr`.
+"""
+points(pr::PointRegionCache) = points(pr.cache)
+
+#=
+Assembly of the forcing model and forcing region
+=#
 
 """
     ForcingModelAndRegion
@@ -190,17 +180,18 @@ end
 
 
 """
-    apply_forcing!(dx,x,t,fv::Vector{ForcingModelAndRegion},phys_params)
+    apply_forcing!(out,x,t,fv::Vector{ForcingModelAndRegion},phys_params)
 
-Return the total contribution of forcing in the vector `fv` to the right-hand side `dx`
+Return the total contribution of forcing in the vector `fv` to `out`,
 based on the current state `x`, time `t`, and physical parameters in `phys_params`.
+Note that `out` is zeroed before the contributions are added.
 """
-function apply_forcing!(dx,x,t,fr::Vector{<:ForcingModelAndRegion},phys_params)
-    fill!(dx,0.0)
+function apply_forcing!(out,x,t,fr::Vector{<:ForcingModelAndRegion},phys_params)
+    fill!(out,0.0)
     for f in fr
-        _apply_forcing!(dx,x,t,f,phys_params)
+        _apply_forcing!(out,x,t,f,phys_params)
     end
-    return dx
+    return out
 end
 
 """
@@ -211,12 +202,18 @@ based on the current state `x`, time `t`, and physical parameters in `phys_param
 """
 apply_forcing!(dx,x,t,fr::ForcingModelAndRegion,phys_params) = apply_forcing!(dx,x,t,[fr],phys_params)
 
+#=
+The following define how forcing of each type get applied. Each one
+calls the forcing model to determine the strength.
+=#
+
 function _apply_forcing!(dx,x,t,fcache::ForcingModelAndRegion{<:AreaRegionCache},phys_params)
     @unpack region_cache, fcn = fcache
     @unpack str = region_cache
 
     fill!(str,0.0)
     fcn(str,x,t,region_cache,phys_params)
+
     dx .+= str*mask(region_cache)
     return dx
 end
