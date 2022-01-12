@@ -330,7 +330,7 @@ _firstindices(bl::BodyList) = [map(i -> first(getrange(bl,i)),1:length(bl)); num
 
 Get a `similar` copy of the basic grid data in the cache.
 """
-@inline similar_grid(cache::BasicILMCache,kwargs...) = similar(cache.gdata_cache,kwargs...)
+@inline similar_grid(cache::AbstractBasicCache,kwargs...) = similar(cache.gdata_cache,kwargs...)
 
 """
     similar_gridgrad(::BasicILMCache)
@@ -353,14 +353,14 @@ Get a `similar` copy of the grid curl field data in the cache.
 
 Get a `similar` copy of the basic surface point data in the cache.
 """
-@inline similar_surface(cache::BasicILMCache,kwargs...) = similar(cache.sdata_cache,kwargs...)
+@inline similar_surface(cache::AbstractBasicCache,kwargs...) = similar(cache.sdata_cache,kwargs...)
 
 """
     zeros_grid(::BasicILMCache)
 
 Get an instance of the basic grid data in the cache, with values set to zero.
 """
-@inline zeros_grid(cache::BasicILMCache,kwargs...) = zero(cache.gdata_cache,kwargs...)
+@inline zeros_grid(cache::AbstractBasicCache,kwargs...) = zero(cache.gdata_cache,kwargs...)
 
 """
     zeros_gridgrad(::BasicILMCache,dim)
@@ -385,14 +385,14 @@ Get an instance of the grid curl field data in the cache, with values set to zer
 
 Get an instance of the basic surface point data in the cache, with values set to zero.
 """
-@inline zeros_surface(cache::BasicILMCache,kwargs...) = zero(cache.sdata_cache,kwargs...)
+@inline zeros_surface(cache::AbstractBasicCache,kwargs...) = zero(cache.sdata_cache,kwargs...)
 
 """
     ones_grid(::BasicILMCache)
 
 Get an instance of the basic grid data in the cache, with values set to unity.
 """
-@inline ones_grid(cache::BasicILMCache,kwargs...) = ones(cache.gdata_cache,kwargs...)
+@inline ones_grid(cache::AbstractBasicCache,kwargs...) = ones(cache.gdata_cache,kwargs...)
 
 """
     ones_gridgrad(::BasicILMCache,dim)
@@ -417,7 +417,7 @@ Get an instance of the grid curl field data in the cache, with values set to uni
 
 Get an instance of the basic surface point data in the cache, with values set to unity.
 """
-@inline ones_surface(cache::BasicILMCache,kwargs...) = ones(cache.sdata_cache,kwargs...)
+@inline ones_surface(cache::AbstractBasicCache,kwargs...) = ones(cache.sdata_cache,kwargs...)
 
 """
     x_grid(::BasicILMCache)
