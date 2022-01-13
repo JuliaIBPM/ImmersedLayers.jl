@@ -15,14 +15,14 @@ _scale_inverse_laplacian!(w,cache::BasicILMCache{N,IndexScaling}) where {N} = w
 _scale_inverse_laplacian!(w,cache::BasicILMCache{N,GridScaling}) where {N} = w  #.*= cellsize(cache)^2
 
 """
-    divergence!(p::Nodes{Primal},v::Edges{Primal},cache::BasicILMCache)
-    divergence!(p::Nodes{Primal},v::Edges{Primal},sys::ILMSystem)
+    divergence!(p::Nodes{Primal/Dual},v::Edges{Primal/Dual},cache::BasicILMCache)
+    divergence!(p::Nodes{Primal/Dual},v::Edges{Primal/Dual},sys::ILMSystem)
 
 Compute the discrete divergence of `v` and return it in `p`, scaling it
 by the grid spacing if `cache` (or `sys`) is of `GridScaling` type, or leaving it
 as a simple differencing if `cache` (or `sys`) is of `IndexScaling` type.
 """
-function divergence!(p::Nodes{Primal,NX,NY},q::Edges{Primal,NX,NY},cache::BasicILMCache) where {NX,NY}
+function divergence!(p::Nodes{C,NX,NY},q::Edges{C,NX,NY},cache::BasicILMCache) where {C,NX,NY}
     _unscaled_divergence!(p,q,cache)
     _scale_derivative!(p,cache)
 end
@@ -30,14 +30,14 @@ end
 _unscaled_divergence!(p,q,cache::BasicILMCache) = (fill!(p,0.0); divergence!(p,q))
 
 """
-    grad!(v::Edges{Primal},p::Nodes{Primal},cache::BasicILMCache)
-    grad!(v::Edges{Primal},p::Nodes{Primal},sys::ILMSystem)
+    grad!(v::Edges{Primal/Dual},p::Nodes{Primal/Dual},cache::BasicILMCache)
+    grad!(v::Edges{Primal/Dual},p::Nodes{Primal/Dual},sys::ILMSystem)
 
 Compute the discrete gradient of `p` and return it in `v`, scaling it
 by the grid spacing if `cache` (or `sys`) is of `GridScaling` type, or leaving it
 as a simple differencing if `cache` (or `sys`) is of `IndexScaling` type.
 """
-function grad!(q::Edges{Primal,NX,NY},p::Nodes{Primal,NX,NY},cache::BasicILMCache) where {NX,NY}
+function grad!(q::Edges{C,NX,NY},p::Nodes{C,NX,NY},cache::BasicILMCache) where {C,NX,NY}
     _unscaled_grad!(q,p,cache)
     _scale_derivative!(q,cache)
 end
@@ -209,6 +209,18 @@ function _unscaled_convective_derivative!(udp::Nodes{Primal},u::Edges{Primal},p:
     product!(vt3_cache,u,vt1_cache)
     fill!(udp,0.0)
     grid_interpolate!(udp,vt3_cache)
+    udp
+end
+
+function _unscaled_convective_derivative!(udw::Nodes{Dual},u::Edges{Primal},w::Nodes{Dual},extra_cache::ConvectiveDerivativeCache)
+    @unpack vt1_cache, vt3_cache = extra_cache
+
+    fill!(vt1_cache,0.0)
+    grad!(vt1_cache,w) # needs to be on dual edges
+    grid_interpolate!(vt2_cache,u) # needs to be on dual edges
+    product!(vt3_cache,u,vt1_cache) # will be on dual edges
+    fill!(udw,0.0)
+    grid_interpolate!(udw,vt3_cache) # will be on dual nodes
     udp
 end
 

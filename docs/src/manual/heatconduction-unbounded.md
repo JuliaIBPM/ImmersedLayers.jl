@@ -8,11 +8,12 @@ EditURL = "<unknown>/literate/heatconduction-unbounded.jl"
 CurrentModule = ImmersedLayers
 ```
 
-In this example we will explore ways to apply forcing to a PDE. Our target
-problem will be similar to the previous example -- transient heat conduction --
+In a previous example of the Poisson equation we demonstrated the use of point forcing. In this example
+we will explore other ways to apply forcing to a PDE. Our target
+problem will be similar to the most recent example -- transient heat conduction --
 but now it will be in an unbounded domain. Our forcing will comprise local
-*volumetric heating* (or rather, area heating, since this is two dimensional).
-We will also include convection by an externally-imposed velocity field.
+*area heating* and *line heating*. We will also include convection by an
+externally-imposed velocity field.
 
 The governing equations are
 
@@ -31,21 +32,27 @@ diffusion operator as in the previous example. Note that these equations are
 no longer constrained. We only need to supply the right-hand side function.
 Our job here is to provide everything needed to compute this right-hand side.
 
-We will apply the heating inside of a local region. We supply the information about this
-forcing in the `forcing` keyword argument. There are two pieces of information
-we need to supply: the shape of the forcing region and a model to describe how the forcing is to be computed.
+We will apply the heating and cooling inside of local regions.
+As we discussed before, for each forcing, we supply information about the **shape**
+of the forcing region and the **model function**, supplying the forcing strength
+whenever we need it. We package these together into a forcing model and
+provide it to the problem via the `forcing` keyword.
 
-Then, in our `prob_cache`, we will use this information to call the `AreaRegionCache` function.
-This creates a mask and other cache for the forcing. This mask is available
-in the forcing model. This structure allows a considerable amount of freedom.
-
-The convection velocity also must be provided. We make use of the `forcing`
+The convection velocity also must be provided. We also make use of the `forcing`
 keyword to supply this to the problem, as well, in the form of a function
 that returns the current convection velocity at a given time `t`. The
 convective derivative term `N` requires a special cache, which we also
 generate in the `prob_cache`.
 
-We will highlight these aspects in the example that follows:
+We will highlight these aspects in the example that follows. In this example,
+we will create
+* a square-shaped line forcing region that delivers a certain
+amount of heat per unit length of line
+* a circular-shaped area forcing region that supplies heat based on the heat-transfer model $h*(T_0\cos(2\pi f t)-T)$,
+where $h$ is the heat transfer coefficient, $T$ is the current local temperature,
+and $T_0$ is the amplitude of an oscillatory heater temperature, oscillating
+at frequency $f$
+* a background rotational velocity field, with angular velocity $\Omega$.
 
 ````@example heatconduction-unbounded
 using ImmersedLayers
@@ -72,47 +79,79 @@ use of later to calculate the time step size.
 
 ````@example heatconduction-unbounded
 phys_params = Dict("diffusivity" => 0.005,
-                    "velocity" => 0.5,
+                    "angular velocity" => 0.5,
+                    "length scale" => Lx/2,
                      "Fourier" => 0.25,
-                     "CFL" => 0.5)
+                     "CFL" => 0.5,
+                     "lineheater_flux" => -2.0,
+                     "areaheater_freq" => 1.0,
+                     "areaheater_temp" => 2.0,
+                     "areaheater_coeff" => 100.0
+                     )
 ````
 
-## Specifying the forcing region and model
-We will create a circular region in which we apply the forcing. In this
-region, we will apply a negative heat flux of strength 2. Note how
-we use the mask to define this region. This mask takes the value 1 inside
-the circle, and 0 outside. Also, note that we provide the current
-temperature data, but don't actually use it. We will return to this
-at the end of this example.
+## Specifying the forcing regions and models and convection velocity model
+We first create the square line heater and place it at $(0,1)$. Its
+associated model function is very simple, since it just sets the
+strength uniformly. But note the function signature, which must always take this
+form. It can make use of the current temperature, time, and physical parameters,
+to return the strength of the line forcing. We bundle these together
+using [`LineForcingModel`](@ref).
 
 ````@example heatconduction-unbounded
-fregion = Circle(0.2,1.4*Δx)
+fregion1 = Square(0.5,1.4*Δx)
+T = RigidTransform((0.0,1.0),0.0)
+T(fregion1)
 
-function heatflux_model!(dT,T,fr::AreaRegionCache,t)
-    dT .= -2.0*mask(fr)
+function model1!(σ,T,t,fr::LineRegionCache,phys_params)
+    σ .= phys_params["lineheater_flux"]
+end
+lfm = LineForcingModel(fregion1,model1!);
+nothing #hide
+````
+
+Now the oscillatory heater, which we place at $(0,-0.5)$. This one has a few more parameters,
+since we provide the heat transfer coefficient and the amplitude and frequency
+of the target temperature. These are bundled with [`AreaForcingModel`](@ref).
+
+````@example heatconduction-unbounded
+fregion2 = Circle(0.2,1.4*Δx)
+T = RigidTransform((0.0,-0.5),0.0)
+T(fregion2)
+
+function model2!(σ,T,t,fr::AreaRegionCache,phys_params)
+    f = phys_params["areaheater_freq"]
+    T0 = phys_params["areaheater_temp"]
+    h = phys_params["areaheater_coeff"]
+    σ .= h*(T0*cos(2π*f*t) - T)
+end
+afm = AreaForcingModel(fregion2,model2!);
+nothing #hide
+````
+
+Finally, the convection velocity model. Here, we make use of the
+coordinate function [`x_gridgrad`](@ref) and [`y_gridgrad`](@ref)
+to supply the coordinates of the velocity grid points. Since this
+is a staggered grid, the velocity components live at different places.
+For example, `yg.u` denotes the $y$ coordinates for the horizontal velocity
+components, and `xg.v` denotes the $x$ coordinates for the vertical
+velocity components.
+
+````@example heatconduction-unbounded
+function my_velocity!(vel,t,cache,phys_params)
+    xg, yg = x_gridgrad(cache), y_gridgrad(cache)
+    Ω = phys_params["angular velocity"]
+    vel.u .= -Ω*yg.u
+    vel.v .= Ω*xg.v
+    return vel
 end
 ````
 
-## Specifying the convection velocity
-We will provide a function that can be called to return the
-convection velocity at a given time. Notice how we also pass in the
-physical parameters. We can do this for the forcing model, too, if we desire.
+We pack the forcing and convection together into the *forcing* `Dict`:
 
 ````@example heatconduction-unbounded
-function set_convection_velocity!(v,t,phys_params)
-    U∞ = phys_params["velocity"]
-    v.u .= U∞
-    v.v .= 0.0
-    return v
-end
-````
-
-For convenience, we will pack the forcing and convection together into the *forcing* `Dict`:
-
-````@example heatconduction-unbounded
-forcing = Dict("heating region" => fregion,
-               "heating model" => heatflux_model!,
-               "convection velocity model" => set_convection_velocity!)
+forcing_dict = Dict("heating models" => [lfm,afm],
+                    "convection velocity model" => my_velocity!)
 ````
 
 ## Construct the ODE function and the extra cache
@@ -122,19 +161,19 @@ derivative and the external heating.
 ````@example heatconduction-unbounded
 function heatconduction_rhs!(dT,T,sys::ILMSystem,t)
     @unpack forcing, phys_params, extra_cache, base_cache = sys
-    @unpack cdcache, frcache, v, dT_tmp = extra_cache
+    @unpack cdcache, fcache, v, dT_tmp = extra_cache
 
     # This provides the convection velocity at time `t`
-    forcing["convection velocity model"](v,t,phys_params)
+    forcing["convection velocity model"](v,t,base_cache,phys_params)
 
     # Compute the convective derivative term `N(v,T)`
     fill!(dT_tmp,0.0)
     convective_derivative!(dT_tmp,v,T,base_cache,cdcache)
     dT .= -dT_tmp
 
-    # Compute the contribution from the forcing model to the right-hand side
+    # Compute the contribution from the forcing models to the right-hand side
     fill!(dT_tmp,0.0)
-    forcing["heating model"](dT_tmp,T,frcache,t)
+    apply_forcing!(dT_tmp,T,t,fcache,phys_params)
     dT .+= dT_tmp
 
     return dT
@@ -149,7 +188,7 @@ We create a problem type for this, define the extra cache, and extend `prob_cach
 struct UnboundedHeatConductionCache{VT,CDT,FRT,DTT,FT} <: AbstractExtraILMCache
    v :: VT
    cdcache :: CDT
-   frcache :: FRT
+   fcache :: FRT
    dT_tmp :: DTT
    f :: FT
 end
@@ -167,8 +206,8 @@ function ImmersedLayers.prob_cache(prob::UnboundedHeatConductionProblem,
     v = zeros_gridgrad(base_cache)
     cdcache = ConvectiveDerivativeCache(base_cache)
 
-    # Create cache for the forcing area region
-    frcache = AreaRegionCache(forcing["heating region"],base_cache)
+    # Create cache for the forcing regions
+    fcache = ForcingModelAndRegion(forcing["heating models"],base_cache);
 
     dT_tmp = zeros_grid(base_cache)
 
@@ -177,7 +216,7 @@ function ImmersedLayers.prob_cache(prob::UnboundedHeatConductionProblem,
                         ode_rhs=heatconduction_rhs!,
                         lin_op=heat_L)
 
-    UnboundedHeatConductionCache(v,cdcache,frcache,dT_tmp,f)
+    UnboundedHeatConductionCache(v,cdcache,fcache,dT_tmp,f)
 end
 ````
 
@@ -187,12 +226,21 @@ we take into account both the Fourier and the CFL conditions:
 ````@example heatconduction-unbounded
 function timestep_fourier_cfl(g,phys_params)
     κ = phys_params["diffusivity"]
-    U∞ = phys_params["velocity"]
+    Ω = phys_params["angular velocity"]
+    L = phys_params["length scale"]
     Fo = phys_params["Fourier"]
     Co = phys_params["CFL"]
-    Δt = min(Fo*cellsize(g)^2/κ,Co*cellsize(g)/U∞)
+    Δt = min(Fo*cellsize(g)^2/κ,Co*cellsize(g)/Ω/L)
     return Δt
 end
+````
+
+As in the last example, we also define the temperature output function for output
+
+````@example heatconduction-unbounded
+temperature(u,sys::ILMSystem,t) = state(u)
+
+@snapshotoutput temperature
 ````
 
 ## Set up the problem and system
@@ -201,7 +249,7 @@ This is similar to previous problems.
 ````@example heatconduction-unbounded
 prob = UnboundedHeatConductionProblem(g,scaling=GridScaling,
                                         phys_params=phys_params,
-                                        forcing=forcing,
+                                        forcing=forcing_dict,
                                         timestep_func=timestep_fourier_cfl)
 
 sys = construct_system(prob);
@@ -224,57 +272,19 @@ Run the problem for one time unit
 step!(integrator,1.0)
 ````
 
-Let's see what this looks like. First, we will define the temperature
-function, like we did last time:
-
-````@example heatconduction-unbounded
-temperature(u,sys::ILMSystem,t) = state(u)
-@snapshotoutput temperature
-
-plot(temperature(integrator),sys)
-````
-
-We can also make a movie
+Let's see what this looks like. We will plot a set of snapshots in an array.
 
 ````@example heatconduction-unbounded
 sol = integrator.sol
-@gif for t in sol.t
-    plot(temperature(sol,sys,t),sys)
-end every 5
-````
 
-There are plenty of other choices we could make in this problem. For
-example, we could have used a heat transfer model for the forcing,
-providing heat that is proportional to the different between the
-local temperature and some prescribed temperature. Here,
-we set that temperature to 1, and the heat transfer coefficient to 2.
-We still make use of the mask to localize the heating:
-
-````@example heatconduction-unbounded
-function heatflux_model!(dT,T,fr::AreaRegionCache,t)
-    dT .= 2.0*mask(fr)*(1.0 .- T)
+plt = plot(layout = (2,3), size = (700, 500), legend=:false)
+framejump = 100
+nframes = 8
+for (i,t) in enumerate(0:0.2:1.0)
+    plot!(plt[i],temperature(sol,sys,t),sys,levels=range(-10,2,length=30),clim=(-10,2))
 end
+plt
 ````
-
-## Line forcing
-Another type of forcing is to distribute it along a line, using the `LineRegionCache`
-constructor. For this type of forcing
-
-````@example heatconduction-unbounded
-function heatflux_model!(dT,T,fr::LineRegionCache,t)
-    @unpack cache = fr
-    str = zeros_surface(cache)
-    str .= 1.0
-    regularize!(dT,str,cache)
-end
-````
-
-## Forcing functions
-
-```@docs
-AreaRegionCache
-LineRegionCache
-```
 
 ---
 
