@@ -26,14 +26,14 @@ for ftype in [:Area,:Line,:Point]
         that returns the strength of the forcing) for $($typename)-type forcing.
         `model_function!` be in-place with a signature of the form
 
-            model_function!(str,x,t,fcache,phys_params)
+            model_function!(str,state,t,fcache,phys_params)
 
-        where `str` is the strength to be returned, `x` the state vector,
+        where `str` is the strength to be returned, `state` the state vector,
         `t` is time, `fcache` is a corresponding `$($fmcache)`
         and `phys_params` are user-supplied physical parameters. Any of these can
         be utilized to compute the strength.
         """
-        struct $fmname{RT<:Union{Body,BodyList,VectorData,Function},KT,MDT<:Function} <: AbstractForcingModel
+        struct $fmname{RT,KT,MDT<:Function} <: AbstractForcingModel
           shape :: RT
           kwargs :: KT
           fcn :: MDT
@@ -50,16 +50,16 @@ and a `model_function` (a function that returns the strength of the forcing) for
 
   `point_function` must have an out-of-place signature of the form
 
-      point_function(x,t,fcache,phys_params)
+      point_function(state,t,fcache,phys_params)
 
-  where `x` the state vector, `t` is time, `fcache` is a corresponding `PointRegionCache`
+  where `state` the state vector, `t` is time, `fcache` is a corresponding `PointRegionCache`
   and `phys_params` are user-supplied physical parameters. Any of these can
-  be utilized to compute the positions. It must return either `x` and `y` as
-  a tuple of vectors or `VectorData`.
+  be utilized to compute the positions. It must return either a vector for
+  each coordinate or `VectorData`.
 
   `model_function!` must have an in-place signature of the form
 
-      model_function!(str,x,t,fcache,phys_params)
+      model_function!(str,state,t,fcache,phys_params)
 
   where `str` is the strength to be returned.
 """ PointForcingModel(::Function,::Function)
@@ -98,6 +98,15 @@ the data in `cache` to provide the details of the regularization.
 Create a line region of the shape(s) `shape`, using
 the data in `cache` to provide the details of the regularization.
 """ LineRegionCache(::Union{Body,BodyList},::BasicILMCache)
+
+"""
+    PointRegionCache(pts::VectorData,cache::BasicILMCache[,kwargs])
+
+Create a regularized point collection based on points `pts`, using the data
+in `cache` to provide the details of the regularization. The `kwargs` can be used to override
+the regularization choices, such as ddf.
+""" PointRegionCache(::VectorData,::BasicILMCache)
+
 
 # Some constructors of the region caches that distinguish scalar and vector data
 for f in [:Scalar,:Vector]
@@ -208,6 +217,10 @@ function ForcingModelAndRegion(flist::Vector{<:AbstractForcingModel},cache::Basi
    end
    return fmlist
 end
+
+#=
+Application of forcing
+=#
 
 
 """
