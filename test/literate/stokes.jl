@@ -177,7 +177,7 @@ function get_vsplus(base_cache,phys_params)
     vsplus.u .= 1.0
     return vsplus
 end
-get_vsminus(base_cache,phys_params) = zeros_surface(sys)
+get_vsminus(base_cache,phys_params) = zeros_surface(base_cache)
 
 bcdict = Dict("vsplus function"=>get_vsplus,"vsminus function"=>get_vsminus)
 

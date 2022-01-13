@@ -104,8 +104,8 @@ And finally, here's the steps we outlined above, used to
 extend the `solve` function
 
 ````@example neumann
-function ImmersedLayers.solve(vnplus,vnminus,prob::NeumannPoissonProblem,sys::ILMSystem)
-    @unpack extra_cache, base_cache = sys
+function ImmersedLayers.solve(prob::NeumannPoissonProblem,sys::ILMSystem)
+    @unpack extra_cache, base_cache, bc, phys_params = sys
     @unpack S, dvn, vn, fstar, sstar = extra_cache
 
     fill!(fstar,0.0)
@@ -115,6 +115,9 @@ function ImmersedLayers.solve(vnplus,vnminus,prob::NeumannPoissonProblem,sys::IL
     s = zeros_gridcurl(base_cache)
     df = zeros_surface(base_cache)
     ds = zeros_surface(base_cache)
+
+    vnplus = bc["vnplus function"](base_cache,phys_params)
+    vnminus = bc["vnminus function"](base_cache,phys_params)
 
     vn .= 0.5*(vnplus+vnminus)
     dvn .= vnplus - vnminus
@@ -166,29 +169,33 @@ body = Circle(1.0,Δs);
 nothing #hide
 ````
 
+Set the boundary condition functions
+
+````@example neumann
+function get_vnplus(base_cache,phys_params)
+    nrm = normals(base_cache)
+    vnplus = zeros_surface(base_cache)
+    vnplus .= nrm.u
+    return vnplus
+end
+get_vnminus(base_cache,phys_params) = zeros_surface(base_cache)
+
+bcdict = Dict("vnplus function"=>get_vnplus,"vnminus function"=>get_vnminus)
+````
+
 Create the system
 
 ````@example neumann
-prob = NeumannPoissonProblem(g,body,scaling=GridScaling)
+prob = NeumannPoissonProblem(g,body,scaling=GridScaling,bc=bcdict)
 sys = construct_system(prob)
-nothing #hide
-````
-
-Set the boundary values
-
-````@example neumann
-nrm = normals(sys)
-vnplus = zeros_surface(sys)
-vnminus = zeros_surface(sys)
-vnplus .= nrm.u
 nothing #hide
 ````
 
 Solve it
 
 ````@example neumann
-solve(vnplus,vnminus,prob,sys) #hide
-@time f, df, s, ds = solve(vnplus,vnminus,prob,sys);
+solve(prob,sys) #hide
+@time f, df, s, ds = solve(prob,sys);
 nothing #hide
 ````
 
@@ -206,13 +213,22 @@ plot(df)
 ````
 
 If, instead, we set the inner boundary condition to $n_x$ and the
-outer to zero, then we get the flow *inside* of a translating circle
+outer to zero, then we get the flow *inside* of a translating circle.
+All we need to do is re-define the boundary functions
 
 ````@example neumann
-vnplus = zeros_surface(sys)
-vnminus = zeros_surface(sys)
-vnminus .= nrm.u
-f, df, s, ds = solve(vnplus,vnminus,prob,sys);
+function get_vnplus(base_cache,phys_params)
+    vnplus = zeros_surface(base_cache)
+    return vnplus
+end
+function get_vnminus(base_cache,phys_params)
+    nrm = normals(base_cache)
+    vnminus = zeros_surface(base_cache)
+    vnminus .= nrm.u
+    return vnminus
+end
+
+f, df, s, ds = solve(prob,sys);
 plot(plot(f,sys,layers=true,levels=30,title="ϕ"),
 plot(s,sys,layers=true,levels=30,title="ψ"))
 ````
@@ -243,28 +259,37 @@ tl(bl)
 nothing #hide
 ````
 
+Set the boundary conditions. We set only the exterior Neumann value
+of body 2 (the circle). This gives us an opportunity to demonstrate the
+ [`copyto!`](@ref) function, which is useful for setting only the part of
+ the overall surface data associated with a certain body.
+
+````@example neumann
+function get_vnplus(base_cache,phys_params)
+    nrm = normals(base_cache)
+    vnplus = zeros_surface(base_cache)
+    copyto!(vnplus,nrm.u,base_cache,2)
+    return vnplus
+end
+function get_vnminus(base_cache,phys_params)
+    vnminus = zeros_surface(base_cache)
+    return vnminus
+end
+bcdict = Dict("vnplus function"=>get_vnplus,"vnminus function"=>get_vnminus)
+````
+
 Create the problem and system
 
 ````@example neumann
-prob = NeumannPoissonProblem(g,bl,scaling=GridScaling)
+prob = NeumannPoissonProblem(g,bl,scaling=GridScaling,bc=bcdict)
 sys = construct_system(prob)
 nothing #hide
-````
-
-Set the boundary conditions. We set only the exterior Neumann value
-of body 2 (the circle), using [`copyto!`](@ref)
-
-````@example neumann
-nrm = normals(sys)
-vnplus = zeros_surface(sys)
-vnminus = zeros_surface(sys)
-copyto!(vnplus,nrm.u,sys,2)
 ````
 
 Solve it and plot
 
 ````@example neumann
-f, df, s, ds  = solve(vnplus,vnminus,prob,sys)
+f, df, s, ds  = solve(prob,sys)
 plot(plot(f,sys,layers=true,levels=30,title="ϕ"),
 plot(s,sys,layers=true,levels=30,title="ψ"))
 ````
@@ -277,6 +302,7 @@ $$M = -\int_{C_2} f^+ \mathbf{n}\mathrm{d}s$$
 where $C_2$ is shape 2 (the circle), and $f^+$ is simply $[\phi]$ on body 2.
 
 ````@example neumann
+nrm = normals(sys)
 M = -integrate(df∘nrm,sys,2)
 ````
 

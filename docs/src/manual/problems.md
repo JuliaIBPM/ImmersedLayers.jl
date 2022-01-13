@@ -52,24 +52,30 @@ Here, we'd like this extra cache to hold the Schur complement and the
 filtering matrices, as well as some cache variables.
 
 ````@example problems
-struct DirichletPoissonCache{SMT,CMT,ST,FT} <: ImmersedLayers.AbstractExtraILMCache
+struct DirichletPoissonCache{SMT,CMT,FRT,ST,FT} <: ImmersedLayers.AbstractExtraILMCache
    S :: SMT
    C :: CMT
+   forcing_cache :: FRT
    fb :: ST
    fstar :: FT
 end
 ````
 
 ### Extend the `prob_cache` function
-We need this to construct our extra cache
+We need this to construct our extra cache. This will get called when the system
+is constructed. We can make use of the data available
+in the `base_cache` (which is already constructed before this is called)
+in order to create the extra cache. (In the example here, we aren't quite ready to
+use the `forcing_cache`, so we just keep it blank for now. We will use it later.)
 
 ````@example problems
 function ImmersedLayers.prob_cache(prob::DirichletPoissonProblem,base_cache::BasicILMCache)
     S = create_RTLinvR(base_cache)
     C = create_surface_filter(base_cache)
+    forcing_cache = nothing
     fb = zeros_surface(base_cache)
     fstar = zeros_grid(base_cache)
-    DirichletPoissonCache(S,C,fb,fstar)
+    DirichletPoissonCache(S,C,forcing_cache,fb,fstar)
 end
 ````
 
@@ -141,63 +147,140 @@ plot(f,sys)
 plot(s)
 ````
 
+## More advanced use, with keyword arguments
 In the previous example, we supplied the surface data as an argument directly to
-the `solve` function. However, sometimes we need to supply surface data with a little
-more complexity (as in time-varying cases). For this purpose, we can create
-functions that supply the boundary data when called, e.g.,
+the `solve` function. We also didn't have any right-hand side forcing. But in
+a more general case we might have more complicated boundary conditions or forcing
+information. This will be particularly true when we get to time varying problems.
+
+So in this next example, we will demonstrate how the problem constructor can
+be used to supply more sophisticated information to the `solve` function.
+In particular, we will use three keywords:
+* The `bc` keyword to supply boundary condition information.
+* The `forcing` keyword to supply forcing.
+* The `phys_params` keyword to supply physical parameters.
+
+In general, the philosophy is that we wish to enable the user to provide a function that
+supplies the required boundary or forcing data. There is a lot
+of freedom in this approach, as we will demonstrate.
+### Boundary conditions
+Here, we wish to construct functions that return the value of `f`
+on the outside and inside of the surface. These functions will
+get called in the `solve` function, and they will be passed
+the base cache and the physical parameters. So we can make use
+of both of these to return the boundary data, e.g., here
+we return the `x` coordinate of the surface points on the outside
+of the surface, and zeros on the inside:
 
 ````@example problems
-get_fbplus(base_cache) = points(base_cache).u
-get_fbminus(base_cache) = zeros_surface(base_cache)
+get_fbplus(base_cache,phys_params) = points(base_cache).u
+get_fbminus(base_cache,phys_params) = zeros_surface(base_cache)
 ````
 
-We can pass these along to the problem specification by various means.
-It's at the user's discretion how to do it, and how to make use of them
-in the solution. Here's an example, using a `Dict`
+Using the `bc` keyword, we can pass these along to the problem specification
+by various means. It's at the user's discretion how to do it, and how to make use of them
+in the solution. Here's an example, using a `Dict`:
 
 ````@example problems
-bcdict = Dict("fbplus"=>get_fbplus,"fbminus"=>get_fbminus)
+bcdict = Dict("fbplus function"=>get_fbplus,"fbminus function"=>get_fbminus)
 ````
 
-We can also pass along physical parameters and forcing functions.
-Let's use the latter feature in order to set some point sources at
-a few locations. For this, we create a function that will take in
-the base cache and the right-hand side data vector, and populate
-this vector with the point sources. We use the `Regularize` function
-in the `CartesianGrids.jl` package to immerse the point sources
-into the grid. In the example shown here, two points: one at (-1.0,1.5)
+### Forcing
+Forcing can come in several forms. It can be
+* **area forcing**, in which the forcing is distributed over a whole region, possibly confined
+* **line forcing**, in which the forcing is distributed along a curve (but singular in the orthogonal direction)
+* **point forcing**, in which the forcing is singular at one or more points
+
+In all cases, the user needs to supply some information about the **shape** of the
+forcing region and some information about the instantaneous strength of the forcing,
+in the form of a **model function**. These get bundled together into a **forcing model**.
+
+For confined area forcing and for line forcing, the **shape** is supplied as a `Body` or `BodyList`,
+similar to bodies (serving as the mask for confined-area forcing and as the curve
+for line forcing). For point forcing, the **shape** is the set of discrete points
+at which we want to apply forcing. We can either supply these points' coordinates directly
+or provide them via a **position function** that returns the point coordinates. The advantage
+of the latter is that it allows the points to be changed later without
+regenerating the system.
+
+In the example shown here, we apply point forcing at two points: one at (-1.0,1.5)
 and the other at (1.0,1.5), with respective strengths -1 and 1,
-are placed.
+are placed. We use a **position function** to provide the positions.
+This function must have the signature as shown here, accepting
+a general state argument, a time argument, the cache for this forcing,
+and physical parameters. Any of these can be used to help determine
+the point positions. In this case, however, we just simply provide the coordinates
+directly.
 
 ````@example problems
-function rhs_func!(rhs,base_cache)
-    X = VectorData([-1.0,1.0],[1.5,1.5])
-    str = ScalarData([-1.0,1.0])
-    reg = Regularize(X,cellsize(base_cache.g),I0=origin(base_cache.g),ddftype=CartesianGrids.M4prime)
-    return reg(rhs,str)
+function my_point_positions(state,t,fr::PointRegionCache,phys_params)
+    x = [-1.0,1.0]
+    y = [1.5,1.5]
+    return x, y
 end
 ````
 
-We redefine the `solve` function and use these functions in place of
-the original argument:
+The **model function** returns the strength of the forcing. In this point
+forcing example, it must return the strength of each point. It must be
+set up as an in-place function, accepting the vector of strengths and
+mutating (i.e. changing) this vector. Beyond that, it has the same
+signature as the position function.
+
+````@example problems
+function my_point_strengths!(σ,state,t,fr::PointRegionCache,phys_params)
+    σ .= [-1.0,1.0]
+end
+````
+
+Now we bundle these together into the forcing model. We also tell
+it what kind of regularized DDF we want to use. We use the $M_4'$ DDF here.
+`pfm` will get passed into the problem setup via the `forcing` keyword.
+
+````@example problems
+pfm = PointForcingModel(my_point_positions,my_point_strengths!;ddftype=CartesianGrids.M4prime);
+nothing #hide
+````
+
+Now, we need to make sure that the forcing data is used. When
+we generate the extra cache, we use the function `ForcingModelAndRegion`
+to assemble the forcing's cache.
+
+````@example problems
+function ImmersedLayers.prob_cache(prob::DirichletPoissonProblem,base_cache::BasicILMCache)
+    @unpack phys_params, forcing = prob
+    S = create_RTLinvR(base_cache)
+    C = create_surface_filter(base_cache)
+    forcing_cache = ForcingModelAndRegion(forcing,base_cache)
+    fb = zeros_surface(base_cache)
+    fstar = zeros_grid(base_cache)
+    DirichletPoissonCache(S,C,forcing_cache,fb,fstar)
+end
+````
+
+We now redefine the `solve` function and use the boundary condition and forcing
+information. For the forcing, we make use of the function `apply_forcing!`
+which takes the forcing and automatically calculates the right-hand side field
 
 ````@example problems
 function ImmersedLayers.solve(prob::DirichletPoissonProblem,sys::ILMSystem)
-    @unpack bc, forcing, extra_cache, base_cache = sys
+    @unpack bc, forcing, phys_params, extra_cache, base_cache = sys
     @unpack gdata_cache = base_cache
-    @unpack S, C, fb, fstar = extra_cache
+    @unpack S, C, forcing_cache, fb, fstar = extra_cache
 
     f = zeros_grid(base_cache)
     s = zeros_surface(base_cache)
 
-    # Get the boundary data on each side of the interface
-    fbplus = bc["fbplus"](base_cache)
-    fbminus = bc["fbminus"](base_cache)
+    # Get the boundary data on each side of the interface using
+    # the functions we supplied via the `Dict`.
+    fbplus = bc["fbplus function"](base_cache,phys_params)
+    fbminus = bc["fbminus function"](base_cache,phys_params)
 
-    # Evaluate the forcing field
-    forcing(gdata_cache,base_cache)
+    # apply_forcing! evaluates the forcing field on the grid and put
+    # the result in the `gdata_cache`.
+    fill!(gdata_cache,0.0)
+    apply_forcing!(gdata_cache,f,0.0,forcing_cache,phys_params)
 
-    # Evaluate the right-hand side of Poisson equation
+    # Evaluate the double-layer term and add it to the right-hand side
     surface_divergence!(fstar,fbplus-fbminus,base_cache)
     fstar .+= gdata_cache
 
@@ -217,11 +300,13 @@ function ImmersedLayers.solve(prob::DirichletPoissonProblem,sys::ILMSystem)
 end
 ````
 
+### Set up the problem
 Now we specify the problem, create the system, and solve it, as before,
-but now supplying the boundary condition functions with the `bc` keyword:
+but now supplying the boundary condition and forcing information with the `bc`
+and `forcing` keywords:
 
 ````@example problems
-prob = DirichletPoissonProblem(g,body,scaling=GridScaling,bc=bcdict,forcing=rhs_func!)
+prob = DirichletPoissonProblem(g,body,scaling=GridScaling,bc=bcdict,forcing=pfm)
 sys = construct_system(prob)
 f, s = solve(prob,sys)
 plot(f,sys)
@@ -229,17 +314,21 @@ plot(f,sys)
 
 So we get the additional features from the sources. Now, suppose we wish to change the
 the boundary conditions or source points? We can do it easily without regenerating the
-cache and system, simply by redefining our bc and forcing functions, e.g.
-to create an internal solution, with surface data equal to the $y$ coordinate,
+cache and system, simply by redefining our bc and forcing model functions. For
+example, to create an internal solution, with surface data equal to the $y$ coordinate,
+and four sources inside.
 
 ````@example problems
-get_fbplus(base_cache) = zeros_surface(base_cache)
-get_fbminus(base_cache) = points(base_cache).v
-function rhs_func!(rhs,base_cache)
-    X = VectorData([-0.2,0.2],[0.0,0.0])
-    str = ScalarData([-1.0,1.0])
-    reg = Regularize(X,cellsize(base_cache.g),I0=origin(base_cache.g),ddftype=CartesianGrids.M4prime)
-    return reg(rhs,str)
+get_fbplus(base_cache,phys_params) = zeros_surface(base_cache)
+get_fbminus(base_cache,phys_params) = points(base_cache).v
+
+function my_point_positions(state,t,fr::PointRegionCache,phys_params)
+    x = [-0.2,0.2,-0.2,0.2]
+    y = [0.2,0.2,-0.2,-0.2]
+    return x, y
+end
+function my_point_strengths!(σ,state,t,fr::PointRegionCache,phys_params)
+    σ .= [-1.0,1.0,-1.0,1.0]
 end
 ````
 
@@ -269,6 +358,21 @@ ILMSystem
 construct_system
 update_system
 update_system!
+```
+
+## Forcing functions
+```@docs
+AreaForcingModel
+LineForcingModel
+PointForcingModel
+AreaRegionCache
+LineRegionCache
+PointRegionCache
+ForcingModelAndRegion
+arccoord(::LineRegionCache)
+mask(::AreaRegionCache)
+points(::PointRegionCache)
+apply_forcing!
 ```
 
 ---
