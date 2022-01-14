@@ -67,7 +67,6 @@ function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{true,SCA,0}) where
     @unpack f = extra_cache
 
     _constrained_ode_function(f.lin_op,f.ode_rhs;_func_cache=zeros_sol(sys))
-    #ConstrainedODEFunction(f.ode_rhs,f.lin_op,_func_cache=zeros_sol(sys))
 end
 
 function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{true})
@@ -76,8 +75,6 @@ function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{true})
 
     _constrained_ode_function(f.lin_op,f.ode_rhs,f.bc_rhs,f.constraint_force,
                            f.bc_op;_func_cache=zeros_sol(sys))
-    #ConstrainedODEFunction(f.ode_rhs,f.bc_rhs,f.constraint_force,
-    #                       f.bc_op,f.lin_op,_func_cache=zeros_sol(sys))
 end
 
 function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{false})
@@ -90,9 +87,6 @@ function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{false})
     _constrained_ode_function(f.lin_op,rhs!,f.bc_rhs,f.constraint_force,
                               f.bc_op;_func_cache=zeros_sol(sys),
                                       param_update_func=update_system!)
-    #ConstrainedODEFunction(rhs!,f.bc_rhs,f.constraint_force,
-    #                       f.bc_op,f.lin_op,_func_cache=zeros_sol(sys),
-    #                       param_update_func=update_system!)
 end
 
 @inline _constrained_ode_function(lin_op,args...;kwargs...) =

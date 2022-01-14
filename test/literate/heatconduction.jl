@@ -271,11 +271,11 @@ package, and leverages most of the tools of that package.
 =#
 
 #=
-Set an initial condition. Here, we just get a zeroed copy of the
+Set an initial condition. Here, we just get an initial (zeroed) copy of the
 solution prototype that we have stored in the extra cache. We also
-get the time step size for our own use.
+get the time step size for our own inspection.
 =#
-u0 = zeros_sol(sys)
+u0 = init_sol(sys)
 Δt = timestep_fourier(g,phys_params)
 
 #=
@@ -340,11 +340,43 @@ We can also get it for an array of times, e.g.,
 =#
 temperature(sol,sys,0.0051:0.0001:0.0061);
 
+#=
+## Motions
+It is straightforward to make bodies move in time-varying problems.
+For each body that we create, we can provide a corresponding motion,
+via the `motions = ` keyword. (If a `BodyList` is provided, then
+a corresponding `MotionList` must be provided.)
+The only caveat is that the time-stepping becomes considerably slower
+in such problems, since the system operators must be regenerated at
+every time step.
+
+The `RigidBodyTools.jl` package provides a versatile set of motions,
+both rigid-body and deforming, and associated tools. For example,
+to simply make the body move at constant velocity 1 in the `x` direction.
+=#
+m = RigidBodyMotion((1.0,0.0),0.0)
+
+#=
+Here's an example of a deforming motion
+=#
+ufcn(x,y,t) = 0.25*x*y*cos(t)
+vfcn(x,y,t) = 0.25*(x^2-y^2)*cos(t)
+m = DeformationMotion(ufcn,vfcn)
+
+#=
+Either of these would be provided in the `motions = ` keyword of the problem
+construction. Consult the documentation of `RigidBodyTools.jl` to learn more
+about these. However, for time-marching purposes, it is helpful to know that the
+maximum surface velocity is provided by the `maxvelocity` function:
+=#
+maxvelocity(body,m)
+
 #md # ## Time-varying PDE functions
 
 #md # ```@docs
 #md # ODEFunctionList
 #md # zeros_sol
+#md # init_sol
 #md # init
 #md # state
 #md # constraint

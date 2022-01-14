@@ -59,13 +59,6 @@ vector type, as well as an optional extra cache
 function __init(prob::AbstractILMProblem{DT,ST,DTP}) where {DT,ST,DTP}
     @unpack g, bodies, phys_params, bc, forcing, timestep_func, motions = prob
 
-    #=
-    if typeof(prob) <: AbstractScalarILMProblem
-        base_cache = SurfaceScalarCache(bodies,g,ddftype=DT,scaling=ST)
-    elseif typeof(prob) <: AbstractVectorILMProblem
-        base_cache = SurfaceVectorCache(bodies,g,ddftype=DT,scaling=ST)
-    end
-    =#
     base_cache = _construct_base_cache(bodies,g,DT,ST,DTP,prob,Val(length(bodies)))
 
     extra_cache = prob_cache(prob,base_cache)
@@ -87,8 +80,6 @@ end
 
 @inline _construct_base_cache(bodies,g,DT,ST,DTP,::PT,::Val{N}) where {PT <: AbstractVectorILMProblem,N} =
               SurfaceVectorCache(bodies,g,ddftype=DT,scaling=ST,dtype=DTP)
-
-
 
 _static_surfaces(::Nothing) = true
 _static_surfaces(::Any) = false

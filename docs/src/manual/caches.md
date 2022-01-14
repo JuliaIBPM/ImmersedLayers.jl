@@ -172,14 +172,17 @@ AbstractExtraILMCache
 similar_grid
 similar_gridgrad
 similar_gridcurl
+similar_gridgradcurl
 similar_surface
 zeros_grid
 zeros_gridgrad
 zeros_gridcurl
+zeros_gridgradcurl
 zeros_surface
 ones_grid
 ones_gridgrad
 ones_gridcurl
+ones_gridgradcurl
 ones_surface
 x_grid
 y_grid
