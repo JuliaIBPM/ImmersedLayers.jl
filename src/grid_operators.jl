@@ -27,11 +27,6 @@ function divergence!(p::Nodes{C,NX,NY},q::Edges{C,NX,NY},cache::BasicILMCache) w
     _scale_derivative!(p,cache)
 end
 
-function divergence!(p::Nodes{Dual,NX,NY},q::Edges{Dual,NX,NY},cache::BasicILMCache) where {NX,NY}
-    _unscaled_divergence!(p,q,cache)
-    _scale_derivative!(p,cache)
-end
-
 _unscaled_divergence!(p,q,cache::BasicILMCache) = (fill!(p,0.0); divergence!(p,q))
 
 
@@ -195,6 +190,20 @@ function convective_derivative!(udp::Nodes{Primal},u::Edges{Primal},p::Nodes{Pri
 end
 
 """
+    convective_derivative!(vdw::Nodes{Dual},v::Edges,w::Nodes{Dual},base_cache::BasicILMCache,extra_cache::ConvectiveDerivativeCache)
+
+Compute the convective derivative of `w` with velocity `v`, i.e., ``v\\cdot \\nabla w``, and
+return the result in `vdw`. The result is either divided by unity or
+the grid cell size depending on whether `base_cache` is of type `IndexScaling`
+or `GridScaling`. This version of the method uses `extra_cache` of type
+[`ConvectiveDerivativeCache`](@ref).
+"""
+function convective_derivative!(udw::Nodes{Primal},u::Edges{Primal},w::Nodes{Primal},base_cache::BasicILMCache,extra_cache::ConvectiveDerivativeCache)
+    _unscaled_convective_derivative!(udw,u,w,extra_cache)
+    _scale_derivative!(udw,base_cache)
+end
+
+"""
     convective_derivative!(vdv::Edges,v::Edges,base_cache::BasicILMCache,extra_cache::ConvectiveDerivativeCache)
 
 Compute the convective derivative of `v`, i.e., ``v\\cdot \\nabla v``, and
@@ -220,15 +229,16 @@ function _unscaled_convective_derivative!(udp::Nodes{Primal},u::Edges{Primal},p:
 end
 
 function _unscaled_convective_derivative!(udw::Nodes{Dual},u::Edges{Primal},w::Nodes{Dual},extra_cache::ConvectiveDerivativeCache)
-    @unpack vt1_cache, vt3_cache = extra_cache
+    @unpack vt1_cache, vt2_cache, vt3_cache = extra_cache
 
     fill!(vt1_cache,0.0)
     grad!(vt1_cache,w) # needs to be on dual edges
+    fill!(vt2_cache,0.0)
     grid_interpolate!(vt2_cache,u) # needs to be on dual edges
     product!(vt3_cache,u,vt1_cache) # will be on dual edges
     fill!(udw,0.0)
     grid_interpolate!(udw,vt3_cache) # will be on dual nodes
-    udp
+    udw
 end
 
 function _unscaled_convective_derivative!(udu::Edges{Primal},u::Edges{Primal},extra_cache::ConvectiveDerivativeCache)

@@ -264,10 +264,10 @@ _get_regularization(X::VectorData{N},g::PhysicalGrid;kwargs...) where {N} =
     Regularize(X,cellsize(g),I0=origin(g); kwargs...)
 
 # Standardize the Laplacian
-_get_laplacian(a,coeff_factor::Real,g::PhysicalGrid,::Type{IndexScaling};dtype=Float64) =
-               CartesianGrids.plan_laplacian(size(a),with_inverse=true,factor=coeff_factor,dtype=dtype)
-_get_laplacian(a,coeff_factor::Real,g::PhysicalGrid,::Type{GridScaling};dtype=Float64) =
-               CartesianGrids.plan_laplacian(size(a),with_inverse=true,factor=coeff_factor/cellsize(g)^2,dtype=dtype)
+_get_laplacian(a,coeff_factor::Real,g::PhysicalGrid,with_inverse,::Type{IndexScaling};dtype=Float64) =
+               CartesianGrids.plan_laplacian(size(a),with_inverse=with_inverse,factor=coeff_factor,dtype=dtype)
+_get_laplacian(a,coeff_factor::Real,g::PhysicalGrid,with_inverse,::Type{GridScaling};dtype=Float64) =
+               CartesianGrids.plan_laplacian(size(a),with_inverse=with_inverse,factor=coeff_factor/cellsize(g)^2,dtype=dtype)
 
 # This is needed to stabilize the type-unstable `RegularizationMatrix` function in
 # CartesianGrids
