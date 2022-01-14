@@ -205,7 +205,8 @@ function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},d
   E = _interpolation_matrix(regop, gdata_cache,sdata_cache)
 
   coeff_factor = 1.0
-  L = _get_laplacian(gcurl_cache,coeff_factor,g,scaling;dtype=dtype)
+  with_inverse = true
+  L = _get_laplacian(gcurl_cache,coeff_factor,g,with_inverse,scaling;dtype=dtype)
 
   return BasicILMCache{N,scaling,typeof(gdata_cache),ND,typeof(bl),typeof(nrm),typeof(a),typeof(regop),typeof(Rsn),typeof(Esn),typeof(R),typeof(E),typeof(L),
                        typeof(gsnorm_cache),typeof(gcurl_cache),typeof(snorm_cache),typeof(sdata_cache)}(
@@ -250,6 +251,7 @@ Convenience functions
 
 @inline CartesianGrids.cellsize(s::AbstractBasicCache) = cellsize(s.g)
 @inline Base.length(s::AbstractBasicCache{N}) where {N} = N
+Base.eltype(s::AbstractBasicCache) = eltype(s.gdata_cache)
 
 # Standardize the regularization
 _get_regularization(X::VectorData{N},a::ScalarData{N},g::PhysicalGrid,ddftype,::Type{GridScaling};filter=false) where {N} =
@@ -349,6 +351,13 @@ Get a `similar` copy of the grid curl field data in the cache.
 """
 @inline similar_gridcurl(cache::BasicILMCache,kwargs...) = similar(cache.gcurl_cache,kwargs...)
 
+"""
+    similar_gridgradcurl(::BasicILMCache)
+
+Get a `similar` copy of the grid gradient-of-curl field data in the cache.
+"""
+@inline similar_gridgradcurl(cache::BasicILMCache;element_type=eltype(cache)) = Edges(Dual,cache.gdata_cache,dtype=element_type)
+
 
 """
     similar_surface(::BasicILMCache)
@@ -381,6 +390,13 @@ Get an instance of the grid curl field data in the cache, with values set to zer
 """
 @inline zeros_gridcurl(cache::BasicILMCache,kwargs...) = zero(cache.gcurl_cache,kwargs...)
 
+"""
+    zeros_gridgradcurl(::BasicILMCache)
+
+Get an instance of the grid gradient-of-curl field data in the cache, with values set to zero.
+"""
+@inline zeros_gridgradcurl(cache::BasicILMCache;element_type=eltype(cache)) = Edges(Dual,cache.gdata_cache,dtype=element_type)
+
 
 """
     zeros_surface(::BasicILMCache)
@@ -412,6 +428,14 @@ with values set to unity. If the data are of type `TensorGridData`, then
 Get an instance of the grid curl field data in the cache, with values set to unity.
 """
 @inline ones_gridcurl(cache::BasicILMCache,kwargs...) = ones(cache.gcurl_cache,kwargs...)
+
+"""
+    ones_gridgradcurl(::BasicILMCache)
+
+Get an instance of the grid gradient-of-curl field data in the cache, with values set to unity.
+"""
+@inline ones_gridgradcurl(cache::BasicILMCache;element_type=eltype(cache)) =
+      (d = Edges(Dual,cache.gdata_cache,dtype=element_type); fill!(d,one(element_type)))
 
 
 """

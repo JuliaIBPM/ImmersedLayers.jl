@@ -58,6 +58,22 @@ end
 
   f .= En*w
 
+  vd = zeros_gridgradcurl(scache)
+  @test typeof(vd) <: Edges{Dual}
+
+
+end
+
+@testset "Complex cache" begin
+  scache = SurfaceScalarCache(body,g,scaling=GridScaling,dtype=ComplexF64)
+
+  @test eltype(similar_grid(scache)) == ComplexF64
+  @test eltype(similar_gridcurl(scache)) == ComplexF64
+  @test eltype(similar_gridgrad(scache)) == ComplexF64
+  @test eltype(similar_gridgradcurl(scache)) == ComplexF64
+  @test eltype(similar_surface(scache)) == ComplexF64
+
+
 end
 
 dq = EdgeGradient(Primal,size(g))

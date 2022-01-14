@@ -159,14 +159,17 @@ dot(os,os,cache)
 #md # similar_grid
 #md # similar_gridgrad
 #md # similar_gridcurl
+#md # similar_gridgradcurl
 #md # similar_surface
 #md # zeros_grid
 #md # zeros_gridgrad
 #md # zeros_gridcurl
+#md # zeros_gridgradcurl
 #md # zeros_surface
 #md # ones_grid
 #md # ones_gridgrad
 #md # ones_gridcurl
+#md # ones_gridgradcurl
 #md # ones_surface
 #md # x_grid
 #md # y_grid
