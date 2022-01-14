@@ -154,17 +154,18 @@ for details.
 
 function SurfaceScalarCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid;
                               ddftype = CartesianGrids.Yang3,
-                              scaling = IndexScaling) where {N}
+                              scaling = IndexScaling,
+                              dtype = Float64) where {N}
 
-   X = points(bl)
-   sdata_cache = ScalarData(X)
-   snorm_cache = VectorData(X)
+	X = points(bl)
+	sdata_cache = ScalarData(X, dtype = dtype)
+	snorm_cache = VectorData(X, dtype = dtype)
 
-   gsnorm_cache = Edges(Primal,size(g))
-   gcurl_cache = Nodes(Dual,size(g))
-   gdata_cache = Nodes(Primal,size(g))
+	gsnorm_cache = Edges(Primal,size(g), dtype = dtype)
+	gcurl_cache = Nodes(Dual,size(g), dtype = dtype)
+	gdata_cache = Nodes(Primal,size(g), dtype = dtype)
 
-   _surfacecache(bl,X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdata_cache)
+	_surfacecache(bl,X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdata_cache;dtype=dtype)
 
 end
 
@@ -172,17 +173,18 @@ end
 
 function SurfaceVectorCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid;
                               ddftype = CartesianGrids.Yang3,
-                              scaling = IndexScaling) where {N}
+                              scaling = IndexScaling,
+                              dtype = Float64) where {N}
 
-   X = points(bl)
-   sdata_cache = VectorData(X)
-   snorm_cache = TensorData(X)
+	X = points(bl)
+	sdata_cache = VectorData(X, dtype = dtype)
+	snorm_cache = TensorData(X, dtype = dtype)
 
-   gsnorm_cache = EdgeGradient(Primal,size(g))
-   gcurl_cache = Nodes(Dual,size(g))
-   gdata_cache = Edges(Primal,size(g))
+	gsnorm_cache = EdgeGradient(Primal,size(g), dtype = dtype)
+	gcurl_cache = Nodes(Dual,size(g), dtype = dtype)
+	gdata_cache = Edges(Primal,size(g), dtype = dtype)
 
-   _surfacecache(bl,X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdata_cache)
+	_surfacecache(bl,X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdata_cache;dtype=dtype)
 
 end
 
@@ -193,7 +195,7 @@ function Base.show(io::IO, H::BasicILMCache{N,SCA}) where {N,SCA}
 end
 
 function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},ddftype,scaling,
-                      sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdata_cache) where {N,ND}
+                      sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdata_cache;dtype=Float64) where {N,ND}
 
   regop = _get_regularization(X,a,g,ddftype,scaling)
   Rsn = _regularization_matrix(regop,snorm_cache,gsnorm_cache)
@@ -203,8 +205,7 @@ function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},d
   E = _interpolation_matrix(regop, gdata_cache,sdata_cache)
 
   coeff_factor = 1.0
-  with_inverse = true
-  L = _get_laplacian(gcurl_cache,coeff_factor,g,with_inverse,scaling)
+  L = _get_laplacian(gcurl_cache,coeff_factor,g,scaling;dtype=dtype)
 
   return BasicILMCache{N,scaling,typeof(gdata_cache),ND,typeof(bl),typeof(nrm),typeof(a),typeof(regop),typeof(Rsn),typeof(Esn),typeof(R),typeof(E),typeof(L),
                        typeof(gsnorm_cache),typeof(gcurl_cache),typeof(snorm_cache),typeof(sdata_cache)}(
@@ -263,9 +264,10 @@ _get_regularization(X::VectorData{N},g::PhysicalGrid;kwargs...) where {N} =
     Regularize(X,cellsize(g),I0=origin(g); kwargs...)
 
 # Standardize the Laplacian
-_get_laplacian(a,coeff_factor::Real,g::PhysicalGrid,with_inverse,::Type{IndexScaling}) = plan_laplacian(size(a),with_inverse=with_inverse,factor=coeff_factor)
-_get_laplacian(a,coeff_factor::Real,g::PhysicalGrid,with_inverse,::Type{GridScaling}) =  plan_laplacian(size(a),with_inverse=with_inverse,factor=coeff_factor/cellsize(g)^2)
-
+_get_laplacian(a,coeff_factor::Real,g::PhysicalGrid,::Type{IndexScaling};dtype=Float64) =
+               CartesianGrids.plan_laplacian(size(a),with_inverse=true,factor=coeff_factor,dtype=dtype)
+_get_laplacian(a,coeff_factor::Real,g::PhysicalGrid,::Type{GridScaling};dtype=Float64) =
+               CartesianGrids.plan_laplacian(size(a),with_inverse=true,factor=coeff_factor/cellsize(g)^2,dtype=dtype)
 
 # This is needed to stabilize the type-unstable `RegularizationMatrix` function in
 # CartesianGrids
@@ -311,8 +313,8 @@ Create an invertible Laplacian operator for data `src` (of the same size as the 
 using the index or grid scaling associated with `cache`. The operator is pre-multiplied
 by the factor `coeff_factor`.
 """
-Laplacian(cache::BasicILMCache{N,SCA},src::GridData,coeff_factor; with_inverse=true) where {N,SCA} =
-    _get_laplacian(src,coeff_factor,cache.g,with_inverse,SCA)
+Laplacian(cache::BasicILMCache{N,SCA},src::GridData,coeff_factor; with_inverse=true, dtype=Float64) where {N,SCA} =
+    _get_laplacian(src,coeff_factor,cache.g,with_inverse,SCA;dtype=dtype)
 
 
 # Some utilities to get the DDF type of the cache

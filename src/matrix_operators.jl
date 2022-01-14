@@ -227,7 +227,11 @@ function create_surface_filter(cache::BasicILMCache{N,SCA}) where {N,SCA}
     Ef = InterpolationMatrix(regfilt,gdata_cache,sdata_cache)
 
     len = length(sdata_cache)
-    C = Matrix{eltype(sdata_cache)}(undef,len,len)
+
+    # Keep C as a Matrix{Float64} for now
+    # C = Matrix{eltype(sdata_cache)}(undef,len,len)
+    C = Matrix{Float64}(undef,len,len)
+
     return mul!(C,Ef,R)
 
 end

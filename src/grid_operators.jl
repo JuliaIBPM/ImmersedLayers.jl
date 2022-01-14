@@ -27,7 +27,14 @@ function divergence!(p::Nodes{C,NX,NY},q::Edges{C,NX,NY},cache::BasicILMCache) w
     _scale_derivative!(p,cache)
 end
 
+function divergence!(p::Nodes{Dual,NX,NY},q::Edges{Dual,NX,NY},cache::BasicILMCache) where {NX,NY}
+    _unscaled_divergence!(p,q,cache)
+    _scale_derivative!(p,cache)
+end
+
 _unscaled_divergence!(p,q,cache::BasicILMCache) = (fill!(p,0.0); divergence!(p,q))
+
+
 
 """
     grad!(v::Edges{Primal/Dual},p::Nodes{Primal/Dual},cache::BasicILMCache)
