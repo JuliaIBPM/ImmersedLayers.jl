@@ -248,7 +248,7 @@ function _unscaled_convective_derivative!(udw::Nodes{Dual},u::Edges{Primal},w::N
     grad!(vt1_cache,w) # needs to be on dual edges
     fill!(vt2_cache,0.0)
     grid_interpolate!(vt2_cache,u) # needs to be on dual edges
-    product!(vt3_cache,u,vt1_cache) # will be on dual edges
+    product!(vt3_cache,vt2_cache,vt1_cache) # will be on dual edges
     fill!(udw,0.0)
     grid_interpolate!(udw,vt3_cache) # will be on dual nodes
     udw
