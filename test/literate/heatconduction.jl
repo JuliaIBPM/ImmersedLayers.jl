@@ -90,8 +90,8 @@ function heatconduction_ode_rhs!(dT,T,sys::ILMSystem,t)
 
     ## Calculate the double-layer term
     fill!(dT,0.0)
-    Tbplus .= bc["Tbplus"](base_cache,t)
-    Tbminus .= bc["Tbminus"](base_cache,t)
+    Tbplus .= bc["Tbplus"](t,base_cache,phys_params)
+    Tbminus .= bc["Tbminus"](t,base_cache,phys_params)
     dTb .= Tbplus - Tbminus
     surface_divergence!(dT,-κ*dTb,sys)
 
@@ -104,11 +104,11 @@ For this Dirichlet condition, we simply take the average of the interior
 and exterior prescribed values. The first argument `dTb` holds the result.
 =#
 function heatconduction_bc_rhs!(dTb,sys::ILMSystem,t)
-    @unpack bc, extra_cache, base_cache = sys
+    @unpack bc, extra_cache, base_cache, phys_params = sys
     @unpack Tb, Tbplus, Tbminus = extra_cache
 
-    Tbplus .= bc["Tbplus"](base_cache,t)
-    Tbminus .= bc["Tbminus"](base_cache,t)
+    Tbplus .= bc["Tbplus"](t,base_cache,phys_params)
+    Tbminus .= bc["Tbminus"](t,base_cache,phys_params)
     dTb .= 0.5*(Tbplus + Tbminus)
 
     return dTb
@@ -237,14 +237,14 @@ These can be changed later without having to regenerate the system.
 #=
 Here, we create a dict with physical parameters to be passed in.
 =#
-phys_params = Dict("diffusivity" => 1.0, "Fourier" => 0.25)
+phys_params = Dict("diffusivity" => 1.0, "Fourier" => 1.0)
 
 #=
 The temperature boundary functions on the exterior and interior are
 defined here and assembled into a dict.
 =#
-get_Tbplus(base_cache,t) = zeros_surface(base_cache)
-get_Tbminus(base_cache,t) = ones_surface(base_cache)
+get_Tbplus(t,base_cache,phys_params) = zeros_surface(base_cache)
+get_Tbminus(t,base_cache,phys_params) = ones_surface(base_cache)
 bcdict = Dict("Tbplus" => get_Tbplus,"Tbminus" => get_Tbminus)
 
 #=
@@ -299,10 +299,10 @@ tspan = (0.0,1.0)
 integrator = init(u0,tspan,sys)
 
 #=
-Now advance the solution by 1 convective time unit, by using the `step!` function,
+Now advance the solution by 0.01 convective time units, by using the `step!` function,
 which steps through the solution.
 =#
-step!(integrator,1.0)
+step!(integrator,0.01)
 
 #=
 ### Plot the solution
@@ -333,12 +333,12 @@ we can obtain the temperature at *any* time in the interval of our solution.
 For example, to get the solution at time 0.51:
 =#
 sol = integrator.sol
-plot(temperature(sol,sys,0.51),sys)
+plot(temperature(sol,sys,0.0051),sys)
 
 #=
-We can also get it for an array of times:
+We can also get it for an array of times, e.g.,
 =#
-temperature(sol,sys,0.5:0.01:0.6)
+temperature(sol,sys,0.0051:0.0001:0.0061);
 
 #md # ## Time-varying PDE functions
 

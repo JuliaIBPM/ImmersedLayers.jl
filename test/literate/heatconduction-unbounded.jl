@@ -75,7 +75,7 @@ use of later to calculate the time step size.
 phys_params = Dict("diffusivity" => 0.005,
                     "angular velocity" => 0.5,
                     "length scale" => Lx/2,
-                     "Fourier" => 0.25,
+                     "Fourier" => 1.0,
                      "CFL" => 0.5,
                      "lineheater_flux" => -2.0,
                      "areaheater_freq" => 1.0,

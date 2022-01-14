@@ -125,11 +125,12 @@ for f in [:Scalar,:Vector]
         pts = points(shape)
 
         # This needs to be written specially for closed vs open bodies and for lists
-        arccoord = ScalarData(pts)
-        arccoord .= accumulate(+,dlengthmid(shape))
+        s = ScalarData(pts)
+        s .= accumulate(+,dlengthmid(shape))
+        #s = arccoord(shape)
 
         str = similar_surface(cache)
-        return LineRegionCache{typeof(arccoord),typeof(str),typeof(cache)}(arccoord,str,cache)
+        return LineRegionCache{typeof(s),typeof(str),typeof(cache)}(s,str,cache)
     end
 
     @eval function PointRegionCache(g::PhysicalGrid,pts::VectorData,data_prototype::$gdtype;kwargs...)
