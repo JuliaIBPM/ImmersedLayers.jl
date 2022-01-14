@@ -241,16 +241,16 @@ function _unscaled_convective_derivative!(udp::Nodes{Primal},u::Edges{Primal},p:
     udp
 end
 
-function _unscaled_convective_derivative!(udw::Nodes{Dual},u::Edges{Primal},w::Nodes{Dual},extra_cache::ConvectiveDerivativeCache)
+function _unscaled_convective_derivative!(udw::Nodes{Dual},u::Edges{Primal},w::Nodes{Dual},extra_cache::ConvectiveDerivativeCache{VT}) where {VT<:Edges{Dual}}
     @unpack vt1_cache, vt2_cache, vt3_cache = extra_cache
 
     fill!(vt1_cache,0.0)
-    grad!(vt1_cache,w) # needs to be on dual edges
+    grad!(vt1_cache,w)
     fill!(vt2_cache,0.0)
-    grid_interpolate!(vt2_cache,u) # needs to be on dual edges
-    product!(vt3_cache,vt2_cache,vt1_cache) # will be on dual edges
+    grid_interpolate!(vt2_cache,u)
+    product!(vt3_cache,vt2_cache,vt1_cache)
     fill!(udw,0.0)
-    grid_interpolate!(udw,vt3_cache) # will be on dual nodes
+    grid_interpolate!(udw,vt3_cache)
     udw
 end
 

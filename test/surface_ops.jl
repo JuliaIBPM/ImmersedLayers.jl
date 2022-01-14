@@ -137,6 +137,17 @@ end
   qdq2 = convective_derivative(q,vcache)
 
   @test qdq == qdq2
+
+  w = zeros_gridcurl(vcache)
+  v = zeros_grid(vcache)
+  v .= randn(size(v))
+  curl!(w,v)
+  vdw = zeros_gridcurl(vcache)
+
+  cd_cache = ConvectiveDerivativeCache(zeros_gridgradcurl(vcache))
+  convective_derivative!(vdw,v,w,vcache,cd_cache)
+
+
 end
 
 @testset "Convenience fields" begin
