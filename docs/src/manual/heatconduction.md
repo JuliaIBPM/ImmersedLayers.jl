@@ -15,11 +15,13 @@ temperature.
 
 We seek to solve the heat conduction equation with Dirichlet boundary conditions
 
-$$\dfrac{\partial T}{\partial t} = \kappa \nabla^2 T + q + \sigma \delta(\chi) - \nabla\cdot \left( \kappa [T] \delta(\chi)\right)$$
+$$\dfrac{\partial T}{\partial t} = \kappa \nabla^2 T + q + \delta(\chi) \sigma  - \kappa \nabla\cdot \left( \delta(\chi) \mathbf{n} [T] \right)$$
 
-subject to $T = T_b$ on the immersed surface.
+subject to $T = T_b$ on the immersed surface. We might be solving this external
+to a surface, or it might be internal. The quantity $\sigma$ is the Lagrange
+multiplier. In this context, it is the heat flux through the surface.
 
-In our discrete formulation, the problem takes the form
+In the spatially discrete formulation, the problem takes the form
 
 $$\begin{bmatrix}
 \mathcal{L}_C^\kappa & R_C \\ R_C^T & 0
@@ -27,13 +29,18 @@ $$\begin{bmatrix}
 T \\ -\sigma
 \end{pmatrix} =
 \begin{pmatrix}
-q - \kappa D_s [T] \\ T_b
+q - \kappa D_s [T] \\ (T^+_b + T^-_b)/2
 \end{pmatrix}$$
 
-where $\mathcal{L}_C^\kappa = \mathrm{d}/\mathrm{d}t - \kappa L_C$. This has the form required of a
-*constrained ODE system*, which the `ConstrainedSystems.jl` package treats.
+where $\mathcal{L}_C^\kappa = \mathrm{d}/\mathrm{d}t - \kappa L_C$, where $[T] = T_b^+ - T_b^-$
+is the jump in temperature across the surface. As in the time-independent problems,
+we can specify whether we are solving it external or internal to a surface by setting
+the boundary value to zero in the other region. However, in contrast to the
+time-independent problems, we have to advance this problem in time.
+The system above has the form of a *constrained ODE system*, which the `ConstrainedSystems.jl` package treats.
+We will make use of this package in the example below.
 
-The main differences from previous examples is that
+To support this, there are a few additional steps in our setup of the problem:
 - we (as the implementers of the PDE) need to specify the functions that calculate the
    various parts of this constrained ODE system.
 - we (as the users of this implementation) need to specify the time step size,
@@ -42,7 +49,8 @@ The main differences from previous examples is that
 
 The latter of these is very easy, as we'll find. Most of our attention will
 be on the first part: how to set up the constrained ODE system. For this,
-we will make use of the `ConstrainedODEFunction` constructor in the
+we will make use of the `ODEFunctionList`, which assembles the
+various functions and operators into a `ConstrainedODEFunction`, to be used by the
 `ConstrainedSystems.jl` package.
 
 ````@example heatconduction
@@ -64,7 +72,7 @@ The constrained ODE system requires us to provide functions that calculate
 the RHS of the ODE, the RHS of the constraint equation, the Lagrange multiplier force
 term in the ODE, and the action of the boundary operator on the state vector.
 (You can see the generic form of the system by typing `?ConstrainedODEFunction`)
-As you will see, in this example these are `in-place` operators: their
+As you will see, in this example these are *in-place* operators: their
 first argument holds the result, which is changed (i.e., mutated)
 by the function.
 Below, we construct the function that calculates the RHS of the heat conduction ODE.
@@ -75,7 +83,7 @@ data supply the boundary values. Also, note that the function returns `dT`
 in the first argument. This represents this function's contribution to $dT/dt$.
 
 ````@example heatconduction
-function heatconduction_rhs!(dT,T,sys::ILMSystem,t)
+function heatconduction_ode_rhs!(dT,T,sys::ILMSystem,t)
     @unpack bc, forcing, phys_params, extra_cache, base_cache = sys
     @unpack dTb, Tbplus, Tbminus = extra_cache
 
@@ -83,8 +91,8 @@ function heatconduction_rhs!(dT,T,sys::ILMSystem,t)
 
     # Calculate the double-layer term
     fill!(dT,0.0)
-    Tbplus .= bc["Tbplus"](base_cache,t)
-    Tbminus .= bc["Tbminus"](base_cache,t)
+    Tbplus .= bc["Tbplus"](t,base_cache,phys_params)
+    Tbminus .= bc["Tbminus"](t,base_cache,phys_params)
     dTb .= Tbplus - Tbminus
     surface_divergence!(dT,-κ*dTb,sys)
 
@@ -97,12 +105,12 @@ For this Dirichlet condition, we simply take the average of the interior
 and exterior prescribed values. The first argument `dTb` holds the result.
 
 ````@example heatconduction
-function heatconduction_bc_constraint_rhs!(dTb,sys::ILMSystem,t)
-    @unpack bc, extra_cache, base_cache = sys
+function heatconduction_bc_rhs!(dTb,sys::ILMSystem,t)
+    @unpack bc, extra_cache, base_cache, phys_params = sys
     @unpack Tb, Tbplus, Tbminus = extra_cache
 
-    Tbplus .= bc["Tbplus"](base_cache,t)
-    Tbminus .= bc["Tbminus"](base_cache,t)
+    Tbplus .= bc["Tbplus"](t,base_cache,phys_params)
+    Tbminus .= bc["Tbminus"](t,base_cache,phys_params)
     dTb .= 0.5*(Tbplus + Tbminus)
 
     return dTb
@@ -114,7 +122,7 @@ multiplier (the input σ). Here, we simply regularize the negative of this
 to the grid.
 
 ````@example heatconduction
-function heatconduction_op_constraint_force!(dT,σ,sys::ILMSystem)
+function heatconduction_constraint_force!(dT,σ,sys::ILMSystem)
     @unpack extra_cache, base_cache = sys
 
     fill!(dT,0.0)
@@ -129,7 +137,7 @@ interpolates the temperature (state vector) onto the boundary. The first argumen
 holds the result.
 
 ````@example heatconduction
-function heatconduction_bc_constraint_op!(dTb,T,sys::ILMSystem)
+function heatconduction_bc_op!(dTb,T,sys::ILMSystem)
     @unpack extra_cache, base_cache = sys
 
     fill!(dTb,0.0)
@@ -142,24 +150,23 @@ end
 ## Set up the extra cache and extend `prob_cache`
 Here, we construct an extra cache that holds a few extra intermediate
 variables, used in the routines above. But this cache also, crucially, holds
-the constrained ODE function.
+the functions and operators of the constrained ODE function. We call
+the function `ODEFunctionList` to assemble these together.
 
 The `prob_cache` function creates this ODE function, supplying the functions that we just defined. We
 also create a Laplacian operator with the heat diffusivity built into it.
 (This operator is singled out from the other terms in the heat conduction
 equation, because we account for it separately in the time marching
-using a matrix exponential.) We also create a *prototype* of the solution
-vector (using `solvector`). This solution vector holds the *state* (which
-is the grid temperature data) and *constraint* (the Lagrange multipliers on
-the boundary).
+using a matrix exponential.) We also create *prototypes* of the *state* and *constraint
+force* vectors. Here, the state is the grid temperature data and the constraint
+is the Lagrange multipliers on the boundary.
 
 ````@example heatconduction
-struct DirichletHeatConductionCache{DTT,TBT,TBP,TBM,SPT,FT} <: AbstractExtraILMCache
+struct DirichletHeatConductionCache{DTT,TBT,TBP,TBM,FT} <: AbstractExtraILMCache
    dTb :: DTT
    Tb :: TBT
    Tbplus :: TBP
    Tbminus :: TBM
-   sol_prototype :: SPT
    f :: FT
 end
 
@@ -177,19 +184,16 @@ function ImmersedLayers.prob_cache(prob::DirichletHeatConductionProblem,
     κ = phys_params["diffusivity"]
     heat_L = Laplacian(base_cache,gdata_cache,κ)
 
-    # Solution prototype vector, containing the state (grid temperature data)
-    # and constraint (surface Lagrange multipliers)
-    sol_prototype = solvector(state=zeros_grid(base_cache),
-                              constraint=zeros_surface(base_cache))
+    # State (grid temperature data) and constraint (surface Lagrange multipliers)
+    f = ODEFunctionList(state = zeros_grid(base_cache),
+                        constraint = zeros_surface(base_cache),
+                        ode_rhs=heatconduction_ode_rhs!,
+                        lin_op=heat_L,
+                        bc_rhs=heatconduction_bc_rhs!,
+                        constraint_force = heatconduction_constraint_force!,
+                        bc_op = heatconduction_bc_op!)
 
-    f = ConstrainedODEFunction(heatconduction_rhs!,
-                               heatconduction_bc_constraint_rhs!,
-                               heatconduction_op_constraint_force!,
-                               heatconduction_bc_constraint_op!,
-                               heat_L,
-                               _func_cache=sol_prototype)
-
-    DirichletHeatConductionCache(dTb,Tb,Tbplus,Tbminus,sol_prototype,f)
+    DirichletHeatConductionCache(dTb,Tb,Tbplus,Tbminus,f)
 end
 ````
 
@@ -239,15 +243,15 @@ These can be changed later without having to regenerate the system.
 Here, we create a dict with physical parameters to be passed in.
 
 ````@example heatconduction
-phys_params = Dict("diffusivity" => 1.0, "Fourier" => 0.25)
+phys_params = Dict("diffusivity" => 1.0, "Fourier" => 1.0)
 ````
 
 The temperature boundary functions on the exterior and interior are
 defined here and assembled into a dict.
 
 ````@example heatconduction
-get_Tbplus(base_cache,t) = zeros_surface(base_cache)
-get_Tbminus(base_cache,t) = ones_surface(base_cache)
+get_Tbplus(t,base_cache,phys_params) = zeros_surface(base_cache)
+get_Tbminus(t,base_cache,phys_params) = ones_surface(base_cache)
 bcdict = Dict("Tbplus" => get_Tbplus,"Tbminus" => get_Tbminus)
 ````
 
@@ -265,7 +269,7 @@ nothing #hide
 Construct the system
 
 ````@example heatconduction
-sys = ImmersedLayers.__init(prob);
+sys = construct_system(prob);
 nothing #hide
 ````
 
@@ -276,13 +280,25 @@ Instead, we rely on the tools in `ConstrainedSystems.jl` to advance
 the solution forward in time. This package builds from the `OrdinaryDiffEq.jl`
 package, and leverages most of the tools of that package.
 
-Set an initial condition. Here, we just get a zeroed copy of the
+Set an initial condition. Here, we just get an initial (zeroed) copy of the
 solution prototype that we have stored in the extra cache. We also
-get the time step size for our own use.
+get the time step size for our own inspection.
 
 ````@example heatconduction
-u0 = zero(sys.extra_cache.sol_prototype)
+u0 = init_sol(sys)
 Δt = timestep_fourier(g,phys_params)
+````
+
+It is instructive to note that `u0` has two parts: a *state* and a *constraint*,
+each obtained respectively with a convenience function. The state in this
+case is the temperature; the constraint is the Lagrange multiplier.
+
+````@example heatconduction
+state(u0)
+````
+
+````@example heatconduction
+constraint(u0)
 ````
 
 Now, create the integrator, with a time interval of 0 to 1. We have not
@@ -297,19 +313,99 @@ tspan = (0.0,1.0)
 integrator = init(u0,tspan,sys)
 ````
 
-Now advance the solution by 100 time steps, by using the `step!` function,
+Now advance the solution by 0.01 convective time units, by using the `step!` function,
 which steps through the solution.
 
 ````@example heatconduction
-step!(integrator,100Δt)
+step!(integrator,0.01)
 ````
 
 ### Plot the solution
-Here, we plot the state of the system at the end of the interval.
+The integrator holds the most recent solution in the field `u`, which
+has the same type as our initial condition `u0`. Here, we plot the state of the system at the end of the interval.
 
 ````@example heatconduction
 plot(state(integrator.u),sys)
 ````
+
+It would be nice to just define a function called `temperature` to get this
+more explicitly. We will do that here, and also apply a macro `@snapshotoutput` that
+automatically extends this function with some convenient interfaces. For example,
+if we simply pass in the integrator to `temperature`, it will pick off the `u`
+field for us.
+
+````@example heatconduction
+temperature(u,sys::ILMSystem,t) = state(u)
+@snapshotoutput temperature
+````
+
+Now we can write
+
+````@example heatconduction
+plot(temperature(integrator),sys)
+````
+
+The solution history is in the field `integrator.sol`. The macro we
+called earlier enables temperature to work for this, as well, and
+we can obtain the temperature at *any* time in the interval of our solution.
+For example, to get the solution at time 0.51:
+
+````@example heatconduction
+sol = integrator.sol
+plot(temperature(sol,sys,0.0051),sys)
+````
+
+We can also get it for an array of times, e.g.,
+
+````@example heatconduction
+temperature(sol,sys,0.0051:0.0001:0.0061);
+nothing #hide
+````
+
+## Motions
+It is straightforward to make bodies move in time-varying problems.
+For each body that we create, we can provide a corresponding motion,
+via the `motions = ` keyword. (If a `BodyList` is provided, then
+a corresponding `MotionList` must be provided.)
+The only caveat is that the time-stepping becomes considerably slower
+in such problems, since the system operators must be regenerated at
+every time step.
+
+The `RigidBodyTools.jl` package provides a versatile set of motions,
+both rigid-body and deforming, and associated tools. For example,
+to simply make the body move at constant velocity 1 in the `x` direction.
+
+````@example heatconduction
+m = RigidBodyMotion((1.0,0.0),0.0)
+````
+
+Here's an example of a deforming motion
+
+````@example heatconduction
+ufcn(x,y,t) = 0.25*x*y*cos(t)
+vfcn(x,y,t) = 0.25*(x^2-y^2)*cos(t)
+m = DeformationMotion(ufcn,vfcn)
+````
+
+Either of these would be provided in the `motions = ` keyword of the problem
+construction. Consult the documentation of `RigidBodyTools.jl` to learn more
+about these. However, for time-marching purposes, it is helpful to know that the
+maximum surface velocity is provided by the `maxvelocity` function:
+
+````@example heatconduction
+maxvelocity(body,m)
+````
+
+## Time-varying PDE functions
+
+```@docs
+ODEFunctionList
+zeros_sol
+init_sol
+init
+state
+constraint
+```
 
 ---
 

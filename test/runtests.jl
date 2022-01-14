@@ -8,6 +8,8 @@ using Test
 
 const GROUP = get(ENV, "GROUP", "All")
 
+ENV["GKSwstype"] = "nul" # removes GKS warnings during plotting
+
 notebookdir = "../examples"
 docdir = "../docs/src/manual"
 litdir = "./literate"
@@ -28,8 +30,8 @@ end
 if GROUP == "Notebooks"
   for (root, dirs, files) in walkdir(litdir)
     for file in files
-      endswith(file,".jl") && startswith(file,"heatconduction") && Literate.notebook(joinpath(root, file),notebookdir)
-      #endswith(file,".jl") && Literate.notebook(joinpath(root, file),notebookdir)
+      #endswith(file,".jl") && startswith(file,"heatconduction.") && Literate.notebook(joinpath(root, file),notebookdir)
+      endswith(file,".jl") && Literate.notebook(joinpath(root, file),notebookdir)
     end
   end
 end

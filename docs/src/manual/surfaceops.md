@@ -223,7 +223,9 @@ plot(xmask,cache)
 regularize!
 interpolate!
 regularize_normal!
+regularize_normal_symm!
 normal_interpolate!
+normal_interpolate_symm!
 regularize_normal_cross!
 normal_cross_interpolate!
 surface_divergence!

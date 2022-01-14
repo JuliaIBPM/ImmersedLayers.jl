@@ -15,29 +15,31 @@ _scale_inverse_laplacian!(w,cache::BasicILMCache{N,IndexScaling}) where {N} = w
 _scale_inverse_laplacian!(w,cache::BasicILMCache{N,GridScaling}) where {N} = w  #.*= cellsize(cache)^2
 
 """
-    divergence!(p::Nodes{Primal},v::Edges{Primal},cache::BasicILMCache)
-    divergence!(p::Nodes{Primal},v::Edges{Primal},sys::ILMSystem)
+    divergence!(p::Nodes{Primal/Dual},v::Edges{Primal/Dual},cache::BasicILMCache)
+    divergence!(p::Nodes{Primal/Dual},v::Edges{Primal/Dual},sys::ILMSystem)
 
 Compute the discrete divergence of `v` and return it in `p`, scaling it
 by the grid spacing if `cache` (or `sys`) is of `GridScaling` type, or leaving it
 as a simple differencing if `cache` (or `sys`) is of `IndexScaling` type.
 """
-function divergence!(p::Nodes{Primal,NX,NY},q::Edges{Primal,NX,NY},cache::BasicILMCache) where {NX,NY}
+function divergence!(p::Nodes{C,NX,NY},q::Edges{C,NX,NY},cache::BasicILMCache) where {C,NX,NY}
     _unscaled_divergence!(p,q,cache)
     _scale_derivative!(p,cache)
 end
 
 _unscaled_divergence!(p,q,cache::BasicILMCache) = (fill!(p,0.0); divergence!(p,q))
 
+
+
 """
-    grad!(v::Edges{Primal},p::Nodes{Primal},cache::BasicILMCache)
-    grad!(v::Edges{Primal},p::Nodes{Primal},sys::ILMSystem)
+    grad!(v::Edges{Primal/Dual},p::Nodes{Primal/Dual},cache::BasicILMCache)
+    grad!(v::Edges{Primal/Dual},p::Nodes{Primal/Dual},sys::ILMSystem)
 
 Compute the discrete gradient of `p` and return it in `v`, scaling it
 by the grid spacing if `cache` (or `sys`) is of `GridScaling` type, or leaving it
 as a simple differencing if `cache` (or `sys`) is of `IndexScaling` type.
 """
-function grad!(q::Edges{Primal,NX,NY},p::Nodes{Primal,NX,NY},cache::BasicILMCache) where {NX,NY}
+function grad!(q::Edges{C,NX,NY},p::Nodes{C,NX,NY},cache::BasicILMCache) where {C,NX,NY}
     _unscaled_grad!(q,p,cache)
     _scale_derivative!(q,cache)
 end
@@ -136,7 +138,7 @@ struct ConvectiveDerivativeCache{VTT} <: AbstractExtraILMCache
    vt1_cache :: VTT
    vt2_cache :: VTT
    vt3_cache :: VTT
-   ConvectiveDerivativeCache(vt::EdgeGradient) = new{typeof(vt)}(similar(vt),similar(vt),similar(vt))
+   ConvectiveDerivativeCache(vt::GridData) = new{typeof(vt)}(similar(vt),similar(vt),similar(vt))
 end
 
 """
@@ -145,7 +147,33 @@ end
 Create a cache for computing the convective derivative, based on
 the basic ILM cache `cache`.
 """
-ConvectiveDerivativeCache(cache::BasicILMCache) = ConvectiveDerivativeCache(EdgeGradient(Primal,cache.gdata_cache))
+ConvectiveDerivativeCache(cache::BasicILMCache) = ConvectiveDerivativeCache(similar_gridgrad(cache))
+
+"""
+    convective_derivative(v::Edges{Primal},p::Nodes{Primal},base_cache::BasicILMCache)
+
+Compute the convective derivative of `p` with velocity `v`, i.e., ``v\\cdot \\nabla p``. The result is either divided by unity or
+the grid cell size depending on whether `base_cache` is of type `IndexScaling`
+or `GridScaling`.
+"""
+function convective_derivative(u::Edges{Primal},p::Nodes{Primal},base_cache::BasicILMCache)
+    extra_cache = ConvectiveDerivativeCache(similar_gridgrad(cache))
+    udp = similar(p)
+    convective_derivative!(udp,u,p,base_cache,extra_cache)
+end
+
+"""
+    convective_derivative(v::Edges{Dual},w::Nodes{Dual},base_cache::BasicILMCache)
+
+Compute the convective derivative of `w` with velocity `v`, i.e., ``v\\cdot \\nabla w``. The result is either divided by unity or
+the grid cell size depending on whether `base_cache` is of type `IndexScaling`
+or `GridScaling`.
+"""
+function convective_derivative(u::Edges{Dual},w::Nodes{Dual},base_cache::BasicILMCache)
+    extra_cache = ConvectiveDerivativeCache(similar_gridgradcurl(cache))
+    udw = similar(w)
+    convective_derivative!(udw,u,w,base_cache,extra_cache)
+end
 
 """
     convective_derivative(v::Edges,base_cache::BasicILMCache)
@@ -155,9 +183,37 @@ the grid cell size depending on whether `base_cache` is of type `IndexScaling`
 or `GridScaling`.
 """
 function convective_derivative(u::Edges{Primal},base_cache::BasicILMCache)
-    extra_cache = ConvectiveDerivativeCache(EdgeGradient(Primal,u))
+    extra_cache = ConvectiveDerivativeCache(similar_gridgrad(base_cache))
     udu = similar(u)
     convective_derivative!(udu,u,base_cache,extra_cache)
+end
+
+"""
+    convective_derivative!(vdp::Nodes{Primal},v::Edges,p::Nodes{Primal},base_cache::BasicILMCache,extra_cache::ConvectiveDerivativeCache)
+
+Compute the convective derivative of `p` with velocity `v`, i.e., ``v\\cdot \\nabla p``, and
+return the result in `vdp`. The result is either divided by unity or
+the grid cell size depending on whether `base_cache` is of type `IndexScaling`
+or `GridScaling`. This version of the method uses `extra_cache` of type
+[`ConvectiveDerivativeCache`](@ref).
+"""
+function convective_derivative!(udp::Nodes{Primal},u::Edges{Primal},p::Nodes{Primal},base_cache::BasicILMCache,extra_cache::ConvectiveDerivativeCache)
+    _unscaled_convective_derivative!(udp,u,p,extra_cache)
+    _scale_derivative!(udp,base_cache)
+end
+
+"""
+    convective_derivative!(vdw::Nodes{Dual},v::Edges,w::Nodes{Dual},base_cache::BasicILMCache,extra_cache::ConvectiveDerivativeCache)
+
+Compute the convective derivative of `w` with velocity `v`, i.e., ``v\\cdot \\nabla w``, and
+return the result in `vdw`. The result is either divided by unity or
+the grid cell size depending on whether `base_cache` is of type `IndexScaling`
+or `GridScaling`. This version of the method uses `extra_cache` of type
+[`ConvectiveDerivativeCache`](@ref).
+"""
+function convective_derivative!(udw::Nodes{Dual},u::Edges{Primal},w::Nodes{Dual},base_cache::BasicILMCache,extra_cache::ConvectiveDerivativeCache)
+    _unscaled_convective_derivative!(udw,u,w,extra_cache)
+    _scale_derivative!(udw,base_cache)
 end
 
 """
@@ -172,6 +228,30 @@ or `GridScaling`. This version of the method uses `extra_cache` of type
 function convective_derivative!(udu::Edges{Primal},u::Edges{Primal},base_cache::BasicILMCache,extra_cache::ConvectiveDerivativeCache)
     _unscaled_convective_derivative!(udu,u,extra_cache)
     _scale_derivative!(udu,base_cache)
+end
+
+function _unscaled_convective_derivative!(udp::Nodes{Primal},u::Edges{Primal},p::Nodes{Primal},extra_cache::ConvectiveDerivativeCache)
+    @unpack vt1_cache, vt3_cache = extra_cache
+
+    fill!(vt1_cache,0.0)
+    grad!(vt1_cache,p)
+    product!(vt3_cache,u,vt1_cache)
+    fill!(udp,0.0)
+    grid_interpolate!(udp,vt3_cache)
+    udp
+end
+
+function _unscaled_convective_derivative!(udw::Nodes{Dual},u::Edges{Primal},w::Nodes{Dual},extra_cache::ConvectiveDerivativeCache{VT}) where {VT<:Edges{Dual}}
+    @unpack vt1_cache, vt2_cache, vt3_cache = extra_cache
+
+    fill!(vt1_cache,0.0)
+    grad!(vt1_cache,w)
+    fill!(vt2_cache,0.0)
+    grid_interpolate!(vt2_cache,u)
+    product!(vt3_cache,vt2_cache,vt1_cache)
+    fill!(udw,0.0)
+    grid_interpolate!(udw,vt3_cache)
+    udw
 end
 
 function _unscaled_convective_derivative!(udu::Edges{Primal},u::Edges{Primal},extra_cache::ConvectiveDerivativeCache)
