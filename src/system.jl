@@ -56,7 +56,7 @@ Initialize `ILMSystem` with the given problem `prob` specification.
 Depending on the type of problem, this sets up a base cache of scalar or
 vector type, as well as an optional extra cache
 """
-function __init(prob::AbstractILMProblem{DT,ST}) where {DT,ST}
+function __init(prob::AbstractILMProblem{DT,ST,DTP}) where {DT,ST,DTP}
     @unpack g, bodies, phys_params, bc, forcing, timestep_func, motions = prob
 
     #=
@@ -66,7 +66,7 @@ function __init(prob::AbstractILMProblem{DT,ST}) where {DT,ST}
         base_cache = SurfaceVectorCache(bodies,g,ddftype=DT,scaling=ST)
     end
     =#
-    base_cache = _construct_base_cache(bodies,g,DT,ST,prob,Val(length(bodies)))
+    base_cache = _construct_base_cache(bodies,g,DT,ST,DTP,prob,Val(length(bodies)))
 
     extra_cache = prob_cache(prob,base_cache)
 
@@ -76,17 +76,17 @@ function __init(prob::AbstractILMProblem{DT,ST}) where {DT,ST}
 
 end
 
-@inline _construct_base_cache(bodies,g,DT,ST,::PT,::Val{0}) where {PT <: AbstractScalarILMProblem} =
-              SurfaceScalarCache(g,ddftype=DT,scaling=ST)
+@inline _construct_base_cache(bodies,g,DT,ST,DTP,::PT,::Val{0}) where {PT <: AbstractScalarILMProblem} =
+              SurfaceScalarCache(g,ddftype=DT,scaling=ST,dtype=DTP)
 
-@inline _construct_base_cache(bodies,g,DT,ST,::PT,::Val{N}) where {PT <: AbstractScalarILMProblem,N} =
-              SurfaceScalarCache(bodies,g,ddftype=DT,scaling=ST)
+@inline _construct_base_cache(bodies,g,DT,ST,DTP,::PT,::Val{N}) where {PT <: AbstractScalarILMProblem,N} =
+              SurfaceScalarCache(bodies,g,ddftype=DT,scaling=ST,dtype=DTP)
 
-@inline _construct_base_cache(bodies,g,DT,ST,::PT,::Val{0}) where {PT <: AbstractVectorILMProblem} =
-              SurfaceVectorCache(g,ddftype=DT,scaling=ST)
+@inline _construct_base_cache(bodies,g,DT,ST,DTP,::PT,::Val{0}) where {PT <: AbstractVectorILMProblem} =
+              SurfaceVectorCache(g,ddftype=DT,scaling=ST,dtype=DTP)
 
-@inline _construct_base_cache(bodies,g,DT,ST,::PT,::Val{N}) where {PT <: AbstractVectorILMProblem,N} =
-              SurfaceVectorCache(bodies,g,ddftype=DT,scaling=ST)
+@inline _construct_base_cache(bodies,g,DT,ST,DTP,::PT,::Val{N}) where {PT <: AbstractVectorILMProblem,N} =
+              SurfaceVectorCache(bodies,g,ddftype=DT,scaling=ST,dtype=DTP)
 
 
 
@@ -101,9 +101,9 @@ function solve(prob::AbstractILMProblem,sys::ILMSystem) end
 
 
 ## Extend functions on `BasicILMCache` type to `ILMSystem`
-for f in [:zeros_surface,:zeros_grid,:zeros_gridcurl,:zeros_gridgrad,
-          :similar_surface,:similar_grid,:similar_gridcurl,:similar_gridgrad,
-          :ones_surface,:ones_grid,:ones_gridgrad,:ones_gridcurl,
+for f in [:zeros_surface,:zeros_grid,:zeros_gridcurl,:zeros_gridgrad,:zeros_gridgradcurl,
+          :similar_surface,:similar_grid,:similar_gridcurl,:similar_gridgrad,:similar_gridgradcurl,
+          :ones_surface,:ones_grid,:ones_gridgrad,:ones_gridcurl,:ones_gridgradcurl,
           :x_grid,:y_grid,:x_gridcurl,:y_gridcurl,
           :normals,:areas,:points,
           :create_nRTRn,:create_GLinvD,:create_CLinvCT,:create_CL2invCT,

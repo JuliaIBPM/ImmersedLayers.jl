@@ -224,6 +224,14 @@ end
   sys = construct_system(prob)
   @test sys.forcing == my_f_func
 
+  prob = BasicScalarILMProblem(g,body,scaling=GridScaling,dtype=ComplexF64)
+  sys = construct_system(prob)
+  @test eltype(sys.base_cache.gdata_cache) == ComplexF64
+
+  prob = BasicVectorILMProblem(g,body,scaling=GridScaling,dtype=ComplexF64)
+  sys = construct_system(prob)
+  @test eltype(sys.base_cache.gdata_cache) == ComplexF64
+
 end
 
 @testset "Problem regeneration" begin

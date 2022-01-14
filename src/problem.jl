@@ -1,4 +1,4 @@
-abstract type AbstractILMProblem{DT,ST} end
+abstract type AbstractILMProblem{DT,ST,DTP} end
 
 function regenerate_problem() end
 
@@ -7,14 +7,14 @@ $(TYPEDEF)
 
 When defining a problem type with scalar data, make it a subtype of this.
 """
-abstract type AbstractScalarILMProblem{DT,ST} <: AbstractILMProblem{DT,ST} end
+abstract type AbstractScalarILMProblem{DT,ST,DTP} <: AbstractILMProblem{DT,ST,DTP} end
 
 """
 $(TYPEDEF)
 
 When defining a problem type with vector data, make it a subtype of this.
 """
-abstract type AbstractVectorILMProblem{DT,ST} <: AbstractILMProblem{DT,ST} end
+abstract type AbstractVectorILMProblem{DT,ST,DTP} <: AbstractILMProblem{DT,ST,DTP} end
 
 """
 The `@ilmproblem` macro is used to automatically generate a type
@@ -41,6 +41,7 @@ There are several keyword arguments for the problem constructor
 
 - `ddftype = ` to set the DDF type. The default is `Yang3`.
 - `scaling = ` to set the scaling type, `IndexScaling` (default) or `GridScaling`.
+- `dtype = ` to set the element type to `Float64` (default) or `ComplexF64`.
 - `phys_params = ` to pass in physical parameters
 - `bc = ` to pass in boundary condition data or functions
 - `forcing = ` to pass in forcing functions or data
@@ -63,7 +64,7 @@ macro ilmproblem(name,vector_or_scalar)
 
           ILM problem type dealing with $($vs_string)-type data.
           """
-          struct $typename{DT,ST,BLT,PHT,BCF,FF,DTF,MTF} <: $abtype{DT,ST}
+          struct $typename{DT,ST,DTP,BLT,PHT,BCF,FF,DTF,MTF} <: $abtype{DT,ST,DTP}
              g :: PhysicalGrid
              bodies :: BLT
              phys_params :: PHT
@@ -73,12 +74,13 @@ macro ilmproblem(name,vector_or_scalar)
              motions :: MTF
              $typename(g::PT,bodies::BodyList;ddftype=CartesianGrids.Yang3,
                                               scaling=IndexScaling,
+                                              dtype=Float64,
                                               phys_params=nothing,
                                               bc=nothing,
                                               forcing=nothing,
                                               timestep_func=nothing,
                                               motions=nothing) where {PT <: PhysicalGrid} =
-                    new{ddftype,scaling,typeof(bodies),typeof(phys_params),typeof(bc),typeof(forcing),typeof(timestep_func),
+                    new{ddftype,scaling,dtype,typeof(bodies),typeof(phys_params),typeof(bc),typeof(forcing),typeof(timestep_func),
                                         typeof(ImmersedLayers._list(motions))}(
                                               g,bodies,phys_params,bc,forcing,timestep_func,ImmersedLayers._list(motions))
           end
@@ -90,6 +92,7 @@ macro ilmproblem(name,vector_or_scalar)
                                       $typename(sys.base_cache.g,bl,
                                                 ddftype=ImmersedLayers._ddf_type(P),
                                                 scaling=ImmersedLayers._scaling_type(P),
+                                                dtype=ImmersedLayers._element_type(P),
                                                 phys_params=sys.phys_params,
                                                 bc=sys.bc,
                                                 forcing=sys.forcing,
@@ -113,7 +116,8 @@ _ddf_type(::AbstractILMProblem{DT}) where {DT} = DT
 _ddf_type(::Type{P}) where P <: AbstractILMProblem{DT} where {DT} = DT
 _scaling_type(::AbstractILMProblem{DT,ST}) where {DT,ST} = ST
 _scaling_type(::Type{P}) where P <: AbstractILMProblem{DT,ST} where {DT,ST} = ST
-
+_element_type(::AbstractILMProblem{DT,ST,DTP}) where {DT,ST,DTP} = DTP
+_element_type(::Type{P}) where P <: AbstractILMProblem{DT,ST,DTP} where {DT,ST,DTP} = DTP
 
 
 @ilmproblem BasicScalarILM scalar
