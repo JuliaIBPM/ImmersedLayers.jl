@@ -198,13 +198,15 @@ of the latter is that it allows the points to be changed later without
 regenerating the system.
 
 In the example shown here, we apply point forcing at two points: one at (-1.0,1.5)
-and the other at (1.0,1.5), with respective strengths -1 and 1,
-are placed. We use a **position function** to provide the positions.
+and the other at (1.0,1.5), with respective strengths -1 and 1.
+We use a **position function** to provide the positions.
 This function must have the signature as shown here, accepting
-a general state argument, a time argument, the cache for this forcing,
+a general `state` argument, a time argument `t`, the cache for this forcing,
 and physical parameters. Any of these can be used to help determine
-the point positions. In this case, however, we just simply provide the coordinates
-directly.
+the point positions. In this case, we just simply provide the coordinates
+directly. However, it is straightforward to pass these in via the `state`
+argument (or perhaps to update the positions by some velocity).
+
 =#
 function my_point_positions(state,t,fr::PointRegionCache,phys_params)
     x = [-1.0,1.0]

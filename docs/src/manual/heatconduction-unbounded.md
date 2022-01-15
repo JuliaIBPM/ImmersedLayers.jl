@@ -46,10 +46,8 @@ generate in the `prob_cache`.
 
 We will highlight these aspects in the example that follows. In this example,
 we will create
-* a square-shaped line forcing region that delivers a certain
-amount of heat per unit length of line
-* a circular-shaped area forcing region that supplies heat based on the heat-transfer model $h*(T_0\cos(2\pi f t)-T)$,
-where $h$ is the heat transfer coefficient, $T$ is the current local temperature,
+* a square-shaped line forcing region that delivers a certain amount of heat per unit length of line
+* a circular-shaped area forcing region that supplies heat based on the heat-transfer model $h\cdot(T_0\cos(2\pi f t)-T)$, where $h$ is the heat transfer coefficient, $T$ is the current local temperature,
 and $T_0$ is the amplitude of an oscillatory heater temperature, oscillating
 at frequency $f$
 * a background rotational velocity field, with angular velocity $\Omega$.
@@ -278,8 +276,6 @@ Let's see what this looks like. We will plot a set of snapshots in an array.
 sol = integrator.sol
 
 plt = plot(layout = (2,3), size = (700, 500), legend=:false)
-framejump = 100
-nframes = 8
 for (i,t) in enumerate(0:0.2:1.0)
     plot!(plt[i],temperature(sol,sys,t),sys,levels=range(-10,2,length=30),clim=(-10,2))
 end
