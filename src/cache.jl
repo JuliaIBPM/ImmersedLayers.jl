@@ -24,7 +24,7 @@ struct BasicILMCache{N,SCA<:AbstractScalingType,GCT,ND,BLT<:BodyList,NT<:VectorD
                       DST<:ScalarData,REGT<:Regularize,
                       RSNT<:RegularizationMatrix,ESNT<:InterpolationMatrix,
                       RT<:RegularizationMatrix,ET<:InterpolationMatrix,
-                      LT<:CartesianGrids.Laplacian,GVT,GNT,SVT,SST} <: AbstractBasicCache{N,GCT}
+                      LT<:CartesianGrids.Laplacian,GVT,GNT,GDT,SVT,SST} <: AbstractBasicCache{N,GCT}
 
     # Grid
     g :: PhysicalGrid{ND}
@@ -59,6 +59,9 @@ struct BasicILMCache{N,SCA<:AbstractScalingType,GCT,ND,BLT<:BodyList,NT<:VectorD
 
     # For holding the curl of the basic grid data (always Nodes{Dual})
     gcurl_cache :: GNT
+
+    # For holding the div of the basic grid data (always Nodes{Primal})
+    gdiv_cache :: GDT
 
     # For holding the basic data type (e.g., scalar -> Nodes{Primal}, vector -> Edges{Primal})
     gdata_cache :: GCT
@@ -163,9 +166,10 @@ function SurfaceScalarCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::
 
 	gsnorm_cache = Edges(Primal,size(g), dtype = dtype)
 	gcurl_cache = Nodes(Dual,size(g), dtype = dtype)
+  gdiv_cache = Nodes(Primal,size(g), dtype = dtype)
 	gdata_cache = Nodes(Primal,size(g), dtype = dtype)
 
-	_surfacecache(bl,X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdata_cache;dtype=dtype)
+	_surfacecache(bl,X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdiv_cache,gdata_cache;dtype=dtype)
 
 end
 
@@ -182,9 +186,10 @@ function SurfaceVectorCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::
 
 	gsnorm_cache = EdgeGradient(Primal,size(g), dtype = dtype)
 	gcurl_cache = Nodes(Dual,size(g), dtype = dtype)
+  gdiv_cache = Nodes(Primal,size(g), dtype = dtype)
 	gdata_cache = Edges(Primal,size(g), dtype = dtype)
 
-	_surfacecache(bl,X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdata_cache;dtype=dtype)
+	_surfacecache(bl,X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdiv_cache,gdata_cache;dtype=dtype)
 
 end
 
@@ -195,7 +200,7 @@ function Base.show(io::IO, H::BasicILMCache{N,SCA}) where {N,SCA}
 end
 
 function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},ddftype,scaling,
-                      sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdata_cache;dtype=Float64) where {N,ND}
+                      sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdiv_cache,gdata_cache;dtype=Float64) where {N,ND}
 
   regop = _get_regularization(X,a,g,ddftype,scaling)
   Rsn = _regularization_matrix(regop,snorm_cache,gsnorm_cache)
@@ -209,9 +214,9 @@ function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},d
   L = _get_laplacian(gcurl_cache,coeff_factor,g,with_inverse,scaling;dtype=dtype)
 
   return BasicILMCache{N,scaling,typeof(gdata_cache),ND,typeof(bl),typeof(nrm),typeof(a),typeof(regop),typeof(Rsn),typeof(Esn),typeof(R),typeof(E),typeof(L),
-                       typeof(gsnorm_cache),typeof(gcurl_cache),typeof(snorm_cache),typeof(sdata_cache)}(
+                       typeof(gsnorm_cache),typeof(gcurl_cache),typeof(gdiv_cache),typeof(snorm_cache),typeof(sdata_cache)}(
                        g,bl,nrm,a,regop,Rsn,Esn,R,E,L,
-                       similar(gsnorm_cache),similar(gsnorm_cache),similar(gcurl_cache),similar(gdata_cache),
+                       similar(gsnorm_cache),similar(gsnorm_cache),similar(gcurl_cache),similar(gdiv_cache),similar(gdata_cache),
                        similar(snorm_cache),similar(snorm_cache),similar(sdata_cache))
 
 end
@@ -352,6 +357,14 @@ Get a `similar` copy of the grid curl field data in the cache.
 @inline similar_gridcurl(cache::BasicILMCache,kwargs...) = similar(cache.gcurl_cache,kwargs...)
 
 """
+    similar_griddiv(::BasicILMCache)
+
+Get a `similar` copy of the grid div field data in the cache.
+"""
+@inline similar_griddiv(cache::BasicILMCache,kwargs...) = similar(cache.gdiv_cache,kwargs...)
+
+
+"""
     similar_gridgradcurl(::BasicILMCache)
 
 Get a `similar` copy of the grid gradient-of-curl field data in the cache.
@@ -391,6 +404,13 @@ Get an instance of the grid curl field data in the cache, with values set to zer
 @inline zeros_gridcurl(cache::BasicILMCache,kwargs...) = zero(cache.gcurl_cache,kwargs...)
 
 """
+    zeros_griddiv(::BasicILMCache)
+
+Get an instance of the grid div field data in the cache, with values set to zero.
+"""
+@inline zeros_griddiv(cache::BasicILMCache,kwargs...) = zero(cache.gdiv_cache,kwargs...)
+
+"""
     zeros_gridgradcurl(::BasicILMCache)
 
 Get an instance of the grid gradient-of-curl field data in the cache, with values set to zero.
@@ -428,6 +448,14 @@ with values set to unity. If the data are of type `TensorGridData`, then
 Get an instance of the grid curl field data in the cache, with values set to unity.
 """
 @inline ones_gridcurl(cache::BasicILMCache,kwargs...) = ones(cache.gcurl_cache,kwargs...)
+
+"""
+    ones_griddiv(::BasicILMCache)
+
+Get an instance of the grid div field data in the cache, with values set to unity.
+"""
+@inline ones_griddiv(cache::BasicILMCache,kwargs...) = ones(cache.gdiv_cache,kwargs...)
+
 
 """
     ones_gridgradcurl(::BasicILMCache)
@@ -478,6 +506,17 @@ Return basic grid curl field data filled with the grid `x` coordinate
 function x_gridcurl(cache::BasicILMCache)
     xc, _ = coordinates(cache.gcurl_cache,cache.g)
     p = zeros_gridcurl(cache)
+    p .= xc
+end
+
+"""
+    x_griddiv(::BasicILMCache)
+
+Return basic grid div field data filled with the grid `x` coordinate
+"""
+function x_griddiv(cache::BasicILMCache)
+    xc, _ = coordinates(cache.gdiv_cache,cache.g)
+    p = zeros_griddiv(cache)
     p .= xc
 end
 
@@ -544,6 +583,17 @@ Return basic grid curl field data filled with the grid `y` coordinate
 function y_gridcurl(cache::BasicILMCache)
     _,yc = coordinates(cache.gcurl_cache,cache.g)
     p = zeros_gridcurl(cache)
+    p .= yc'
+end
+
+"""
+    y_griddiv(::BasicILMCache)
+
+Return basic grid div field data filled with the grid `y` coordinate
+"""
+function y_griddiv(cache::BasicILMCache)
+    _,yc = coordinates(cache.gdiv_cache,cache.g)
+    p = zeros_griddiv(cache)
     p .= yc'
 end
 

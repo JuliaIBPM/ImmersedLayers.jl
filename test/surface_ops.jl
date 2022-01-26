@@ -61,6 +61,14 @@ end
   vd = zeros_gridgradcurl(scache)
   @test typeof(vd) <: Edges{Dual}
 
+  f2 = zeros_griddiv(scache)
+  @test typeof(f2) <: Nodes{Primal}
+
+  f2 = similar_griddiv(scache)
+  @test typeof(f2) <: Nodes{Primal}
+
+  f2 = ones_griddiv(scache)
+  @test typeof(f2) <: Nodes{Primal}
 
 end
 
@@ -103,6 +111,14 @@ vs = VectorData(X)
   A = create_GLinvD(vcache,scale=cellsize(g))
   @test maximum(abs.(eigvals(A))) ≈ 0.45 atol = 1e-1
 
+  f2 = zeros_griddiv(vcache)
+  @test typeof(f2) <: Nodes{Primal}
+
+  f2 = similar_griddiv(vcache)
+  @test typeof(f2) <: Nodes{Primal}
+
+  f2 = ones_griddiv(vcache)
+  @test typeof(f2) <: Nodes{Primal}
 
 end
 
