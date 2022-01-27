@@ -97,7 +97,7 @@ end
 """
     norm(u::GridData,g::PhysicalGrid)
 
-Return the norm of `u`, weighted by the volume (area)
+Return the L2 norm of `u`, weighted by the volume (area)
 of the cell in grid `g`.
 """
 norm(u::GridData,g::PhysicalGrid) = sqrt(dot(u,u,g))

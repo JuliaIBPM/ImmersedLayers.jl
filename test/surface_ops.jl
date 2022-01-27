@@ -235,6 +235,26 @@ end
   vectorpotential_from_masked_curlv!(ψ,w,dv,vcache,wcache)
   scalarpotential_from_masked_divv!(ϕ,d,dv,vcache,dcache)
 
+  # Tests that no immersed points lead to no problems
+  vcache = SurfaceVectorCache(g,scaling=GridScaling)
+  wcache = VectorPotentialCache(vcache)
+  dcache = ScalarPotentialCache(vcache)
+
+  w = zeros_gridcurl(vcache)
+  ψ = zeros_gridcurl(vcache)
+  d = zeros_griddiv(vcache)
+  ϕ = zeros_griddiv(vcache)
+  v = zeros_grid(vcache)
+  dv = zeros_surface(vcache)
+
+  vectorpotential_from_masked_curlv!(ψ,w,dv,vcache,wcache)
+  scalarpotential_from_masked_divv!(ϕ,d,dv,vcache,dcache)
+  vecfield_helmholtz!(v,w,d,dv,(0.0,0.0),vcache,wcache,dcache)
+  @test maximum(abs.(ψ)) == 0.0
+  @test maximum(abs.(ϕ)) == 0.0
+  @test maximum(abs.(v)) == 0.0
+
+
 end
 
 @testset "Problem specification" begin

@@ -74,6 +74,9 @@ function vectorpotential_from_masked_curlv!(ψ::Nodes{Dual},curlv::Nodes{Dual},d
 
 end
 
+# - Create routines for regularizing n x v and n . v
+# - Make sure all surface operators work when there are no surface points
+
 """
     vectorpotential_from_curlv!(ψ::Nodes{Dual},curlv::Nodes{Dual},base_cache::BasicILMCache,wcache::VectorPotentialCache)
 
