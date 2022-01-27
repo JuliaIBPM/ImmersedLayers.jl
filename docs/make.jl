@@ -13,6 +13,7 @@ makedocs(
                      "manual/surfaceops.md",
                      "manual/multbodies.md",
                      "manual/gridops.md",
+                     "manual/helmholtz.md",
                      "manual/matrices.md",
                      "manual/dirichlet.md",
                      "manual/utilities.md"

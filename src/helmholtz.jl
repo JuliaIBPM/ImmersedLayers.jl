@@ -50,27 +50,44 @@ end
 
 
 """
-    vectorpotential_from_curlv!(ψ::Nodes{Dual},curlv::Nodes{Dual},dv::VectorData,base_cache::BasicILMCache,wcache::VectorPotentialCache)
+    vectorpotential_from_masked_curlv!(ψ::Nodes{Dual},masked_curlv::Nodes{Dual},dv::VectorData,base_cache::BasicILMCache,wcache::VectorPotentialCache)
 
-Return the vector potential field `ψ` from the masked curl of the vector field, `curlv` (``\\overline{\\nabla\\times\\mathbf{v}}``),
+Return the vector potential field `ψ` from the masked curl of the vector field, `masked_curlv` (``\\overline{\\nabla\\times\\mathbf{v}}``),
 the jump in the vector field across immersed surface `dv`. It solves
 
 ``L_n\\psi = -\\overline{\\nabla\\times\\mathbf{v}} - R_n\\mathbf{n}\\times[\\mathbf{v}]``
 
 and returns ``\\psi``.
 """
-function vectorpotential_from_curlv!(ψ::Nodes{Dual},curlv::Nodes{Dual},dv::VectorData,base_cache::BasicILMCache,wcache::VectorPotentialCache)
+function vectorpotential_from_masked_curlv!(ψ::Nodes{Dual},curlv::Nodes{Dual},dv::VectorData,base_cache::BasicILMCache,wcache::VectorPotentialCache)
     @unpack nrm = base_cache
-    @unpack dvn, Rn = wcache
+    @unpack dvn, Rn, stemp = wcache
 
-    fill!(ψ,0.0)
+    fill!(stemp,0.0)
     cross!(dvn,nrm,dv)
-    regularize!(ψ,dvn,Rn)
-    ψ .*= -1.0
-    ψ .-= curlv
+    regularize!(stemp,dvn,Rn)
+    stemp .+= curlv
 
+    vectorpotential_from_curlv!(ψ,stemp,base_cache,wcache)
+
+    return ψ
+
+end
+
+"""
+    vectorpotential_from_curlv!(ψ::Nodes{Dual},curlv::Nodes{Dual},base_cache::BasicILMCache,wcache::VectorPotentialCache)
+
+Return the vector potential field `ψ` from the curl of the masked vector field, `curlv` (``\\nabla\\times\\overline{\\mathbf{v}}``),
+the jump in the vector field across immersed surface `dv`. It solves
+
+``L_n\\psi = -\\nabla\\times\\overline{\\mathbf{v}}``
+
+and returns ``\\psi``.
+"""
+function vectorpotential_from_curlv!(ψ::Nodes{Dual},curlv::Nodes{Dual},base_cache::BasicILMCache,wcache::VectorPotentialCache)
+
+    ψ .= -curlv
     inverse_laplacian!(ψ,base_cache)
-
     return ψ
 
 end
@@ -111,27 +128,58 @@ function masked_curlv_from_curlv_masked!(masked_curlv::Nodes{Dual},curlv::Nodes{
 end
 
 """
-    scalarotential_from_divv!(ϕ::Nodes{Primal},divv::Nodes{Primal},dv::VectorData,base_cache::BasicILMCache,dcache::ScalarPotentialCache)
+    scalarpotential_from_masked_divv!(ϕ::Nodes{Primal},masked_divv::Nodes{Primal},dv::VectorData,base_cache::BasicILMCache,dcache::ScalarPotentialCache)
 
-Return the scalar potential field `ϕ` from the masked divergence of the vector field, `divv` (``\\overline{\\nabla\\cdot\\mathbf{v}}``)
+Return the scalar potential field `ϕ` from the masked divergence of the vector field, `masked_divv` (``\\overline{\\nabla\\cdot\\mathbf{v}}``)
 the jump in the vector field across immersed surface `dv`. It solves
 
 ``L_c\\phi = \\overline{\\nabla\\cdot\\mathbf{v}} + R_c\\mathbf{n}\\cdot[\\mathbf{v}]``
 
 and returns ``\\phi``.
 """
-function scalarpotential_from_divv!(ϕ::Nodes{Primal},divv::Nodes{Primal},dv::VectorData,base_cache::BasicILMCache,dcache::ScalarPotentialCache)
+function scalarpotential_from_masked_divv!(ϕ::Nodes{Primal},divv::Nodes{Primal},dv::VectorData,base_cache::BasicILMCache,dcache::ScalarPotentialCache)
     @unpack nrm = base_cache
-    @unpack dvn, Rc = dcache
+    @unpack dvn, Rc, ftemp = dcache
 
-    fill!(ϕ,0.0)
+    fill!(ftemp,0.0)
     pointwise_dot!(dvn,nrm,dv)
-    regularize!(ϕ,dvn,Rc)
-    ϕ .+= divv
+    regularize!(ftemp,dvn,Rc)
+    ftemp .+= divv
 
+    scalarpotential_from_divv!(ϕ,ftemp,base_cache,dcache)
+    return ϕ
+
+end
+
+"""
+    scalarpotential_from_divv!(ϕ::Nodes{Primal},divv::Nodes{Primal},base_cache::BasicILMCache,dcache::ScalarPotentialCache)
+
+Return the scalar potential field `ϕ` from the divergence of the masked vector field, `divv` (``\\nabla\\cdot\\overline{\\mathbf{v}}``)
+the jump in the vector field across immersed surface `dv`. It solves
+
+``L_c\\phi = \\nabla\\cdot\\overline{\\mathbf{v}}``
+
+and returns ``\\phi``.
+"""
+function scalarpotential_from_divv!(ϕ::Nodes{Primal},divv::Nodes{Primal},dv::VectorData,base_cache::BasicILMCache,dcache::ScalarPotentialCache)
+
+    ϕ .= divv
     inverse_laplacian!(ϕ,base_cache)
     return ϕ
 
+end
+
+"""
+    vecfield_from_scalarpotential!(v::Edges{Primal},ϕ::Nodes{Primal},base_cache::BasicILMCache)
+
+Return the vector field `v` associated with scalar potential field `ϕ`, via the gradient
+
+``\\mathbf{v} = \\nabla\\phi``
+"""
+function vecfield_from_scalarpotential!(v::Edges{Primal},ϕ::Nodes{Primal},base_cache::BasicILMCache)
+    fill!(v,0.0)
+    grad!(v,ϕ,base_cache)
+    return v
 end
 
 """
@@ -155,18 +203,7 @@ function masked_divv_from_divv_masked!(masked_divv::Nodes{Primal},divv::Nodes{Pr
     return masked_divv
 end
 
-"""
-    vecfield_from_scalarpotential!(v::Edges{Primal},ϕ::Nodes{Primal},base_cache::BasicILMCache)
 
-Return the vector field `v` associated with scalar potential field `ϕ`, via the gradient
-
-``\\mathbf{v} = \\nabla\\phi``
-"""
-function vecfield_from_scalarpotential!(v::Edges{Primal},ϕ::Nodes{Primal},base_cache::BasicILMCache)
-    fill!(v,0.0)
-    grad!(v,ϕ,base_cache)
-    return v
-end
 
 
 """
@@ -199,10 +236,10 @@ function vecfield_helmholtz!(v::Edges{Primal},curlv::Nodes{Dual},divv::Nodes{Pri
     @unpack vϕ,ftemp = dcache
     @unpack vψ,stemp = wcache
 
-    vectorpotential_from_curlv!(stemp,curlv,dv,base_cache,wcache)
+    vectorpotential_from_masked_curlv!(stemp,curlv,dv,base_cache,wcache)
     vecfield_from_vectorpotential!(vψ,stemp,base_cache)
 
-    scalarpotential_from_divv!(ftemp,divv,dv,base_cache,dcache)
+    scalarpotential_from_masked_divv!(ftemp,divv,dv,base_cache,dcache)
     vecfield_from_scalarpotential!(vϕ,ftemp,base_cache)
 
     v .= vψ .+ vϕ

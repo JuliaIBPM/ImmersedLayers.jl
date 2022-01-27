@@ -232,6 +232,9 @@ end
   masked_divv_from_divv_masked!(masked_d,d2,dv,vcache,dcache)
   @test maximum(abs.(masked_d[2:end-1,2:end-1]-d[2:end-1,2:end-1])) < 1e-8
 
+  vectorpotential_from_curlv!(ψ,w,dv,cache,wcache)
+  scalarpotential_from_divv!(ϕ,d,dv,cache,dcache)
+
 end
 
 @testset "Problem specification" begin
