@@ -11,12 +11,15 @@ _Tools for solving partial differential equations by immersing surfaces and thei
 
 ## Package objective
 
-The objective of this package is to implement tools to support the solution of partial differential equations in domains with complex geometries.
-These tools include:
+The objective of this package is to implement tools and operations for solving
+partial differential equations (PDEs) on Cartesian grids. Objects in the domain
+of interest are handled by immersing them into the grid (rather than creating
+a grid that conforms to their shape). The package implements    
 * the tools for regularizing and interpolating data between discretely-represented surfaces and Cartesian grids
-* discrete Heaviside functions that mask the regions interior or exterior to surfaces
+* discrete Heaviside functions that mask the regions interior or exterior of surfaces
 * discrete differential operators that immerse surface data into the grid (i.e., "layers")
-* caches and constructors that can be easily extended to address user-specific problems 
+* an easy framework for specifying a user-defined PDE problem and creating the caches and functions (e.g., boundary conditions, forcing, time marching) that fully implement this problem
+* several examples of prototypical PDEs, both time-invariant and time-varying
 
 The [documentation](https://JuliaIBPM.github.io/ImmersedLayers.jl/stable) provides several illustrative examples. Much of the underlying machinery in this package is based on the [CartesianGrids.jl](https://github.com/JuliaIBPM/CartesianGrids.jl) and [RigidBodyTools.jl](https://github.com/JuliaIBPM/RigidBodyTools.jl) packages. At this time, the package only implements these in two spatial dimensions. The operators and tools are described in detail in [1], but a summary is given below.
 
