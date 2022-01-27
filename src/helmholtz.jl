@@ -161,7 +161,7 @@ the jump in the vector field across immersed surface `dv`. It solves
 
 and returns ``\\phi``.
 """
-function scalarpotential_from_divv!(ϕ::Nodes{Primal},divv::Nodes{Primal},dv::VectorData,base_cache::BasicILMCache,dcache::ScalarPotentialCache)
+function scalarpotential_from_divv!(ϕ::Nodes{Primal},divv::Nodes{Primal},base_cache::BasicILMCache,dcache::ScalarPotentialCache)
 
     ϕ .= divv
     inverse_laplacian!(ϕ,base_cache)
