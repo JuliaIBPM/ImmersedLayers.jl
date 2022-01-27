@@ -44,6 +44,10 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         surface_curl_cross!,surface_divergence_cross!,surface_grad_cross!,
         surface_divergence_symm!,surface_grad_symm!,
         mask,mask!,complementary_mask,complementary_mask!,
+        ScalarPotentialCache,VectorPotentialCache,
+        vectorpotential_from_curlv!,vecfield_from_vectorpotential!,masked_curlv_from_curlv_masked!,
+        scalarpotential_from_divv!,masked_divv_from_divv_masked!,vecfield_from_scalarpotential!,
+        vecfield_helmholtz!,vectorpotential_uniformvecfield!,scalarpotential_uniformvecfield!,vecfield_uniformvecfield!,
         create_CLinvCT,create_CL2invCT,create_GLinvD,create_nRTRn,create_RTLinvR,
         create_GLinvD_cross,create_surface_filter,
         AreaRegionCache,LineRegionCache,PointRegionCache,arccoord,
@@ -80,6 +84,7 @@ include("grid_operators.jl")
 include("surface_operators.jl")
 include("forcing.jl")
 include("matrix_operators.jl")
+include("helmholtz.jl")
 include("timemarching.jl")
 include("output.jl")
 

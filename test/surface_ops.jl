@@ -198,6 +198,42 @@ end
 
 end
 
+@testset "Helmholtz decomposition" begin
+
+  vcache = SurfaceVectorCache(body,g,scaling=GridScaling)
+  wcache = VectorPotentialCache(vcache)
+  dcache = ScalarPotentialCache(vcache)
+
+  w = zeros_gridcurl(vcache)
+  ψ = zeros_gridcurl(vcache)
+  d = zeros_griddiv(vcache)
+  ϕ = zeros_griddiv(vcache)
+  v = zeros_grid(vcache)
+  dv = zeros_surface(vcache)
+
+  w .= randn(size(w))
+  d .= randn(size(d))
+
+  dv .= randn(size(dv))
+
+  vecfield_helmholtz!(v,w,d,dv,(0.0,0.0),vcache,wcache,dcache)
+
+  # Test that curl of the resulting vector field is zero
+  w2 = zeros_gridcurl(vcache)
+  curl!(w2,v,vcache)
+  masked_w = zeros_gridcurl(vcache)
+  masked_curlv_from_curlv_masked!(masked_w,w2,dv,vcache,wcache)
+  @test maximum(abs.(masked_w[2:end-1,2:end-1] - w[2:end-1,2:end-1])) < 1e-8
+
+  # Test that divergence of the resulting vector field is zero
+  d2 = zeros_griddiv(vcache)
+  divergence!(d2,v,vcache)
+  masked_d = zeros_griddiv(vcache)
+  masked_divv_from_divv_masked!(masked_d,d2,dv,vcache,dcache)
+  @test maximum(abs.(masked_d[2:end-1,2:end-1]-d[2:end-1,2:end-1])) < 1e-8
+
+end
+
 @testset "Problem specification" begin
 
   prob = BasicScalarILMProblem(g,scaling=GridScaling)
@@ -263,11 +299,6 @@ end
   @test prob.bc == prob2.bc
   @test prob.forcing == prob2.forcing
   @test prob.timestep_func == prob2.timestep_func
-
-
-end
-
-@testset "System update" begin
 
 
 end
@@ -348,7 +379,5 @@ end
    str = [1.0,-1.0,2.0]
 
    @test_throws DimensionMismatch apply_forcing!(dT2,T2,t,fcache2,phys_params)
-
-
 
 end
