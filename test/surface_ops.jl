@@ -61,6 +61,14 @@ end
   vd = zeros_gridgradcurl(scache)
   @test typeof(vd) <: Edges{Dual}
 
+  f2 = zeros_griddiv(scache)
+  @test typeof(f2) <: Nodes{Primal}
+
+  f2 = similar_griddiv(scache)
+  @test typeof(f2) <: Nodes{Primal}
+
+  f2 = ones_griddiv(scache)
+  @test typeof(f2) <: Nodes{Primal}
 
 end
 
@@ -103,6 +111,14 @@ vs = VectorData(X)
   A = create_GLinvD(vcache,scale=cellsize(g))
   @test maximum(abs.(eigvals(A))) ≈ 0.45 atol = 1e-1
 
+  f2 = zeros_griddiv(vcache)
+  @test typeof(f2) <: Nodes{Primal}
+
+  f2 = similar_griddiv(vcache)
+  @test typeof(f2) <: Nodes{Primal}
+
+  f2 = ones_griddiv(vcache)
+  @test typeof(f2) <: Nodes{Primal}
 
 end
 
@@ -182,6 +198,65 @@ end
 
 end
 
+@testset "Helmholtz decomposition" begin
+
+  vcache = SurfaceVectorCache(body,g,scaling=GridScaling)
+  wcache = VectorPotentialCache(vcache)
+  dcache = ScalarPotentialCache(vcache)
+
+  w = zeros_gridcurl(vcache)
+  ψ = zeros_gridcurl(vcache)
+  d = zeros_griddiv(vcache)
+  ϕ = zeros_griddiv(vcache)
+  v = zeros_grid(vcache)
+  dv = zeros_surface(vcache)
+
+  w .= randn(size(w))
+  d .= randn(size(d))
+
+  dv .= randn(size(dv))
+
+  vecfield_helmholtz!(v,w,d,dv,(0.0,0.0),vcache,wcache,dcache)
+
+  # Test that curl of the resulting vector field is zero
+  w2 = zeros_gridcurl(vcache)
+  curl!(w2,v,vcache)
+  masked_w = zeros_gridcurl(vcache)
+  masked_curlv_from_curlv_masked!(masked_w,w2,dv,vcache,wcache)
+  @test maximum(abs.(masked_w[2:end-1,2:end-1] - w[2:end-1,2:end-1])) < 1e-8
+
+  # Test that divergence of the resulting vector field is zero
+  d2 = zeros_griddiv(vcache)
+  divergence!(d2,v,vcache)
+  masked_d = zeros_griddiv(vcache)
+  masked_divv_from_divv_masked!(masked_d,d2,dv,vcache,dcache)
+  @test maximum(abs.(masked_d[2:end-1,2:end-1]-d[2:end-1,2:end-1])) < 1e-8
+
+  vectorpotential_from_masked_curlv!(ψ,w,dv,vcache,wcache)
+  scalarpotential_from_masked_divv!(ϕ,d,dv,vcache,dcache)
+
+  # Tests that no immersed points lead to no problems
+  vcache = SurfaceVectorCache(g,scaling=GridScaling)
+  wcache = VectorPotentialCache(vcache)
+  dcache = ScalarPotentialCache(vcache)
+
+  w = zeros_gridcurl(vcache)
+  ψ = zeros_gridcurl(vcache)
+  d = zeros_griddiv(vcache)
+  ϕ = zeros_griddiv(vcache)
+  v = zeros_grid(vcache)
+  dv = zeros_surface(vcache)
+
+  vectorpotential_from_masked_curlv!(ψ,w,dv,vcache,wcache)
+  scalarpotential_from_masked_divv!(ϕ,d,dv,vcache,dcache)
+  vecfield_helmholtz!(v,w,d,dv,(0.0,0.0),vcache,wcache,dcache)
+  @test maximum(abs.(ψ)) == 0.0
+  @test maximum(abs.(ϕ)) == 0.0
+  @test maximum(abs.(v)) == 0.0
+
+
+end
+
 @testset "Problem specification" begin
 
   prob = BasicScalarILMProblem(g,scaling=GridScaling)
@@ -247,11 +322,6 @@ end
   @test prob.bc == prob2.bc
   @test prob.forcing == prob2.forcing
   @test prob.timestep_func == prob2.timestep_func
-
-
-end
-
-@testset "System update" begin
 
 
 end
@@ -332,7 +402,5 @@ end
    str = [1.0,-1.0,2.0]
 
    @test_throws DimensionMismatch apply_forcing!(dT2,T2,t,fcache2,phys_params)
-
-
 
 end

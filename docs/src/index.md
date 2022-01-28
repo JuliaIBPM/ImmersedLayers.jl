@@ -1,14 +1,19 @@
 # ImmersedLayers.jl
 
-*tools for immersing surfaces and their operations in Cartesian grids*
+*Tools for solving partial differential equations by immersing surfaces and their operations in Cartesian grids*
 
 ## Package objective
 
-The objective of this package is to implement
+The objective of this package is to implement tools and operations for solving
+partial differential equations (PDEs) on Cartesian grids. Objects in the domain
+of interest are handled by immersing them into the grid (rather than creating
+a grid that conforms to their shape). The package implements    
 - the tools for regularizing and interpolating data between discretely-represented surfaces and Cartesian grids
 - discrete Heaviside functions that mask the regions interior or exterior of surfaces
 - discrete differential operators that immerse surface data into the grid (i.e.,
   "layers")
+- an easy framework for specifying a user-defined PDE problem and creating the caches and functions (e.g., boundary conditions, forcing, time marching) that fully implement this problem
+- several examples of prototypical PDEs, both time-invariant and time-varying
 
 At this time, the package only implements these in two spatial dimensions. The operators and tools are described in detail in [^1], but a summary is given below.
 

@@ -27,10 +27,12 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         AbstractScalingType,GridScaling,IndexScaling,
         BasicILMCache,ILMSystem,
         ODEFunctionList,zeros_sol,init_sol,
-        similar_grid,similar_gridgrad,similar_gridcurl,similar_gridgradcurl,similar_surface,
-        zeros_grid,zeros_gridgrad,zeros_gridcurl,zeros_gridgradcurl,zeros_surface,
-        ones_grid,ones_gridgrad,ones_gridcurl,ones_gridgradcurl,ones_surface,
-        x_grid,y_grid,x_gridcurl,y_gridcurl,x_gridgrad,y_gridgrad,
+        similar_grid,similar_gridgrad,similar_gridcurl,similar_griddiv,similar_gridgradcurl,
+        similar_surface,
+        zeros_grid,zeros_gridgrad,zeros_gridcurl,zeros_griddiv,zeros_gridgradcurl,
+        zeros_surface,
+        ones_grid,ones_gridgrad,ones_gridcurl,ones_griddiv,ones_gridgradcurl,ones_surface,
+        x_grid,y_grid,x_gridcurl,y_gridcurl,x_griddiv,y_griddiv,x_gridgrad,y_gridgrad,
         AbstractExtraILMCache,AbstractScalarILMProblem,AbstractVectorILMProblem,
         ConvectiveDerivativeCache,convective_derivative, convective_derivative!,
         regularize!, interpolate!,
@@ -42,6 +44,11 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         surface_curl_cross!,surface_divergence_cross!,surface_grad_cross!,
         surface_divergence_symm!,surface_grad_symm!,
         mask,mask!,complementary_mask,complementary_mask!,
+        ScalarPotentialCache,VectorPotentialCache,
+        vectorpotential_from_masked_curlv!,scalarpotential_from_masked_divv!,
+        vectorpotential_from_curlv!,vecfield_from_vectorpotential!,masked_curlv_from_curlv_masked!,
+        scalarpotential_from_divv!,masked_divv_from_divv_masked!,vecfield_from_scalarpotential!,
+        vecfield_helmholtz!,vectorpotential_uniformvecfield!,scalarpotential_uniformvecfield!,vecfield_uniformvecfield!,
         create_CLinvCT,create_CL2invCT,create_GLinvD,create_nRTRn,create_RTLinvR,
         create_GLinvD_cross,create_surface_filter,
         AreaRegionCache,LineRegionCache,PointRegionCache,arccoord,
@@ -78,6 +85,7 @@ include("grid_operators.jl")
 include("surface_operators.jl")
 include("forcing.jl")
 include("matrix_operators.jl")
+include("helmholtz.jl")
 include("timemarching.jl")
 include("output.jl")
 

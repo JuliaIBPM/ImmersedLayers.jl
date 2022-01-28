@@ -92,10 +92,10 @@ function solve(prob::AbstractILMProblem,sys::ILMSystem) end
 
 
 ## Extend functions on `BasicILMCache` type to `ILMSystem`
-for f in [:zeros_surface,:zeros_grid,:zeros_gridcurl,:zeros_gridgrad,:zeros_gridgradcurl,
-          :similar_surface,:similar_grid,:similar_gridcurl,:similar_gridgrad,:similar_gridgradcurl,
-          :ones_surface,:ones_grid,:ones_gridgrad,:ones_gridcurl,:ones_gridgradcurl,
-          :x_grid,:y_grid,:x_gridcurl,:y_gridcurl,
+for f in [:zeros_surface,:zeros_grid,:zeros_gridcurl,:zeros_griddiv,:zeros_gridgrad,:zeros_gridgradcurl,
+          :similar_surface,:similar_grid,:similar_gridcurl,:similar_griddiv,:similar_gridgrad,:similar_gridgradcurl,
+          :ones_surface,:ones_grid,:ones_gridgrad,:ones_gridcurl,:ones_griddiv,:ones_gridgradcurl,
+          :x_grid,:y_grid,:x_gridcurl,:y_gridcurl,:x_griddiv,:y_griddiv,
           :normals,:areas,:points,
           :create_nRTRn,:create_GLinvD,:create_CLinvCT,:create_CL2invCT,
           :create_RTLinvR,:create_GLinvD_symm,
