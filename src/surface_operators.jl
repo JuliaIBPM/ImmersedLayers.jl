@@ -11,6 +11,18 @@ to [`interpolate!`](@ref)
 """
 @inline regularize!(s::Nodes{Primal},f::ScalarData,cache::BasicILMCache) = regularize!(s,f,cache.R)
 
+"""
+    regularize!(s::Nodes{Dual},f::ScalarData,cache::BasicILMCache)
+    regularize!(s::Nodes{Dual},f::ScalarData,sys::ILMSystem)
+
+
+The operation ``s = R_N f``, which regularizes scalar surface data `f`
+onto the grid in the form of scalar grid (curl) data `s`. Only works if
+the cache is built for vector data. This is the adjoint
+to [`interpolate!`](@ref)
+"""
+@inline regularize!(s::Nodes{Dual},f::ScalarData,cache::BasicILMCache) = regularize!(s,f,cache.Rcurl)
+
 
 """
     regularize!(v::Edges{Primal},vb::VectorData,cache::BasicILMCache)
@@ -40,6 +52,16 @@ to [`regularize!`](@ref)
 """
 @inline interpolate!(f::ScalarData,s::Nodes{Primal},cache::BasicILMCache) = interpolate!(f,s,cache.E)
 
+"""
+    interpolate!(f::ScalarData,s::Nodes{Dual},cache::BasicILMCache)
+    interpolate!(f::ScalarData,s::Nodes{Dual},sys::ILMSystem)
+
+The operation ``f = R_N^T s``, which interpolates scalar grid (curl) data `s`
+onto the surface points in the form of scalar point data `f`. Only works if the
+cache is built for vector data. This is the adjoint
+to [`regularize!`](@ref)
+"""
+@inline interpolate!(f::ScalarData,s::Nodes{Dual},cache::BasicILMCache) = interpolate!(f,s,cache.Ecurl)
 
 
 """
@@ -122,7 +144,14 @@ a jump in streamfunction, endowed with the out-of-plane unit vector ``\\mathbf{e
 data `v` (like velocity). This is the negative adjoint to [`normal_cross_interpolate!`](@ref).
 """
 @inline regularize_normal_cross!(q::Edges{Primal},f::ScalarData,cache::BasicILMCache) =
+           _regularize_normal_cross!(q,f,cache,Val(cache_datatype(cache)))
+
+@inline _regularize_normal_cross!(q::Edges{Primal},f::ScalarData,cache::BasicILMCache,::Val{:scalar}) =
            regularize_normal_cross!(q,f,cache.nrm,cache.Rsn,cache.snorm_cache)
+
+@inline _regularize_normal_cross!(q::Edges{Primal},f::ScalarData,cache::BasicILMCache,::Val{:vector}) =
+           regularize_normal_cross!(q,f,cache.nrm,cache.R,cache.sdata_cache)
+
 
 function regularize_normal_cross!(q::Edges{Primal,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,snorm_cache::VectorData{N}) where {NX,NY,N}
     pointwise_cross!(snorm_cache,nrm,f)
@@ -133,15 +162,16 @@ end
     regularize_normal_cross!(w::Nodes{Dual},vs::VectorData,cache::BasicILMCache)
     regularize_normal_cross!(w::Nodes{Dual},vs::VectorData,sys::ILMSystem)
 
-The operation ``\\omega = R_N \\mathbf{n}\\times \\mathbf{v}_s``, which maps scalar vector data `vs` (like
-a jump in velocity) to grid dual nodal data `w` (like vorticity). This is the negative adjoint to [`normal_cross_interpolate!`](@ref).
+The operation ``\\omega = R_N \\mathbf{n}\\times \\mathbf{v}_s``, which maps surface vector data `vs` (like
+a jump in velocity) to grid dual nodal data `w` (like vorticity). This is for use only
+with vector-data caches. This is the negative adjoint to [`normal_cross_interpolate!`](@ref).
 """
 @inline regularize_normal_cross!(w::Nodes{Dual},vs::VectorData,cache::BasicILMCache) =
-           regularize_normal_cross!(w,vs,cache.nrm,cache.Rn,cache.snorm_cache)
+           regularize_normal_cross!(w,vs,cache.nrm,cache.Rcurl,cache.sscalar_cache)
 
-function regularize_normal_cross!(w::Nodes{Dual,NX,NY},vs::VectorData{N},nrm::VectorData{N},Rn::RegularizationMatrix,snorm_cache::VectorData{N}) where {NX,NY,N}
-    pointwise_cross!(snorm_cache,nrm,vs)
-    w .= Rn*snorm_cache
+function regularize_normal_cross!(w::Nodes{Dual,NX,NY},vs::VectorData{N},nrm::VectorData{N},Rn::RegularizationMatrix,scache::ScalarData{N}) where {NX,NY,N}
+    pointwise_cross!(scache,nrm,vs)
+    w .= Rn*scache
 end
 
 

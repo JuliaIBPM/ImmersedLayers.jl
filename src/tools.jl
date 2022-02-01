@@ -103,23 +103,23 @@ of the cell in grid `g`.
 norm(u::GridData,g::PhysicalGrid) = sqrt(dot(u,u,g))
 
 """
-    ones(u::ScalarGridData)
+    ones(u::GridData)
 
-Returns `ScalarGridData` of the same type as `u` filled with ones.
+Returns `GridData` of the same type as `u` filled with ones.
 """
-function ones(u::ScalarGridData)
+function ones(u::GridData)
   o = similar(u)
   o .= 1
   o
 end
 
 """
-    ones(u::VectorGridData,dim::Int)
+    ones(u::VectorGridData/TensorGridData,dim::Int)
 
-Returns `VectorGridData` of the same type as `u`, filled with ones in
+Returns grid data of the same type as `u`, filled with ones in
 component `dim`.
 """
-function ones(u::VectorGridData,dim::Integer)
+function ones(u::Union{VectorGridData,TensorGridData},dim::Integer)
   o = zero(u)
   ocomp = getfield(o,dim+1) # offset
   ocomp .= 1
@@ -213,23 +213,23 @@ integrate(u::VectorData{N},ds::ScalarData{N},bl::BodyList,i::Int) where {N} = [d
 
 
 """
-    ones(u::ScalarData)
+    ones(u::PointData)
 
-Returns `ScalarData` of the same type as `u` filled with ones.
+Returns `PointData` of the same type as `u` filled with ones.
 """
-function ones(u::ScalarData{N}) where {N}
+function ones(u::PointData{N}) where {N}
   o = similar(u)
   o .= 1
   o
 end
 
 """
-    ones(u::VectorData,dim::Int)
+    ones(u::VectorData/TensorData,dim::Int)
 
-Returns `VectorData` of the same type as `u`, filled with ones in
+Returns point data of the same type as `u`, filled with ones in
 component `dim`.
 """
-function ones(u::VectorData{N},dim::Integer) where {N}
+function ones(u::Union{VectorData,TensorData},dim::Integer)
   o = zero(u)
   ocomp = getfield(o,dim+1) # offset
   ocomp .= 1

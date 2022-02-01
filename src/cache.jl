@@ -88,12 +88,15 @@ struct BasicILMCache{N,SCA<:AbstractScalingType,GCT,ND,BLT<:BodyList,NT<:VectorD
 end
 
 RigidBodyTools.numpts(::BasicILMCache{N}) where {N} = N
+RigidBodyTools.numpts(::AbstractBasicCache{N}) where {N} = N
 scalingtype(::BasicILMCache{N,SCA}) where {N,SCA} = SCA
 cache_datatype(::BasicILMCache{N,SCA,GCT}) where {N,SCA,GCT} = GCT <: Nodes ? :scalar : :vector
+cache_datatype(::AbstractBasicCache{N,GCT}) where {N,GCT} = GCT <: Nodes ? :scalar : :vector
 type_curlreg(::BasicILMCache{N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST}) where {N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST} = RCT
 type_divreg(::BasicILMCache{N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST}) where {N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST} = RDT
 type_sdata(::BasicILMCache{N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST}) where {N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST} = SDT
 type_sscalar(::BasicILMCache{N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST}) where {N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST} = SST
+
 
 
 for f in [:SurfaceScalarCache, :SurfaceVectorCache]
@@ -422,6 +425,16 @@ Get a `similar` copy of the basic surface point data in the cache.
 """
 @inline similar_surface(cache::AbstractBasicCache,kwargs...) = _similar(cache.sdata_cache,kwargs...)
 
+"""
+    similar_surfacescalar(::BasicILMCache)
+
+Get a `similar` copy of the surface scalar point data in the cache. This
+is only used for vector-type caches. Otherwise, [`similar_surface`](@ref) should
+be used.
+"""
+@inline similar_surfacescalar(cache::AbstractBasicCache,kwargs...) = _similar(cache.sscalar_cache,kwargs...)
+
+
 _similar(::Nothing;kwargs...) = nothing
 _similar(a;kwargs...) = similar(a;kwargs...)
 
@@ -471,6 +484,16 @@ Get an instance of the basic surface point data in the cache, with values set to
 """
 @inline zeros_surface(cache::AbstractBasicCache,kwargs...) = _zero(cache.sdata_cache,kwargs...)
 
+"""
+    zeros_surfacescalar(::BasicILMCache)
+
+Get an instance of the surface scalar point data in the cache, with values set to zero.
+This is only used for vector-type caches. Otherwise, [`zeros_surface`](@ref) should
+be used.
+"""
+@inline zeros_surfacescalar(cache::AbstractBasicCache,kwargs...) = _zero(cache.sscalar_cache,kwargs...)
+
+
 _zero(a;kwargs...) = zero(a;kwargs...)
 _zero(::Nothing;kwargs...) = nothing
 
@@ -479,7 +502,16 @@ _zero(::Nothing;kwargs...) = nothing
 
 Get an instance of the basic grid data in the cache, with values set to unity.
 """
-@inline ones_grid(cache::AbstractBasicCache,kwargs...) = _ones(cache.gdata_cache,kwargs...)
+@inline ones_grid(cache::AbstractBasicCache;kwargs...) = ones(cache.gdata_cache;kwargs...)
+
+"""
+    ones_grid(::BasicILMCache,dim)
+
+For a vector-type cache, get an instance of the basic grid data in the cache, with values set to unity
+in dimension `dim`.
+"""
+@inline ones_grid(cache::AbstractBasicCache{N,GCT},dim;kwargs...) where {N,GCT<:Edges} = ones(cache.gdata_cache,dim;kwargs...)
+
 
 """
     ones_gridgrad(::BasicILMCache,dim)
@@ -488,7 +520,7 @@ Get an instance of the gradient of the grid data in the cache, in direction `dim
 with values set to unity. If the data are of type `TensorGridData`, then
 `dim` takes values from 1 to 2^2.
 """
-@inline ones_gridgrad(cache::BasicILMCache,kwargs...) = _ones(cache.gsnorm_cache,kwargs...)
+@inline ones_gridgrad(cache::BasicILMCache,dim;kwargs...) = ones(cache.gsnorm_cache,dim;kwargs...)
 
 
 """
@@ -520,10 +552,28 @@ Get an instance of the grid gradient-of-curl field data in the cache, with value
 
 Get an instance of the basic surface point data in the cache, with values set to unity.
 """
-@inline ones_surface(cache::AbstractBasicCache,kwargs...) = _ones(cache.sdata_cache,kwargs...)
+@inline ones_surface(cache::AbstractBasicCache;kwargs...) = ones(cache.sdata_cache;kwargs...)
+
+"""
+    ones_surface(::BasicILMCache,dim)
+
+Get an instance of the basic surface point data in the cache, with values set to unity
+in dimension `dim`. This only works for a vector-type cache.
+"""
+@inline ones_surface(cache::AbstractBasicCache{N,GCT},dim;kwargs...) where {N,GCT<:Edges} = ones(cache.sdata_cache,dim;kwargs...)
 
 
-_ones(a;kwargs...) = ones(a;kwargs...)
+"""
+    ones_surfacescalar(::BasicILMCache)
+
+Get an instance of the surface scalar point data in the cache, with values set to unity.
+This is only used for vector-type caches. Otherwise, [`ones_surface`](@ref) should
+be used.
+"""
+@inline ones_surfacescalar(cache::AbstractBasicCache;kwargs...) = _ones(cache.sscalar_cache;kwargs...)
+
+
+_ones(a...;kwargs...) = ones(a...;kwargs...)
 _ones(::Nothing;kwargs...) = nothing
 
 
