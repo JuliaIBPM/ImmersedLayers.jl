@@ -119,7 +119,7 @@ end
 
 The operation ``\\mathbf{v} = R_f \\mathbf{n}\\times f \\mathbf{e}_z``, which maps scalar surface data `f` (like
 a jump in streamfunction, endowed with the out-of-plane unit vector ``\\mathbf{e}_z``) to grid
-data `v` (like velocity). This is the adjoint to [`normal_cross_interpolate!`](@ref).
+data `v` (like velocity). This is the negative adjoint to [`normal_cross_interpolate!`](@ref).
 """
 @inline regularize_normal_cross!(q::Edges{Primal},f::ScalarData,cache::BasicILMCache) =
            regularize_normal_cross!(q,f,cache.nrm,cache.Rsn,cache.snorm_cache)
@@ -128,6 +128,22 @@ function regularize_normal_cross!(q::Edges{Primal,NX,NY},f::ScalarData{N},nrm::V
     cross!(snorm_cache,nrm,f)
     q .= Rf*snorm_cache
 end
+
+"""
+    regularize_normal_cross!(w::Nodes{Dual},vs::VectorData,cache::BasicILMCache)
+    regularize_normal_cross!(w::Nodes{Dual},vs::VectorData,sys::ILMSystem)
+
+The operation ``\\omega = R_N \\mathbf{n}\\times \\mathbf{v}_s``, which maps scalar vector data `vs` (like
+a jump in velocity) to grid dual nodal data `w` (like vorticity). This is the negative adjoint to [`normal_cross_interpolate!`](@ref).
+"""
+@inline regularize_normal_cross!(w::Nodes{Dual},vs::VectorData,cache::BasicILMCache) =
+           regularize_normal_cross!(w,vs,cache.nrm,cache.Rn,cache.snorm_cache)
+
+function regularize_normal_cross!(w::Nodes{Dual,NX,NY},vs::VectorData{N},nrm::VectorData{N},Rn::RegularizationMatrix,snorm_cache::VectorData{N}) where {NX,NY,N}
+    cross!(snorm_cache,nrm,vs)
+    w .= Rn*snorm_cache
+end
+
 
 
 """
@@ -185,7 +201,7 @@ end
 
 The operation ``w_n = e_z\\cdot (\\mathbf{n} \\times R_f^T \\mathbf{v})``, which maps grid data `v` (like velocity) to scalar
 surface data `wn` (like vorticity in the surface). This is the
-adjoint to [`regularize_normal!`](@ref).
+negative adjoint to [`regularize_normal_cross!`](@ref).
 """
 @inline normal_cross_interpolate!(vn::ScalarData,q::Edges{Primal},cache::BasicILMCache) =
           normal_cross_interpolate!(vn,q,cache.nrm,cache.Esn,cache.snorm_cache)
@@ -344,7 +360,7 @@ end
 
 The operation ``\\theta = D_s f = D R_f \\mathbf{n} \\circ f``, which maps surface scalar data `f` (like
 jump in scalar potential) to grid data `Θ` (like dilatation, i.e. divergence of velocity).
-This is the adjoint of [`surface_grad!`](@ref).
+This is the negative adjoint of [`surface_grad!`](@ref).
 Note that
 the differential operations are divided either by 1 or by the grid cell size,
 depending on whether `sys` has been designated with `IndexScaling` or `GridScaling`,
@@ -367,7 +383,7 @@ end
     surface_divergence!(v::Edges{Primal},dv::VectorData,sys::ILMSystem)
 
 The operation ``\\mathbf{v} = D_s d\\mathbf{v} = D R_t (\\mathbf{n} \\circ d\\mathbf{v})``, which maps surface vector data `dv` (like
-jump in velocity) to grid data `v` (like velocity). This is the adjoint of [`surface_grad!`](@ref). Note that
+jump in velocity) to grid data `v` (like velocity). This is the negative adjoint of [`surface_grad!`](@ref). Note that
 the differential operations are divided either by 1 or by the grid cell size,
 depending on whether `sys` has been designated with `IndexScaling` or `GridScaling`,
 respectively.
@@ -382,7 +398,7 @@ end
     surface_divergence_symm!(v::Edges{Primal},dv::VectorData,sys::ILMSystem)
 
 The operation ``\\mathbf{v} = D_s d\\mathbf{v} = D R_t (\\mathbf{n} \\circ d\\mathbf{v} + d\\mathbf{v} \\circ \\mathbf{n})``, which maps surface vector data `dv` (like
-jump in velocity) to grid data `v` (like velocity). This is the adjoint of [`surface_grad_symm!`](@ref). Note that
+jump in velocity) to grid data `v` (like velocity). This is the negative adjoint of [`surface_grad_symm!`](@ref). Note that
 the differential operations are divided either by 1 or by the grid cell size,
 depending on whether `sys` has been designated with `IndexScaling` or `GridScaling`,
 respectively.
@@ -411,7 +427,7 @@ end
     surface_grad!(vn::ScalarData,ϕ::Nodes{Primal},sys::ILMSystem)
 
 The operation ``v_n = G_s\\phi = \\mathbf{n} \\cdot R_f^T G\\phi``, which maps grid data `ϕ` (like
-scalar potential) to scalar surface data `vn` (like normal component of velocity). This is the adjoint of [`surface_divergence!`](@ref).
+scalar potential) to scalar surface data `vn` (like normal component of velocity). This is the negative adjoint of [`surface_divergence!`](@ref).
 Note that
 the differential operations are divided either by 1 or by the grid cell size,
 depending on whether `sys` has been designated with `IndexScaling` or `GridScaling`,
@@ -434,7 +450,7 @@ end
     surface_grad!(τ::VectorData,v::Edges{Primal},sys::ILMSystem)
 
 The operation ``\\mathbf{\\tau} = G_s v = \\mathbf{n} \\cdot R_t^T G \\mathbf{v}``, which maps grid vector data `v` (like
-velocity) to vector surface data `τ` (like traction). This is the adjoint of [`surface_divergence!`](@ref). Note that
+velocity) to vector surface data `τ` (like traction). This is the negative adjoint of [`surface_divergence!`](@ref). Note that
 the differential operations are divided either by 1 or by the grid cell size,
 depending on whether `sys` has been designated with `IndexScaling` or `GridScaling`,
 respectively.
@@ -449,7 +465,7 @@ end
     surface_grad_symm!(τ::VectorData,v::Edges{Primal},sys::ILMSystem)
 
 The operation ``\\mathbf{\\tau} = G_s v = \\mathbf{n} \\cdot R_t^T (G \\mathbf{v} + (G \\mathbf{v})^T)``, which maps grid vector data `v` (like
-velocity) to vector surface data `τ` (like traction). This is the adjoint of [`surface_divergence_symm!`](@ref). Note that
+velocity) to vector surface data `τ` (like traction). This is the negative adjoint of [`surface_divergence_symm!`](@ref). Note that
 the differential operations are divided either by 1 or by the grid cell size,
 depending on whether `sys` has been designated with `IndexScaling` or `GridScaling`,
 respectively.

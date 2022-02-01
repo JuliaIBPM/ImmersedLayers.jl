@@ -37,7 +37,7 @@ and
 
 $$\nabla\times{\overline{\mathbf{v}}} = \overline{\nabla\times\mathbf{v}} + \delta(\chi)\mathbf{n}\times[\mathbf{v}]$$
 
-These are, respectively, the divergence and curl of the masked vector field, $\overline{\mathbf{v}$.
+These are, respectively, the divergence and curl of the masked vector field, $\overline{\mathbf{v}}$.
 In `ImmersedLayers.jl`, we are always working with the masked form of a field,
 whether we acknowledge it or not. In contrast, the first terms on the right-hand sides of these are the masked divergence and curl
 of the vector field in each side of the surface. The difference between these is
