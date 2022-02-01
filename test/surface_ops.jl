@@ -80,6 +80,9 @@ end
   f2 = y_griddiv(scache)
   @test typeof(f2) <: Nothing
 
+  @test isnothing(scache.Rcurl)
+  @test isnothing(scache.Rdiv)
+
 end
 
 @testset "Complex cache" begin
@@ -135,6 +138,10 @@ vs = VectorData(X)
 
   f2 = y_griddiv(vcache)
   @test typeof(f2) <: Nodes{Primal}
+
+  @test typeof(vcache.Rcurl) <: RegularizationMatrix
+  @test typeof(vcache.Rdiv) <: RegularizationMatrix
+
 
 end
 
