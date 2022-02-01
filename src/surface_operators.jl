@@ -96,12 +96,12 @@ to [`normal_interpolate_symm!`](@ref).
 @inline regularize_normal_symm!(q::EdgeGradient{Primal},f::VectorData,cache::BasicILMCache) = regularize_normal_symm!(q,f,cache.nrm,cache.Rsn,cache.snorm_cache,cache.snorm2_cache)
 
 function regularize_normal!(q::EdgeGradient{Primal,Dual,NX,NY},f::VectorData{N},nrm::VectorData{N},Rf::RegularizationMatrix,snorm_cache::TensorData{N}) where {NX,NY,N}
-    tensorproduct!(snorm_cache,nrm,f)
+    pointwise_tensorproduct!(snorm_cache,nrm,f)
     q .= Rf*snorm_cache
 end
 
 function regularize_normal_symm!(q::EdgeGradient{Primal,Dual,NX,NY},f::VectorData{N},nrm::VectorData{N},Rf::RegularizationMatrix,snorm_cache::TensorData{N},snorm2_cache::TensorData{N}) where {NX,NY,N}
-    tensorproduct!(snorm_cache,nrm,f)
+    pointwise_tensorproduct!(snorm_cache,nrm,f)
     transpose!(snorm2_cache,snorm_cache)
     snorm_cache .+= snorm2_cache
     # subtract the dot product of f and n from each diagonal entry
@@ -125,7 +125,7 @@ data `v` (like velocity). This is the negative adjoint to [`normal_cross_interpo
            regularize_normal_cross!(q,f,cache.nrm,cache.Rsn,cache.snorm_cache)
 
 function regularize_normal_cross!(q::Edges{Primal,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,snorm_cache::VectorData{N}) where {NX,NY,N}
-    cross!(snorm_cache,nrm,f)
+    pointwise_cross!(snorm_cache,nrm,f)
     q .= Rf*snorm_cache
 end
 
@@ -140,7 +140,7 @@ a jump in velocity) to grid dual nodal data `w` (like vorticity). This is the ne
            regularize_normal_cross!(w,vs,cache.nrm,cache.Rn,cache.snorm_cache)
 
 function regularize_normal_cross!(w::Nodes{Dual,NX,NY},vs::VectorData{N},nrm::VectorData{N},Rn::RegularizationMatrix,snorm_cache::VectorData{N}) where {NX,NY,N}
-    cross!(snorm_cache,nrm,vs)
+    pointwise_cross!(snorm_cache,nrm,vs)
     w .= Rn*snorm_cache
 end
 
@@ -208,7 +208,7 @@ negative adjoint to [`regularize_normal_cross!`](@ref).
 
 function normal_cross_interpolate!(vn::ScalarData{N},q::Edges{Primal,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,snorm_cache::VectorData{N}) where {NX,NY,N}
     snorm_cache .= Ef*q
-    cross!(vn,nrm,snorm_cache)
+    pointwise_cross!(vn,nrm,snorm_cache)
 end
 
 """

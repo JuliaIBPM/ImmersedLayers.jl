@@ -87,6 +87,15 @@ struct BasicILMCache{N,SCA<:AbstractScalingType,GCT,ND,BLT<:BodyList,NT<:VectorD
     sscalar_cache :: SST
 end
 
+RigidBodyTools.numpts(::BasicILMCache{N}) where {N} = N
+scalingtype(::BasicILMCache{N,SCA}) where {N,SCA} = SCA
+cache_datatype(::BasicILMCache{N,SCA,GCT}) where {N,SCA,GCT} = GCT <: Nodes ? :scalar : :vector
+type_curlreg(::BasicILMCache{N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST}) where {N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST} = RCT
+type_divreg(::BasicILMCache{N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST}) where {N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST} = RDT
+type_sdata(::BasicILMCache{N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST}) where {N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST} = SDT
+type_sscalar(::BasicILMCache{N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST}) where {N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST} = SST
+
+
 for f in [:SurfaceScalarCache, :SurfaceVectorCache]
   @eval $f(body::Body,g::PhysicalGrid; kwargs...) =
         $f(BodyList([body]),areas(body),normals(body),g; kwargs...)
@@ -559,7 +568,11 @@ end
 
 Return basic grid div field data filled with the grid `x` coordinate
 """
-function x_griddiv(cache::BasicILMCache)
+@inline x_griddiv(cache::BasicILMCache) = _x_griddiv(cache,Val(cache_datatype(cache)))
+
+_x_griddiv(cache,::Val{:scalar}) = nothing
+
+function _x_griddiv(cache,::Val{:vector})
     xc, _ = coordinates(cache.gdiv_cache,cache.g)
     p = zeros_griddiv(cache)
     p .= xc
@@ -636,7 +649,11 @@ end
 
 Return basic grid div field data filled with the grid `y` coordinate
 """
-function y_griddiv(cache::BasicILMCache)
+@inline y_griddiv(cache::BasicILMCache) = _y_griddiv(cache,Val(cache_datatype(cache)))
+
+_y_griddiv(cache,::Val{:scalar}) = nothing
+
+function _y_griddiv(cache,::Val{:vector})
     _,yc = coordinates(cache.gdiv_cache,cache.g)
     p = zeros_griddiv(cache)
     p .= yc'

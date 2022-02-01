@@ -74,6 +74,12 @@ end
   f2 = ones_griddiv(scache)
   @test typeof(f2) <: Nothing
 
+  f2 = x_griddiv(scache)
+  @test typeof(f2) <: Nothing
+
+  f2 = y_griddiv(scache)
+  @test typeof(f2) <: Nothing
+
 end
 
 @testset "Complex cache" begin
@@ -122,6 +128,12 @@ vs = VectorData(X)
   @test typeof(f2) <: Nodes{Primal}
 
   f2 = ones_griddiv(vcache)
+  @test typeof(f2) <: Nodes{Primal}
+
+  f2 = x_griddiv(vcache)
+  @test typeof(f2) <: Nodes{Primal}
+
+  f2 = y_griddiv(vcache)
   @test typeof(f2) <: Nodes{Primal}
 
 end

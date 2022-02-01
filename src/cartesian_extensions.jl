@@ -1,5 +1,6 @@
 # These routines should be added to CartesianGrids
 
+#=
 import CartesianGrids: cross!
 
 """
@@ -20,3 +21,4 @@ function cross!(C::VectorData{N},A::VectorData{N},B::ScalarData{N}) where {N}
     @. C.v = -A.u*B
     return C
 end
+=#

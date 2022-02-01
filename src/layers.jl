@@ -80,7 +80,7 @@ function (μ::DoubleLayer{N,D,<:Edges{C}})(u::Nodes{C},p::ScalarData{N}) where {
 end
 
 function (μ::DoubleLayer{N,D,<:EdgeGradient{C}})(u::Edges{C},p::VectorData{N}) where {N,D,C}
-    tensorproduct!(μ.Pbuf,p,μ.nds)
+    pointwise_tensorproduct!(μ.Pbuf,p,μ.nds)
     transpose!(μ.Qbuf,μ.Pbuf)
     μ.Pbuf .+= μ.Qbuf
     divergence!(u,mul!(μ.Gbuf,μ.H,μ.Pbuf))
