@@ -1,3 +1,4 @@
+
 abstract type AbstractBasicCache{N,GCT} end
 
 
@@ -24,7 +25,8 @@ struct BasicILMCache{N,SCA<:AbstractScalingType,GCT,ND,BLT<:BodyList,NT<:VectorD
                       DST<:ScalarData,REGT<:Regularize,
                       RSNT<:RegularizationMatrix,ESNT<:InterpolationMatrix,
                       RT<:RegularizationMatrix,ET<:InterpolationMatrix,
-                      LT<:CartesianGrids.Laplacian,GVT,GNT,GDT,SVT,SST} <: AbstractBasicCache{N,GCT}
+                      RCT, ECT, RDT, EDT,
+                      LT<:CartesianGrids.Laplacian,GVT,GNT,GDT,SVT,SDT,SST} <: AbstractBasicCache{N,GCT}
 
     # Grid
     g :: PhysicalGrid{ND}
@@ -49,6 +51,14 @@ struct BasicILMCache{N,SCA<:AbstractScalingType,GCT,ND,BLT<:BodyList,NT<:VectorD
     R :: RT
     E :: ET
 
+    # Regularization and interpolation of grid curl data (gcurl/sdata)
+    Rcurl :: RCT
+    Ecurl :: ECT
+
+    # Regularization and interpolation of grid div data (gdiv/sdata)
+    Rdiv :: RDT
+    Ediv :: EDT
+
     # Laplacian (with no coefficient)
     L :: LT
 
@@ -72,28 +82,25 @@ struct BasicILMCache{N,SCA<:AbstractScalingType,GCT,ND,BLT<:BodyList,NT<:VectorD
     snorm2_cache :: SVT
 
     # For holding the basic surface data (e.g., scalar -> ScalarData, vector -> VectorData)
-    sdata_cache :: SST
+    sdata_cache :: SDT
+
+    # For holding surface scalar data (always ScalarData)
+    sscalar_cache :: SST
 end
 
-for f in [:SurfaceScalarCache, :SurfaceVectorCache]
-  @eval $f(body::Body,g::PhysicalGrid; kwargs...) =
-        $f(BodyList([body]),areas(body),normals(body),g; kwargs...)
+RigidBodyTools.numpts(::BasicILMCache{N}) where {N} = N
+RigidBodyTools.numpts(::AbstractBasicCache{N}) where {N} = N
+scalingtype(::BasicILMCache{N,SCA}) where {N,SCA} = SCA
+cache_datatype(::BasicILMCache{N,SCA,GCT}) where {N,SCA,GCT} = GCT <: Nodes ? :scalar : :vector
+cache_datatype(::AbstractBasicCache{N,GCT}) where {N,GCT} = GCT <: Nodes ? :scalar : :vector
+type_curlreg(::BasicILMCache{N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST}) where {N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST} = RCT
+type_divreg(::BasicILMCache{N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST}) where {N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST} = RDT
+type_sdata(::BasicILMCache{N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST}) where {N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST} = SDT
+type_sscalar(::BasicILMCache{N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST}) where {N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,ECT,RDT,EDT,LT,GVT,GNT,GDT,SVT,SDT,SST} = SST
 
-  @eval $f(bl::BodyList,g::PhysicalGrid; kwargs...) =
-        $f(bl,areas(bl),normals(bl),g; kwargs...)
 
-  @eval $f(g::PhysicalGrid;kwargs...) =
-        $f(BodyList(),ScalarData(0),VectorData(0),g; kwargs...)
 
-  @eval function $f(X::VectorData,g::PhysicalGrid; kwargs...)
-          x = Vector{Float64}(undef,length(X.u))
-          y = Vector{Float64}(undef,length(X.v))
-          x .= X.u
-          y .= X.v
-          $f(BasicBody(x,y),g; kwargs...)
-  end
 
-end
 """
     SurfaceScalarCache(g::PhysicalGrid[,scaling=IndexScaling])
 
@@ -161,19 +168,18 @@ function SurfaceScalarCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::
                               dtype = Float64) where {N}
 
 	X = points(bl)
+  sscalar_cache = nothing
 	sdata_cache = ScalarData(X, dtype = dtype)
 	snorm_cache = VectorData(X, dtype = dtype)
 
 	gsnorm_cache = Edges(Primal,size(g), dtype = dtype)
-	gcurl_cache = Nodes(Dual,size(g), dtype = dtype)
-  gdiv_cache = Nodes(Primal,size(g), dtype = dtype)
 	gdata_cache = Nodes(Primal,size(g), dtype = dtype)
+  gcurl_cache = Nodes(Dual,size(g), dtype = dtype)
+  gdiv_cache = nothing #Nodes(Primal,size(g), dtype = dtype)
 
-	_surfacecache(bl,X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdiv_cache,gdata_cache;dtype=dtype)
+	_surfacecache(bl,X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,sscalar_cache,gsnorm_cache,gcurl_cache,gdiv_cache,gdata_cache;dtype=dtype)
 
 end
-
-
 
 function SurfaceVectorCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid;
                               ddftype = CartesianGrids.Yang3,
@@ -181,15 +187,36 @@ function SurfaceVectorCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::
                               dtype = Float64) where {N}
 
 	X = points(bl)
+  sscalar_cache = ScalarData(X, dtype = dtype)
 	sdata_cache = VectorData(X, dtype = dtype)
 	snorm_cache = TensorData(X, dtype = dtype)
 
 	gsnorm_cache = EdgeGradient(Primal,size(g), dtype = dtype)
+  gdata_cache = Edges(Primal,size(g), dtype = dtype)
 	gcurl_cache = Nodes(Dual,size(g), dtype = dtype)
   gdiv_cache = Nodes(Primal,size(g), dtype = dtype)
-	gdata_cache = Edges(Primal,size(g), dtype = dtype)
 
-	_surfacecache(bl,X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdiv_cache,gdata_cache;dtype=dtype)
+	_surfacecache(bl,X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,sscalar_cache,gsnorm_cache,gcurl_cache,gdiv_cache,gdata_cache;dtype=dtype)
+
+end
+
+for f in [:SurfaceScalarCache, :SurfaceVectorCache]
+  @eval $f(body::Body,g::PhysicalGrid; kwargs...) =
+        $f(BodyList([body]),areas(body),normals(body),g; kwargs...)
+
+  @eval $f(bl::BodyList,g::PhysicalGrid; kwargs...) =
+        $f(bl,areas(bl),normals(bl),g; kwargs...)
+
+  @eval $f(g::PhysicalGrid;kwargs...) =
+        $f(BodyList(),ScalarData(0),VectorData(0),g; kwargs...)
+
+  @eval function $f(X::VectorData,g::PhysicalGrid; kwargs...)
+          x = Vector{Float64}(undef,length(X.u))
+          y = Vector{Float64}(undef,length(X.v))
+          x .= X.u
+          y .= X.v
+          $f(BasicBody(x,y),g; kwargs...)
+  end
 
 end
 
@@ -200,7 +227,8 @@ function Base.show(io::IO, H::BasicILMCache{N,SCA}) where {N,SCA}
 end
 
 function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},ddftype,scaling,
-                      sdata_cache,snorm_cache,gsnorm_cache,gcurl_cache,gdiv_cache,gdata_cache;dtype=Float64) where {N,ND}
+                      sdata_cache,snorm_cache,sscalar_cache,gsnorm_cache,gcurl_cache,gdiv_cache,gdata_cache;dtype=Float64) where {N,ND}
+
 
   regop = _get_regularization(X,a,g,ddftype,scaling)
   Rsn = _regularization_matrix(regop,snorm_cache,gsnorm_cache)
@@ -209,17 +237,27 @@ function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},d
   R = _regularization_matrix(regop,sdata_cache,gdata_cache )
   E = _interpolation_matrix(regop, gdata_cache,sdata_cache)
 
+  Rcurl = _regularization_matrix(regop,sscalar_cache,gcurl_cache )
+  Ecurl = _interpolation_matrix(regop, gcurl_cache,sscalar_cache)
+
+  Rdiv = _regularization_matrix(regop,sscalar_cache,gdiv_cache )
+  Ediv = _interpolation_matrix(regop, gdiv_cache,sscalar_cache)
+
   coeff_factor = 1.0
   with_inverse = true
-  L = _get_laplacian(gcurl_cache,coeff_factor,g,with_inverse,scaling;dtype=dtype)
+  L = _get_laplacian(gdata_cache,coeff_factor,g,with_inverse,scaling;dtype=dtype)
 
-  return BasicILMCache{N,scaling,typeof(gdata_cache),ND,typeof(bl),typeof(nrm),typeof(a),typeof(regop),typeof(Rsn),typeof(Esn),typeof(R),typeof(E),typeof(L),
-                       typeof(gsnorm_cache),typeof(gcurl_cache),typeof(gdiv_cache),typeof(snorm_cache),typeof(sdata_cache)}(
-                       g,bl,nrm,a,regop,Rsn,Esn,R,E,L,
-                       similar(gsnorm_cache),similar(gsnorm_cache),similar(gcurl_cache),similar(gdiv_cache),similar(gdata_cache),
-                       similar(snorm_cache),similar(snorm_cache),similar(sdata_cache))
+  return BasicILMCache{N,scaling,typeof(gdata_cache),ND,typeof(bl),typeof(nrm),typeof(a),typeof(regop),
+                       typeof(Rsn),typeof(Esn),typeof(R),typeof(E),typeof(Rcurl),typeof(Ecurl),typeof(Rdiv),typeof(Ediv),typeof(L),
+                       typeof(gsnorm_cache),typeof(gcurl_cache),typeof(gdiv_cache),typeof(snorm_cache),typeof(sdata_cache),typeof(sscalar_cache)}(
+                       g,bl,nrm,a,regop,Rsn,Esn,R,E,Rcurl,Ecurl,Rdiv,Ediv,L,
+                       _similar(gsnorm_cache),_similar(gsnorm_cache),
+                       _similar(gcurl_cache),_similar(gdiv_cache),_similar(gdata_cache),
+                       _similar(snorm_cache),_similar(snorm_cache),_similar(sdata_cache),_similar(sscalar_cache))
 
 end
+
+
 
 #=
 Point collection cache
@@ -233,20 +271,20 @@ struct PointCollectionCache{N,GCT,ND,PT,REGT<:Regularize,SST} <: AbstractBasicCa
     sdata_cache :: SST
 end
 
-function ScalarPointCollectionCache(X::VectorData{N},g::PhysicalGrid{ND};kwargs...) where {N,ND}
-    gdata_cache = Nodes(Primal,size(g))
-    sdata_cache = ScalarData(X)
-    return _pointcollectioncache(X,g,gdata_cache,sdata_cache,kwargs)
+function ScalarPointCollectionCache(X::VectorData{N},g::PhysicalGrid{ND};ddftype = CartesianGrids.Yang3,dtype = Float64) where {N,ND}
+    gdata_cache = Nodes(Primal,size(g),dtype = dtype)
+    sdata_cache = ScalarData(X,dtype = dtype)
+    return _pointcollectioncache(X,g,gdata_cache,sdata_cache,ddftype)
 end
 
-function VectorPointCollectionCache(X::VectorData{N},g::PhysicalGrid{ND};kwargs...) where {N,ND}
-    gdata_cache = Edges(Primal,size(g))
-    sdata_cache = VectorData(X)
-    return _pointcollectioncache(X,g,gdata_cache,sdata_cache,kwargs)
+function VectorPointCollectionCache(X::VectorData{N},g::PhysicalGrid{ND};ddftype = CartesianGrids.Yang3,dtype = Float64) where {N,ND}
+    gdata_cache = Edges(Primal,size(g),dtype = dtype)
+    sdata_cache = VectorData(X,dtype = dtype)
+    return _pointcollectioncache(X,g,gdata_cache,sdata_cache,ddftype)
 end
 
-function _pointcollectioncache(X::VectorData{N},g::PhysicalGrid{ND},gdata_cache::GCT,sdata_cache::SDT,kwargs) where {N,ND,GCT,SDT}
-  regop = _get_regularization(X,g;kwargs...)
+function _pointcollectioncache(X::VectorData{N},g::PhysicalGrid{ND},gdata_cache::GCT,sdata_cache::SDT,ddftype) where {N,ND,GCT,SDT}
+  regop = _get_regularization(X,g,ddftype)
   return PointCollectionCache{N,GCT,ND,typeof(X),typeof(regop),SDT}(X,g,regop,gdata_cache,sdata_cache)
 end
 
@@ -259,22 +297,26 @@ Convenience functions
 Base.eltype(s::AbstractBasicCache) = eltype(s.gdata_cache)
 
 # Standardize the regularization
-_get_regularization(X::VectorData{N},a::ScalarData{N},g::PhysicalGrid,ddftype,::Type{GridScaling};filter=false) where {N} =
-     Regularize(X,cellsize(g),I0=origin(g),weights=a.data,ddftype=ddftype,filter=filter)
+for ddf in [:Yang3,:Roma,:Goza,:Witchhat,:M3,:M4prime]
+  @eval _get_regularization(X::VectorData{N},a::ScalarData{N},g::PhysicalGrid,::Type{CartesianGrids.$ddf},::Type{GridScaling};filter=false) where {N} =
+     Regularize(X,cellsize(g),I0=origin(g),weights=a.data,ddftype=CartesianGrids.$ddf,filter=filter)
 
-_get_regularization(X::VectorData{N},a::ScalarData{N},g::PhysicalGrid,ddftype,::Type{IndexScaling};filter=false) where {N} =
-     Regularize(X,cellsize(g),I0=origin(g),issymmetric=true,ddftype=ddftype,filter=filter)
+  @eval _get_regularization(X::VectorData{N},a::ScalarData{N},g::PhysicalGrid,::Type{CartesianGrids.$ddf},::Type{IndexScaling};filter=false) where {N} =
+     Regularize(X,cellsize(g),I0=origin(g),issymmetric=true,ddftype=CartesianGrids.$ddf,filter=filter)
+
+  @eval _get_regularization(X::VectorData{N},g::PhysicalGrid,::Type{CartesianGrids.$ddf}) where {N} =
+     Regularize(X,cellsize(g),I0=origin(g),ddftype=CartesianGrids.$ddf,filter=false)
+end
 
 _get_regularization(body::Union{Body,BodyList},args...;kwargs...) = _get_regularization(VectorData(collect(body)),areas(body),args...;kwargs...)
 
-_get_regularization(X::VectorData{N},g::PhysicalGrid;kwargs...) where {N} =
-    Regularize(X,cellsize(g),I0=origin(g); kwargs...)
+
 
 # Standardize the Laplacian
 _get_laplacian(a,coeff_factor::Real,g::PhysicalGrid,with_inverse,::Type{IndexScaling};dtype=Float64) =
-               CartesianGrids.plan_laplacian(size(a),with_inverse=with_inverse,factor=coeff_factor,dtype=dtype)
+               CartesianGrids.plan_laplacian(a,with_inverse=with_inverse,factor=coeff_factor,dtype=dtype)
 _get_laplacian(a,coeff_factor::Real,g::PhysicalGrid,with_inverse,::Type{GridScaling};dtype=Float64) =
-               CartesianGrids.plan_laplacian(size(a),with_inverse=with_inverse,factor=coeff_factor/cellsize(g)^2,dtype=dtype)
+               CartesianGrids.plan_laplacian(a,with_inverse=with_inverse,factor=coeff_factor/cellsize(g)^2,dtype=dtype)
 
 # This is needed to stabilize the type-unstable `RegularizationMatrix` function in
 # CartesianGrids
@@ -287,8 +329,18 @@ function _regularization_matrix(regop::Regularize,src::PointData,trg::GridData)
     return R
 end
 
+@inline _regularization_matrix(regop::Regularize,src::PointData,::Nothing) = nothing
+
+@inline _regularization_matrix(regop::Regularize,::Nothing,trg) = nothing
+
+
 @inline _interpolation_matrix(regop::Regularize,src::GridData,trg::PointData) =
         InterpolationMatrix(regop,src,trg)
+
+@inline _interpolation_matrix(regop::Regularize,::Nothing,trg::PointData) = nothing
+
+@inline _interpolation_matrix(regop::Regularize,src,::Nothing) = nothing
+
 
 # APIs to generate regularization, interpolation matrices and Laplacians not generated
 # in the basic cache
@@ -339,14 +391,14 @@ _firstindices(bl::BodyList) = [map(i -> first(getrange(bl,i)),1:length(bl)); num
 
 Get a `similar` copy of the basic grid data in the cache.
 """
-@inline similar_grid(cache::AbstractBasicCache,kwargs...) = similar(cache.gdata_cache,kwargs...)
+@inline similar_grid(cache::AbstractBasicCache,kwargs...) = _similar(cache.gdata_cache,kwargs...)
 
 """
     similar_gridgrad(::BasicILMCache)
 
 Get a `similar` copy of the gradient of the grid data in the cache.
 """
-@inline similar_gridgrad(cache::BasicILMCache,kwargs...) = similar(cache.gsnorm_cache,kwargs...)
+@inline similar_gridgrad(cache::BasicILMCache,kwargs...) = _similar(cache.gsnorm_cache,kwargs...)
 
 
 """
@@ -354,14 +406,14 @@ Get a `similar` copy of the gradient of the grid data in the cache.
 
 Get a `similar` copy of the grid curl field data in the cache.
 """
-@inline similar_gridcurl(cache::BasicILMCache,kwargs...) = similar(cache.gcurl_cache,kwargs...)
+@inline similar_gridcurl(cache::BasicILMCache,kwargs...) = _similar(cache.gcurl_cache,kwargs...)
 
 """
     similar_griddiv(::BasicILMCache)
 
 Get a `similar` copy of the grid div field data in the cache.
 """
-@inline similar_griddiv(cache::BasicILMCache,kwargs...) = similar(cache.gdiv_cache,kwargs...)
+@inline similar_griddiv(cache::BasicILMCache,kwargs...) = _similar(cache.gdiv_cache,kwargs...)
 
 
 """
@@ -377,14 +429,27 @@ Get a `similar` copy of the grid gradient-of-curl field data in the cache.
 
 Get a `similar` copy of the basic surface point data in the cache.
 """
-@inline similar_surface(cache::AbstractBasicCache,kwargs...) = similar(cache.sdata_cache,kwargs...)
+@inline similar_surface(cache::AbstractBasicCache,kwargs...) = _similar(cache.sdata_cache,kwargs...)
+
+"""
+    similar_surfacescalar(::BasicILMCache)
+
+Get a `similar` copy of the surface scalar point data in the cache. This
+is only used for vector-type caches. Otherwise, [`similar_surface`](@ref) should
+be used.
+"""
+@inline similar_surfacescalar(cache::AbstractBasicCache,kwargs...) = _similar(cache.sscalar_cache,kwargs...)
+
+
+_similar(::Nothing;kwargs...) = nothing
+_similar(a;kwargs...) = similar(a;kwargs...)
 
 """
     zeros_grid(::BasicILMCache)
 
 Get an instance of the basic grid data in the cache, with values set to zero.
 """
-@inline zeros_grid(cache::AbstractBasicCache,kwargs...) = zero(cache.gdata_cache,kwargs...)
+@inline zeros_grid(cache::AbstractBasicCache,kwargs...) = _zero(cache.gdata_cache,kwargs...)
 
 """
     zeros_gridgrad(::BasicILMCache,dim)
@@ -393,7 +458,7 @@ Get an instance of the gradient of the grid data in the cache, , in direction `d
 with values set to zero. If the data are of type `TensorGridData`, then
 `dim` takes values from 1 to 2^2.
 """
-@inline zeros_gridgrad(cache::BasicILMCache,kwargs...) = zero(cache.gsnorm_cache,kwargs...)
+@inline zeros_gridgrad(cache::BasicILMCache,kwargs...) = _zero(cache.gsnorm_cache,kwargs...)
 
 
 """
@@ -401,14 +466,14 @@ with values set to zero. If the data are of type `TensorGridData`, then
 
 Get an instance of the grid curl field data in the cache, with values set to zero.
 """
-@inline zeros_gridcurl(cache::BasicILMCache,kwargs...) = zero(cache.gcurl_cache,kwargs...)
+@inline zeros_gridcurl(cache::BasicILMCache,kwargs...) = _zero(cache.gcurl_cache,kwargs...)
 
 """
     zeros_griddiv(::BasicILMCache)
 
 Get an instance of the grid div field data in the cache, with values set to zero.
 """
-@inline zeros_griddiv(cache::BasicILMCache,kwargs...) = zero(cache.gdiv_cache,kwargs...)
+@inline zeros_griddiv(cache::BasicILMCache,kwargs...) = _zero(cache.gdiv_cache,kwargs...)
 
 """
     zeros_gridgradcurl(::BasicILMCache)
@@ -423,14 +488,36 @@ Get an instance of the grid gradient-of-curl field data in the cache, with value
 
 Get an instance of the basic surface point data in the cache, with values set to zero.
 """
-@inline zeros_surface(cache::AbstractBasicCache,kwargs...) = zero(cache.sdata_cache,kwargs...)
+@inline zeros_surface(cache::AbstractBasicCache,kwargs...) = _zero(cache.sdata_cache,kwargs...)
+
+"""
+    zeros_surfacescalar(::BasicILMCache)
+
+Get an instance of the surface scalar point data in the cache, with values set to zero.
+This is only used for vector-type caches. Otherwise, [`zeros_surface`](@ref) should
+be used.
+"""
+@inline zeros_surfacescalar(cache::AbstractBasicCache,kwargs...) = _zero(cache.sscalar_cache,kwargs...)
+
+
+_zero(a;kwargs...) = zero(a;kwargs...)
+_zero(::Nothing;kwargs...) = nothing
 
 """
     ones_grid(::BasicILMCache)
 
 Get an instance of the basic grid data in the cache, with values set to unity.
 """
-@inline ones_grid(cache::AbstractBasicCache,kwargs...) = ones(cache.gdata_cache,kwargs...)
+@inline ones_grid(cache::AbstractBasicCache;kwargs...) = ones(cache.gdata_cache;kwargs...)
+
+"""
+    ones_grid(::BasicILMCache,dim)
+
+For a vector-type cache, get an instance of the basic grid data in the cache, with values set to unity
+in dimension `dim`.
+"""
+@inline ones_grid(cache::AbstractBasicCache{N,GCT},dim;kwargs...) where {N,GCT<:Edges} = ones(cache.gdata_cache,dim;kwargs...)
+
 
 """
     ones_gridgrad(::BasicILMCache,dim)
@@ -439,7 +526,7 @@ Get an instance of the gradient of the grid data in the cache, in direction `dim
 with values set to unity. If the data are of type `TensorGridData`, then
 `dim` takes values from 1 to 2^2.
 """
-@inline ones_gridgrad(cache::BasicILMCache,kwargs...) = ones(cache.gsnorm_cache,kwargs...)
+@inline ones_gridgrad(cache::BasicILMCache,dim;kwargs...) = ones(cache.gsnorm_cache,dim;kwargs...)
 
 
 """
@@ -447,14 +534,14 @@ with values set to unity. If the data are of type `TensorGridData`, then
 
 Get an instance of the grid curl field data in the cache, with values set to unity.
 """
-@inline ones_gridcurl(cache::BasicILMCache,kwargs...) = ones(cache.gcurl_cache,kwargs...)
+@inline ones_gridcurl(cache::BasicILMCache,kwargs...) = _ones(cache.gcurl_cache,kwargs...)
 
 """
     ones_griddiv(::BasicILMCache)
 
 Get an instance of the grid div field data in the cache, with values set to unity.
 """
-@inline ones_griddiv(cache::BasicILMCache,kwargs...) = ones(cache.gdiv_cache,kwargs...)
+@inline ones_griddiv(cache::BasicILMCache,kwargs...) = _ones(cache.gdiv_cache,kwargs...)
 
 
 """
@@ -471,7 +558,30 @@ Get an instance of the grid gradient-of-curl field data in the cache, with value
 
 Get an instance of the basic surface point data in the cache, with values set to unity.
 """
-@inline ones_surface(cache::AbstractBasicCache,kwargs...) = ones(cache.sdata_cache,kwargs...)
+@inline ones_surface(cache::AbstractBasicCache;kwargs...) = ones(cache.sdata_cache;kwargs...)
+
+"""
+    ones_surface(::BasicILMCache,dim)
+
+Get an instance of the basic surface point data in the cache, with values set to unity
+in dimension `dim`. This only works for a vector-type cache.
+"""
+@inline ones_surface(cache::AbstractBasicCache{N,GCT},dim;kwargs...) where {N,GCT<:Edges} = ones(cache.sdata_cache,dim;kwargs...)
+
+
+"""
+    ones_surfacescalar(::BasicILMCache)
+
+Get an instance of the surface scalar point data in the cache, with values set to unity.
+This is only used for vector-type caches. Otherwise, [`ones_surface`](@ref) should
+be used.
+"""
+@inline ones_surfacescalar(cache::AbstractBasicCache;kwargs...) = _ones(cache.sscalar_cache;kwargs...)
+
+
+_ones(a...;kwargs...) = ones(a...;kwargs...)
+_ones(::Nothing;kwargs...) = nothing
+
 
 """
     x_grid(::BasicILMCache)
@@ -514,7 +624,11 @@ end
 
 Return basic grid div field data filled with the grid `x` coordinate
 """
-function x_griddiv(cache::BasicILMCache)
+@inline x_griddiv(cache::BasicILMCache) = _x_griddiv(cache,Val(cache_datatype(cache)))
+
+_x_griddiv(cache,::Val{:scalar}) = nothing
+
+function _x_griddiv(cache,::Val{:vector})
     xc, _ = coordinates(cache.gdiv_cache,cache.g)
     p = zeros_griddiv(cache)
     p .= xc
@@ -591,7 +705,11 @@ end
 
 Return basic grid div field data filled with the grid `y` coordinate
 """
-function y_griddiv(cache::BasicILMCache)
+@inline y_griddiv(cache::BasicILMCache) = _y_griddiv(cache,Val(cache_datatype(cache)))
+
+_y_griddiv(cache,::Val{:scalar}) = nothing
+
+function _y_griddiv(cache,::Val{:vector})
     _,yc = coordinates(cache.gdiv_cache,cache.g)
     p = zeros_griddiv(cache)
     p .= yc'

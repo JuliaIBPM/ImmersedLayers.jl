@@ -18,12 +18,16 @@ f = ScalarData(X)
 
 angs(n) = range(0,2π,length=n+1)[1:n]
 
+_size(::CartesianGrids.Laplacian{NX,NY}) where {NX,NY} = NX, NY
+
 @testset "Forming a cache" begin
   scache1 = SurfaceScalarCache(body,g,scaling=GridScaling)
   scache2 = SurfaceScalarCache(X,g,scaling=GridScaling)
   @test normals(scache1) ≈ normals(scache2)
   @test areas(scache1) ≈ areas(scache2)
   @test points(scache1) ≈ points(scache2)
+
+  @test size(g) == _size(scache1.L)
 end
 
 @testset "Scalar surface ops" begin
@@ -62,13 +66,22 @@ end
   @test typeof(vd) <: Edges{Dual}
 
   f2 = zeros_griddiv(scache)
-  @test typeof(f2) <: Nodes{Primal}
+  @test typeof(f2) <: Nothing
 
   f2 = similar_griddiv(scache)
-  @test typeof(f2) <: Nodes{Primal}
+  @test typeof(f2) <: Nothing
 
   f2 = ones_griddiv(scache)
-  @test typeof(f2) <: Nodes{Primal}
+  @test typeof(f2) <: Nothing
+
+  f2 = x_griddiv(scache)
+  @test typeof(f2) <: Nothing
+
+  f2 = y_griddiv(scache)
+  @test typeof(f2) <: Nothing
+
+  @test isnothing(scache.Rcurl)
+  @test isnothing(scache.Rdiv)
 
 end
 
@@ -119,6 +132,25 @@ vs = VectorData(X)
 
   f2 = ones_griddiv(vcache)
   @test typeof(f2) <: Nodes{Primal}
+
+  f2 = x_griddiv(vcache)
+  @test typeof(f2) <: Nodes{Primal}
+
+  f2 = y_griddiv(vcache)
+  @test typeof(f2) <: Nodes{Primal}
+
+  @test typeof(vcache.Rcurl) <: RegularizationMatrix
+  @test typeof(vcache.Rdiv) <: RegularizationMatrix
+
+  v2 = zeros_grid(vcache)
+  f2 = ones_surfacescalar(vcache)
+
+  regularize_normal_cross!(v2,f2,vcache)
+
+  vs2 = ones_surface(vcache,2)
+  w2 = zeros_gridcurl(vcache)
+
+  regularize_normal_cross!(w2,vs2,vcache)
 
 end
 

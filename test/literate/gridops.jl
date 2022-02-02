@@ -14,7 +14,7 @@ We will start by generating the cache, just as we did in [Immersed layer caches]
 
 using ImmersedLayers
 using CartesianGrids
-using Plots
+#!jl using Plots
 
 #=
 ### Set up a grid and cache
@@ -44,14 +44,14 @@ Now, let's generate the gradient of these data
 =#
 v = zeros_gridgrad(cache)
 grad!(v,p,cache)
-plot(v,cache)
+#!jl plot(v,cache)
 
 #=
 We can then compute the derivative of this data
 =#
 divv = zeros_grid(cache)
 divergence!(divv,v,cache)
-plot(divv,cache)
+#!jl plot(divv,cache)
 
 #=
 ## Convective derivatives
@@ -70,7 +70,7 @@ convective_derivative!(vdp,v,p,cache,cdcache) #hide
 nothing #hide
 
 # Plot it
-plot(vdp,cache)
+#!jl plot(vdp,cache)
 
 #=
 Now, let's compute
@@ -88,7 +88,7 @@ convective_derivative!(vdv,v,vcache,cdvcache) #hide
 nothing #hide
 
 # Plot it
-plot(vdv,vcache)
+#!jl plot(vdv,vcache)
 
 
 #md # ## Grid operator functions

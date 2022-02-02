@@ -14,7 +14,7 @@ operators. The starting point for a cache is the specification of the
 # ## Setting up a cache
 
 using ImmersedLayers
-using Plots
+#!jl using Plots
 using LinearAlgebra
 
 #=
@@ -87,7 +87,7 @@ We can plot the immersed points with the `plot` function of the `Plots.jl`
 package, using a special plot recipe. This accepts all of the
 usual attribute keywords of the basic plot function.
 =#
-plot(cache,xlims=(-2,2),ylims=(-2,2))
+#!jl plot(cache,xlims=(-2,2),ylims=(-2,2))
 
 #=
 In this plotting demonstration, we have used the `points` function
@@ -162,18 +162,21 @@ dot(os,os,cache)
 #md # similar_griddiv
 #md # similar_gridgradcurl
 #md # similar_surface
+#md # similar_surfacescalar
 #md # zeros_grid
 #md # zeros_gridgrad
 #md # zeros_gridcurl
 #md # zeros_griddiv
 #md # zeros_gridgradcurl
 #md # zeros_surface
+#md # zeros_surfacescalar
 #md # ones_grid
 #md # ones_gridgrad
 #md # ones_gridcurl
 #md # ones_griddiv
 #md # ones_gridgradcurl
 #md # ones_surface
+#md # ones_surfacescalar
 #md # x_grid
 #md # y_grid
 #md # x_gridcurl

@@ -39,7 +39,7 @@ so we treat this fundamentally as a vector-valued problem.
 =#
 
 using ImmersedLayers
-using Plots
+#!jl using Plots
 using LinearAlgebra
 using UnPack
 
@@ -198,18 +198,18 @@ nothing #hide
 #=
 Let's look at the velocity components
 =#
-plot(v,sys)
+#!jl plot(v,sys)
 
 #=
 Note that the velocity is zero inside, as desired. Let's look at the streamlines here
 =#
-plot(s,sys)
+#!jl plot(s,sys)
 
 #=
 We'll plot the surface traction components, too.
 =#
-plot(σ.u,label="σx")
-plot!(σ.v,label="σy")
+#!jl plot(σ.u,label="σx")
+#!jl plot!(σ.v,label="σy")
 
 
 #=
@@ -228,7 +228,7 @@ end
 Solve it again and plot the velocity and streamlines
 =#
 v, s, σ = solve(prob,sys)
-plot(v,sys)
+#!jl plot(v,sys)
 
 #-
-plot(s,sys)
+#!jl plot(s,sys)

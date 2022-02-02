@@ -46,7 +46,7 @@ We will demonstrate these steps here.
 
 
 using ImmersedLayers
-using Plots
+#!jl using Plots
 using LinearAlgebra
 
 #=
@@ -109,7 +109,7 @@ f .+= fstar;
 #=
 Now, let's look at the resulting field
 =#
-plot(f,cache)
+#!jl plot(f,cache)
 
 #=
 We can see that the field external to the circle has the expected behavior,
@@ -120,8 +120,8 @@ Let's also plot the solution for $s$ on the surface. We will plot the
 several times to smooth it out.
 =#
 C = create_surface_filter(cache)
-plot(s,label="Original solution")
-plot!(C^5*s,label="Filtered solution")
+#!jl plot(s,label="Original solution")
+#!jl plot!(C^5*s,label="Filtered solution")
 
 
 #md # [^1]: Eldredge, J. D. (2021) "A method of immersed layers on Cartesian grids, with application to incompressible flows," arXiv:2103.04521.

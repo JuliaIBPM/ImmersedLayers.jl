@@ -64,7 +64,7 @@ function vectorpotential_from_masked_curlv!(ψ::Nodes{Dual},curlv::Nodes{Dual},d
     @unpack dvn, Rn, stemp = wcache
 
     fill!(stemp,0.0)
-    cross!(dvn,nrm,dv)
+    pointwise_cross!(dvn,nrm,dv)
     regularize!(stemp,dvn,Rn)
     stemp .+= curlv
 
@@ -123,7 +123,7 @@ function masked_curlv_from_curlv_masked!(masked_curlv::Nodes{Dual},curlv::Nodes{
     @unpack dvn, Rn = wcache
 
     fill!(masked_curlv,0.0)
-    cross!(dvn,nrm,dv)
+    pointwise_cross!(dvn,nrm,dv)
     regularize!(masked_curlv,dvn,Rn)
     masked_curlv .*= -1.0
     masked_curlv .+= curlv
