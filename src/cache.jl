@@ -1,3 +1,4 @@
+
 abstract type AbstractBasicCache{N,GCT} end
 
 
@@ -295,11 +296,13 @@ Convenience functions
 Base.eltype(s::AbstractBasicCache) = eltype(s.gdata_cache)
 
 # Standardize the regularization
-_get_regularization(X::VectorData{N},a::ScalarData{N},g::PhysicalGrid,ddftype,::Type{GridScaling};filter=false) where {N} =
-     Regularize(X,cellsize(g),I0=origin(g),weights=a.data,ddftype=ddftype,filter=filter)
+for ddf in [:Yang3,:Roma,:Goza,:Witchhat,:M3,:M4prime]
+  @eval _get_regularization(X::VectorData{N},a::ScalarData{N},g::PhysicalGrid,::Type{CartesianGrids.$ddf},::Type{GridScaling};filter=false) where {N} =
+     Regularize(X,cellsize(g),I0=origin(g),weights=a.data,ddftype=CartesianGrids.$ddf,filter=filter)
 
-_get_regularization(X::VectorData{N},a::ScalarData{N},g::PhysicalGrid,ddftype,::Type{IndexScaling};filter=false) where {N} =
-     Regularize(X,cellsize(g),I0=origin(g),issymmetric=true,ddftype=ddftype,filter=filter)
+  @eval _get_regularization(X::VectorData{N},a::ScalarData{N},g::PhysicalGrid,::Type{CartesianGrids.$ddf},::Type{IndexScaling};filter=false) where {N} =
+     Regularize(X,cellsize(g),I0=origin(g),issymmetric=true,ddftype=CartesianGrids.$ddf,filter=filter)
+end
 
 _get_regularization(body::Union{Body,BodyList},args...;kwargs...) = _get_regularization(VectorData(collect(body)),areas(body),args...;kwargs...)
 
