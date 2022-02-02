@@ -109,6 +109,7 @@ end
 for f in [:regularize!, :interpolate!, :regularize_normal!,
           :normal_interpolate!,
           :regularize_normal_cross!,:normal_cross_interpolate!,
+          :regularize_normal_dot!,:normal_dot_interpolate!,
           :regularize_normal_symm!,:normal_interpolate_symm!,
           :surface_curl!,:surface_divergence!,:surface_grad!,
           :surface_divergence_symm!,:surface_grad_symm!,

@@ -142,6 +142,15 @@ vs = VectorData(X)
   @test typeof(vcache.Rcurl) <: RegularizationMatrix
   @test typeof(vcache.Rdiv) <: RegularizationMatrix
 
+  v = zeros_grid(vcache)
+  f = ones_surfacescalar(vcache)
+
+  regularize_normal_cross!(v,f,vcache)
+
+  vs = ones_surface(vcache,2)
+  w = zeros_gridcurl(vcache)
+
+  regularize_normal_cross!(w,vs,vcache)
 
 end
 

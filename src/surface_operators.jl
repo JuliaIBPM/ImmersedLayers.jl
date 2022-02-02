@@ -146,12 +146,11 @@ data `v` (like velocity). This is the negative adjoint to [`normal_cross_interpo
 @inline regularize_normal_cross!(q::Edges{Primal},f::ScalarData,cache::BasicILMCache) =
            _regularize_normal_cross!(q,f,cache,Val(cache_datatype(cache)))
 
-@inline _regularize_normal_cross!(q::Edges{Primal},f::ScalarData,cache::BasicILMCache,::Val{:scalar}) =
-           regularize_normal_cross!(q,f,cache.nrm,cache.Rsn,cache.snorm_cache)
+@inline _regularize_normal_cross!(q,f,cache,::Val{:scalar}) =
+          regularize_normal_cross!(q,f,cache.nrm,cache.Rsn,cache.snorm_cache)
 
-@inline _regularize_normal_cross!(q::Edges{Primal},f::ScalarData,cache::BasicILMCache,::Val{:vector}) =
-           regularize_normal_cross!(q,f,cache.nrm,cache.R,cache.sdata_cache)
-
+@inline _regularize_normal_cross!(q,f,cache,::Val{:vector}) =
+          regularize_normal_cross!(q,f,cache.nrm,cache.R,cache.sdata_cache)
 
 function regularize_normal_cross!(q::Edges{Primal,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,snorm_cache::VectorData{N}) where {NX,NY,N}
     pointwise_cross!(snorm_cache,nrm,f)
@@ -173,6 +172,44 @@ function regularize_normal_cross!(w::Nodes{Dual,NX,NY},vs::VectorData{N},nrm::Ve
     pointwise_cross!(scache,nrm,vs)
     w .= Rn*scache
 end
+
+
+"""
+    regularize_normal_dot!(f::Nodes{Primal},vs::VectorData,cache::BasicILMCache)
+    regularize_normal_dot!(f::Nodes{Primal},vs::VectorData,sys::ILMSystem)
+
+The operation ``\\phi = R_c \\mathbf{n}\\cdot \\mathbf{v}_s``, which maps surface vector data `vs` (like
+a jump in velocity) to grid nodal data `f` (like scalar potential). This is the negative adjoint to [`normal_dot_interpolate!`](@ref).
+"""
+@inline regularize_normal_dot!(f::Nodes{Primal},vs::VectorData,cache::BasicILMCache) =
+           _regularize_normal_dot!(f,vs,cache,Val(cache_datatype(cache)))
+
+@inline _regularize_normal_dot!(f,vs,cache,::Val{:scalar}) =
+           regularize_normal_dot!(f,vs,cache.nrm,cache.R,cache.sdata_cache)
+
+@inline _regularize_normal_dot!(f,vs,cache,::Val{:vector}) =
+           regularize_normal_dot!(f,vs,cache.nrm,cache.Rdiv,cache.sscalar_cache)
+
+function regularize_normal_dot!(f::Nodes{Primal,NX,NY},vs::VectorData{N},nrm::VectorData{N},Rn::RegularizationMatrix,scache::ScalarData{N}) where {NX,NY,N}
+    pointwise_dot!(scache,nrm,vs)
+    f .= Rn*scache
+end
+
+"""
+    regularize_normal_dot!(v::Edges{Primal},taus::TensorData,cache::BasicILMCache)
+    regularize_normal_dot!(v::Edges{Primal},taus::TensorData,sys::ILMSystem)
+
+The operation ``\\mathbf{v} = R_f \\mathbf{n}\\cdot \\mathbf{\\tau}_s``, which maps surface tensor data `taus` (like
+a stress) to grid edge data `v` (like velocity). This is the negative adjoint to [`normal_dot_interpolate!`](@ref).
+"""
+@inline regularize_normal_dot!(v::Edges{Primal},taus::TensorData,cache::BasicILMCache{N,SCA,GCT}) where {N,SCA,GCT<:Edges} =
+           regularize_normal_dot!(v,taus,cache.nrm,cache.R,cache.sdata_cache)
+
+function regularize_normal_dot!(v::Edges{Primal,NX,NY},taus::TensorData{N},nrm::VectorData{N},R::RegularizationMatrix,scache::VectorData{N}) where {NX,NY,N}
+    pointwise_dot!(scache,nrm,taus)
+    v .= R*scache
+end
+
 
 
 
@@ -234,12 +271,73 @@ surface data `wn` (like vorticity in the surface). This is the
 negative adjoint to [`regularize_normal_cross!`](@ref).
 """
 @inline normal_cross_interpolate!(vn::ScalarData,q::Edges{Primal},cache::BasicILMCache) =
+          _normal_cross_interpolate!(vn,q,cache,Val(cache_datatype(cache)))
+
+@inline _normal_cross_interpolate!(vn,q,cache,::Val{:scalar}) =
           normal_cross_interpolate!(vn,q,cache.nrm,cache.Esn,cache.snorm_cache)
 
-function normal_cross_interpolate!(vn::ScalarData{N},q::Edges{Primal,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,snorm_cache::VectorData{N}) where {NX,NY,N}
-    snorm_cache .= Ef*q
-    pointwise_cross!(vn,nrm,snorm_cache)
+@inline _normal_cross_interpolate!(vn,q,cache,::Val{:vector}) =
+          normal_cross_interpolate!(vn,q,cache.nrm,cache.E,cache.sdata_cache)
+
+
+function normal_cross_interpolate!(vn::ScalarData{N},q::Edges{Primal,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,scache::VectorData{N}) where {NX,NY,N}
+    scache .= Ef*q
+    pointwise_cross!(vn,nrm,scache)
 end
+
+
+"""
+    normal_cross_interpolate!(vs::VectorData,s::Nodes{Dual},cache::BasicILMCache)
+    normal_cross_interpolate!(vs::VectorData,s::Nodes{Dual},sys::ILMSystem)
+
+The operation ``\\mathbf{v}_s = \\mathbf{n}\\times R_N^T \\psi\\mathbf{e}_z)``, which maps grid data `s` (like streamfunction) to vector
+surface data `vs` (like velocity in the surface). It only works for a vector-type cache. This is the
+negative adjoint to [`regularize_normal_cross!`](@ref).
+"""
+@inline normal_cross_interpolate!(vs::VectorData,s::Nodes{Dual},cache::BasicILMCache{N,SCA,GCT}) where {N,SCA,GCT<:Edges} =
+          normal_cross_interpolate!(vs,s,cache.nrm,cache.Ecurl,cache.sscalar_cache)
+
+function normal_cross_interpolate!(vs::VectorData{N},s::Nodes{Dual,NX,NY},nrm::VectorData{N},E::InterpolationMatrix,scache::ScalarData{N}) where {NX,NY,N}
+    scache .= E*s
+    pointwise_cross!(vs,nrm,scache)
+end
+
+"""
+    normal_dot_interpolate!(vs::VectorData,f::Nodes{Primal},cache::BasicILMCache)
+    normal_dot_interpolate!(vs::VectorData,f::Nodes{Primal},sys::ILMSystem)
+
+The operation ``\\mathbf{v}_s = \\mathbf{n} R_c^T \\phi``, which maps grid nodal data `f` (like scalar potential)
+to surface vector data `vs` (like velocity). This is the negative adjoint to [`regularize_normal_dot!`](@ref).
+"""
+@inline normal_dot_interpolate!(vs::VectorData,f::Nodes{Primal},cache::BasicILMCache) =
+           _normal_dot_interpolate!(vs,f,cache,Val(cache_datatype(cache)))
+
+@inline _normal_dot_interpolate!(vs,f,cache,::Val{:scalar}) =
+           normal_dot_interpolate!(vs,f,cache.nrm,cache.E,cache.sdata_cache)
+
+@inline _normal_dot_interpolate!(vs,f,cache,::Val{:vector}) =
+           normal_dot_interpolate!(vs,f,cache.nrm,cache.Ediv,cache.sscalar_cache)
+
+function normal_dot_interpolate!(vs::VectorData{N},f::Nodes{Primal,NX,NY},nrm::VectorData{N},En::InterpolationMatrix,scache::ScalarData{N}) where {NX,NY,N}
+    scache .= En*f
+    product!(vs,nrm,scache)
+end
+
+"""
+    normal_dot_interpolate!(taus::TensorData,v::Edges{Primal},cache::BasicILMCache)
+    normal_dot_interpolate!(taus::TensorData,v::Edges{Primal},sys::ILMSystem)
+
+The operation ``\\mathbf{\\tau}_s = \\mathbf{n}\\circ R_f^T\\mathbf{v}``, which maps grid edge data `v` (like velocity)
+to surface tensor data `taus` (like stress). This is the negative adjoint to [`regularize_normal_dot!`](@ref).
+"""
+@inline normal_dot_interpolate!(taus::TensorData,v::Edges{Primal},cache::BasicILMCache{N,SCA,GCT}) where {N,SCA,GCT<:Edges} =
+           normal_dot_interpolate!(taus,v,cache.nrm,cache.E,cache.sdata_cache)
+
+function normal_dot_interpolate!(taus::TensorData{N},v::Edges{Primal,NX,NY},nrm::VectorData{N},E::InterpolationMatrix,scache::VectorData{N}) where {NX,NY,N}
+    scache .= E*v
+    pointwise_tensorproduct!(taus,nrm,scache)
+end
+
 
 """
     surface_curl!(w::Nodes{Dual},f::ScalarData,cache::BasicILMCache)
