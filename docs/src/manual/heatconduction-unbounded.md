@@ -277,7 +277,7 @@ sol = integrator.sol
 
 plt = plot(layout = (2,3), size = (700, 500), legend=:false)
 for (i,t) in enumerate(0:0.2:1.0)
-    plot!(plt[i],temperature(sol,sys,t),sys,levels=range(-10,2,length=30),clim=(-10,2))
+   plot!(plt[i],temperature(sol,sys,t),sys,levels=range(-10,2,length=30),clim=(-10,2))
 end
 plt
 ````

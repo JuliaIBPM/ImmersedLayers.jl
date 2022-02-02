@@ -189,9 +189,9 @@ and [`complementary_mask`](@ref) achieve this
 m = mask(cache)
 cm = complementary_mask(cache)
 plot(
-    surface(m,cache,layers=false),
-    surface(cm,cache,layers=false)
-    )
+   surface(m,cache,layers=false),
+   surface(cm,cache,layers=false)
+   )
 ````
 
 One can apply a mask to some grid data by multiplying it, using, e.g.,
@@ -204,9 +204,9 @@ xcmask = zeros_grid(cache)
 product!(xmask,xg,m)
 product!(xcmask,xg,cm)
 plot(
-  plot(xmask,cache),
-  plot(xcmask,cache)
-  )
+ plot(xmask,cache),
+ plot(xcmask,cache)
+ )
 ````
 
 The mask and complementary mask effectively partition the field into two parts.
@@ -228,6 +228,8 @@ normal_interpolate!
 normal_interpolate_symm!
 regularize_normal_cross!
 normal_cross_interpolate!
+regularize_normal_dot!
+normal_dot_interpolate!
 surface_divergence!
 surface_grad!
 surface_curl!
