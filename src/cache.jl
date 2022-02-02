@@ -99,25 +99,7 @@ type_sscalar(::BasicILMCache{N,SCA,GCT,ND,BLT,NT,DST,REGT,RSNT,ESNT,RT,ET,RCT,EC
 
 
 
-for f in [:SurfaceScalarCache, :SurfaceVectorCache]
-  @eval $f(body::Body,g::PhysicalGrid; kwargs...) =
-        $f(BodyList([body]),areas(body),normals(body),g; kwargs...)
 
-  @eval $f(bl::BodyList,g::PhysicalGrid; kwargs...) =
-        $f(bl,areas(bl),normals(bl),g; kwargs...)
-
-  @eval $f(g::PhysicalGrid;kwargs...) =
-        $f(BodyList(),ScalarData(0),VectorData(0),g; kwargs...)
-
-  @eval function $f(X::VectorData,g::PhysicalGrid; kwargs...)
-          x = Vector{Float64}(undef,length(X.u))
-          y = Vector{Float64}(undef,length(X.v))
-          x .= X.u
-          y .= X.v
-          $f(BasicBody(x,y),g; kwargs...)
-  end
-
-end
 """
     SurfaceScalarCache(g::PhysicalGrid[,scaling=IndexScaling])
 
@@ -198,8 +180,6 @@ function SurfaceScalarCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::
 
 end
 
-
-
 function SurfaceVectorCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid;
                               ddftype = CartesianGrids.Yang3,
                               scaling = IndexScaling,
@@ -216,6 +196,26 @@ function SurfaceVectorCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::
   gdiv_cache = Nodes(Primal,size(g), dtype = dtype)
 
 	_surfacecache(bl,X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,sscalar_cache,gsnorm_cache,gcurl_cache,gdiv_cache,gdata_cache;dtype=dtype)
+
+end
+
+for f in [:SurfaceScalarCache, :SurfaceVectorCache]
+  @eval $f(body::Body,g::PhysicalGrid; kwargs...) =
+        $f(BodyList([body]),areas(body),normals(body),g; kwargs...)
+
+  @eval $f(bl::BodyList,g::PhysicalGrid; kwargs...) =
+        $f(bl,areas(bl),normals(bl),g; kwargs...)
+
+  @eval $f(g::PhysicalGrid;kwargs...) =
+        $f(BodyList(),ScalarData(0),VectorData(0),g; kwargs...)
+
+  @eval function $f(X::VectorData,g::PhysicalGrid; kwargs...)
+          x = Vector{Float64}(undef,length(X.u))
+          y = Vector{Float64}(undef,length(X.v))
+          x .= X.u
+          y .= X.v
+          $f(BasicBody(x,y),g; kwargs...)
+  end
 
 end
 
