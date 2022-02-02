@@ -19,6 +19,7 @@ if GROUP == "All" || GROUP == "Auxiliary"
   include("surface_ops.jl")
 end
 
+#=
 if GROUP == "All" || GROUP == "Literate"
   for (root, dirs, files) in walkdir(litdir)
     for file in files
@@ -26,6 +27,7 @@ if GROUP == "All" || GROUP == "Literate"
     end
   end
 end
+=#
 
 if GROUP == "Notebooks"
   for (root, dirs, files) in walkdir(litdir)
