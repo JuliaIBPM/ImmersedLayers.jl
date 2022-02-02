@@ -19,7 +19,7 @@ cache stores points in a `BodyList`, and several operations can exploit this.
 
 
 using ImmersedLayers
-using Plots
+#!jl using Plots
 
 #=
 For the demonstration, we use the same grid.
@@ -74,7 +74,7 @@ Now we can create the cache, and inspect it by plotting
 =#
 
 cache = SurfaceScalarCache(bl,g,scaling=GridScaling)
-plot(cache,xlims=(-2,2),ylims=(-2,2))
+#!jl plot(cache,xlims=(-2,2),ylims=(-2,2))
 
 #=
 ## Body-by-body calculations
@@ -119,7 +119,7 @@ nothing #hide
 #=
 Let's plot the data to verify this worked
 =#
-plot(u)
+#!jl plot(u)
 
 #=
 It is also possible to use [`copyto!`](@ref) to copy a vector of just the right

@@ -57,7 +57,7 @@ for the streamfunction $s$.
 =#
 
 using ImmersedLayers
-using Plots
+#!jl using Plots
 using LinearAlgebra
 using UnPack
 
@@ -192,13 +192,13 @@ solve(prob,sys) #hide
 #=
 and plot the field
 =#
-plot(plot(f,sys,layers=true,levels=30,title="ϕ"),
-plot(s,sys,layers=true,levels=30,title="ψ"))
+#!jl plot(plot(f,sys,layers=true,levels=30,title="ϕ"),
+#!jl plot(s,sys,layers=true,levels=30,title="ψ"))
 
 #=
 and the Lagrange multiplier field, $[\phi]$, on the surface
 =#
-plot(df)
+#!jl plot(df)
 
 #=
 If, instead, we set the inner boundary condition to $n_x$ and the
@@ -217,8 +217,8 @@ function get_vnminus(base_cache,phys_params)
 end
 
 f, df, s, ds = solve(prob,sys);
-plot(plot(f,sys,layers=true,levels=30,title="ϕ"),
-plot(s,sys,layers=true,levels=30,title="ψ"))
+#!jl plot(plot(f,sys,layers=true,levels=30,title="ϕ"),
+#!jl plot(s,sys,layers=true,levels=30,title="ψ"))
 
 #=
 ## Multiple bodies
@@ -274,8 +274,8 @@ nothing #hide
 Solve it and plot
 =#
 f, df, s, ds  = solve(prob,sys)
-plot(plot(f,sys,layers=true,levels=30,title="ϕ"),
-plot(s,sys,layers=true,levels=30,title="ψ"))
+#!jl plot(plot(f,sys,layers=true,levels=30,title="ϕ"),
+#!jl plot(s,sys,layers=true,levels=30,title="ψ"))
 
 #=
 Now, let's compute the added mass components of the circle associated

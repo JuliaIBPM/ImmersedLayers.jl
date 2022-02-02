@@ -32,7 +32,7 @@ type called `DirichletPoissonProblem`, which we make a subtype of
 =#
 
 using ImmersedLayers
-using Plots
+#!jl using Plots
 using UnPack
 
 
@@ -136,9 +136,9 @@ sys = construct_system(prob)
 pts = points(sys)
 f, s = solve(pts.u,prob,sys)
 
-plot(f,sys)
+#!jl plot(f,sys)
 #-
-plot(s)
+#!jl plot(s)
 
 #=
 ## More advanced use, with keyword arguments
@@ -299,7 +299,7 @@ and `forcing` keywords:
 prob = DirichletPoissonProblem(g,body,scaling=GridScaling,bc=bcdict,forcing=pfm)
 sys = construct_system(prob)
 f, s = solve(prob,sys)
-plot(f,sys)
+#!jl plot(f,sys)
 
 #=
 So we get the additional features from the sources. Now, suppose we wish to change the
@@ -325,7 +325,7 @@ We can solve immediately without having to reconstruct the system, so
 it's very fast.
 =#
 @time f, s = solve(prob,sys)
-plot(f,sys)
+#!jl plot(f,sys)
 
 #md # ## Problem types and functions
 #md #

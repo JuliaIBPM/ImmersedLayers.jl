@@ -11,7 +11,7 @@ We will start by generating the cache, just as we did in [Immersed layer caches]
 
 
 using ImmersedLayers
-using Plots
+#!jl using Plots
 using LinearAlgebra
 
 #=
@@ -56,7 +56,7 @@ simply supplying the cache to the `plot` function in `Plots.jl`. By default,
 this plots the immersed points, as well, but this can be suppressed by
 adding the keyword `layers=false`.
 =#
-plot(gx,cache)
+#!jl plot(gx,cache)
 
 #=
 This shows how the regularization spreads the data over a couple of cells
@@ -85,8 +85,8 @@ comparing to the actual $x$ coordinate of the points on the body:
 =#
 xg = x_grid(cache)
 interpolate!(f,xg,cache)
-plot(f,ylim=(-2,2),label="Interpolated from grid",ylabel="x",xlabel="Index")
-plot!(pts.u,label="Actual body coordinate")
+#!jl plot(f,ylim=(-2,2),label="Interpolated from grid",ylabel="x",xlabel="Index")
+#!jl plot!(pts.u,label="Actual body coordinate")
 
 #=
 ## A double layer
@@ -103,7 +103,7 @@ surface points:
 =#
 dl = zeros_grid(cache)
 surface_divergence!(dl,pts.v,cache)
-plot(dl,cache)
+#!jl plot(dl,cache)
 
 #=
 If the surface data are vectors, $\mathbf{f}$, then this operation is a little
@@ -145,7 +145,7 @@ on a uniform field on the surface.
 gc = zeros_gridcurl(cache)
 f = ones_surface(cache)
 surface_curl!(gc,f,cache)
-plot(gc,cache)
+#!jl plot(gc,cache)
 
 #=
 The continuous version of this operation is actually zero. It's not quite
@@ -179,10 +179,10 @@ and [`complementary_mask`](@ref) achieve this
 =#
 m = mask(cache)
 cm = complementary_mask(cache)
-plot(
-    surface(m,cache,layers=false),
-    surface(cm,cache,layers=false)
-    )
+#!jl plot(
+#!jl    surface(m,cache,layers=false),
+#!jl    surface(cm,cache,layers=false)
+#!jl    )
 
 #=
 One can apply a mask to some grid data by multiplying it, using, e.g.,
@@ -193,10 +193,10 @@ xmask = zeros_grid(cache)
 xcmask = zeros_grid(cache)
 product!(xmask,xg,m)
 product!(xcmask,xg,cm)
-plot(
-  plot(xmask,cache),
-  plot(xcmask,cache)
-  )
+#!jl plot(
+#!jl  plot(xmask,cache),
+#!jl  plot(xcmask,cache)
+#!jl  )
 
 #=
 The mask and complementary mask effectively partition the field into two parts.
@@ -204,7 +204,7 @@ We can also apply masks in place, using [`mask!`](@ref) and [`complementary_mask
 =#
 xmask .= xg
 mask!(xmask,cache)
-plot(xmask,cache)
+#!jl plot(xmask,cache)
 
 #md # ## Surface-grid operator functions
 #md # ```@docs

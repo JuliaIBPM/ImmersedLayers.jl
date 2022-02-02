@@ -51,7 +51,7 @@ at frequency $f$
 =#
 
 using ImmersedLayers
-using Plots
+#!jl using Plots
 using UnPack
 
 #=
@@ -255,8 +255,8 @@ Let's see what this looks like. We will plot a set of snapshots in an array.
 =#
 sol = integrator.sol
 
-plt = plot(layout = (2,3), size = (700, 500), legend=:false)
-for (i,t) in enumerate(0:0.2:1.0)
-    plot!(plt[i],temperature(sol,sys,t),sys,levels=range(-10,2,length=30),clim=(-10,2))
-end
-plt
+#!jl plt = plot(layout = (2,3), size = (700, 500), legend=:false)
+#!jl for (i,t) in enumerate(0:0.2:1.0)
+#!jl    plot!(plt[i],temperature(sol,sys,t),sys,levels=range(-10,2,length=30),clim=(-10,2))
+#!jl end
+#!jl plt

@@ -229,6 +229,7 @@ end
 function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},ddftype,scaling,
                       sdata_cache,snorm_cache,sscalar_cache,gsnorm_cache,gcurl_cache,gdiv_cache,gdata_cache;dtype=Float64) where {N,ND}
 
+
   regop = _get_regularization(X,a,g,ddftype,scaling)
   Rsn = _regularization_matrix(regop,snorm_cache,gsnorm_cache)
   Esn = _interpolation_matrix(regop, gsnorm_cache, snorm_cache)
@@ -270,20 +271,20 @@ struct PointCollectionCache{N,GCT,ND,PT,REGT<:Regularize,SST} <: AbstractBasicCa
     sdata_cache :: SST
 end
 
-function ScalarPointCollectionCache(X::VectorData{N},g::PhysicalGrid{ND};kwargs...) where {N,ND}
-    gdata_cache = Nodes(Primal,size(g))
-    sdata_cache = ScalarData(X)
-    return _pointcollectioncache(X,g,gdata_cache,sdata_cache,kwargs)
+function ScalarPointCollectionCache(X::VectorData{N},g::PhysicalGrid{ND};ddftype = CartesianGrids.Yang3,dtype = Float64) where {N,ND}
+    gdata_cache = Nodes(Primal,size(g),dtype = dtype)
+    sdata_cache = ScalarData(X,dtype = dtype)
+    return _pointcollectioncache(X,g,gdata_cache,sdata_cache,ddftype)
 end
 
-function VectorPointCollectionCache(X::VectorData{N},g::PhysicalGrid{ND};kwargs...) where {N,ND}
-    gdata_cache = Edges(Primal,size(g))
-    sdata_cache = VectorData(X)
-    return _pointcollectioncache(X,g,gdata_cache,sdata_cache,kwargs)
+function VectorPointCollectionCache(X::VectorData{N},g::PhysicalGrid{ND};ddftype = CartesianGrids.Yang3,dtype = Float64) where {N,ND}
+    gdata_cache = Edges(Primal,size(g),dtype = dtype)
+    sdata_cache = VectorData(X,dtype = dtype)
+    return _pointcollectioncache(X,g,gdata_cache,sdata_cache,ddftype)
 end
 
-function _pointcollectioncache(X::VectorData{N},g::PhysicalGrid{ND},gdata_cache::GCT,sdata_cache::SDT,kwargs) where {N,ND,GCT,SDT}
-  regop = _get_regularization(X,g;kwargs...)
+function _pointcollectioncache(X::VectorData{N},g::PhysicalGrid{ND},gdata_cache::GCT,sdata_cache::SDT,ddftype) where {N,ND,GCT,SDT}
+  regop = _get_regularization(X,g,ddftype)
   return PointCollectionCache{N,GCT,ND,typeof(X),typeof(regop),SDT}(X,g,regop,gdata_cache,sdata_cache)
 end
 
@@ -302,12 +303,14 @@ for ddf in [:Yang3,:Roma,:Goza,:Witchhat,:M3,:M4prime]
 
   @eval _get_regularization(X::VectorData{N},a::ScalarData{N},g::PhysicalGrid,::Type{CartesianGrids.$ddf},::Type{IndexScaling};filter=false) where {N} =
      Regularize(X,cellsize(g),I0=origin(g),issymmetric=true,ddftype=CartesianGrids.$ddf,filter=filter)
+
+  @eval _get_regularization(X::VectorData{N},g::PhysicalGrid,::Type{CartesianGrids.$ddf}) where {N} =
+     Regularize(X,cellsize(g),I0=origin(g),ddftype=CartesianGrids.$ddf,filter=false)
 end
 
 _get_regularization(body::Union{Body,BodyList},args...;kwargs...) = _get_regularization(VectorData(collect(body)),areas(body),args...;kwargs...)
 
-_get_regularization(X::VectorData{N},g::PhysicalGrid;kwargs...) where {N} =
-    Regularize(X,cellsize(g),I0=origin(g); kwargs...)
+
 
 # Standardize the Laplacian
 _get_laplacian(a,coeff_factor::Real,g::PhysicalGrid,with_inverse,::Type{IndexScaling};dtype=Float64) =

@@ -52,7 +52,7 @@ various functions and operators into a `ConstrainedODEFunction`, to be used by t
 =#
 
 using ImmersedLayers
-using Plots
+#!jl using Plots
 using UnPack
 
 #=
@@ -309,7 +309,7 @@ step!(integrator,0.01)
 The integrator holds the most recent solution in the field `u`, which
 has the same type as our initial condition `u0`. Here, we plot the state of the system at the end of the interval.
 =#
-plot(state(integrator.u),sys)
+#!jl plot(state(integrator.u),sys)
 
 #=
 It would be nice to just define a function called `temperature` to get this
@@ -324,7 +324,7 @@ temperature(u,sys::ILMSystem,t) = state(u)
 #=
 Now we can write
 =#
-plot(temperature(integrator),sys)
+#!jl plot(temperature(integrator),sys)
 
 #=
 The solution history is in the field `integrator.sol`. The macro we
@@ -333,7 +333,7 @@ we can obtain the temperature at *any* time in the interval of our solution.
 For example, to get the solution at time 0.51:
 =#
 sol = integrator.sol
-plot(temperature(sol,sys,0.0051),sys)
+#!jl plot(temperature(sol,sys,0.0051),sys)
 
 #=
 We can also get it for an array of times, e.g.,
