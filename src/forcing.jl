@@ -75,7 +75,7 @@ struct AreaRegionCache{MT,ST,CT<:BasicILMCache} <: AbstractRegionCache
 end
 
 struct LineRegionCache{ACT,ST,CT<:BasicILMCache} <: AbstractRegionCache
-    arccoord :: ACT
+    s :: ACT
     str :: ST
     cache :: CT
 end
@@ -124,10 +124,7 @@ for f in [:Scalar,:Vector]
         cache = $cname(shape,g;kwargs...)
         pts = points(shape)
 
-        # This needs to be written specially for closed vs open bodies and for lists
-        s = ScalarData(pts)
-        s .= accumulate(+,dlengthmid(shape))
-        #s = arccoord(shape)
+        s = ScalarData(arccoord(shape))
 
         str = similar_surface(cache)
         return LineRegionCache{typeof(s),typeof(str),typeof(cache)}(s,str,cache)
@@ -171,7 +168,7 @@ mask(ar::AreaRegionCache) = ar.mask
 
 Return the vector of arc length coordinates for the given line region `lr`.
 """
-arccoord(lr::LineRegionCache) = lr.arccoord
+RigidBodyTools.arccoord(lr::LineRegionCache) = lr.s
 
 """
     points(pr::PointRegionCache)
