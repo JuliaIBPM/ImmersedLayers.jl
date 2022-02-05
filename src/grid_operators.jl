@@ -6,7 +6,7 @@ end
 
 
 @inline _scale_derivative!(w,cache::BasicILMCache{N,IndexScaling}) where {N} = w
-@inline _scale_derivative!(w,cache::BasicILMCache{N,GridScaling}) where {N} = (fact = 1.0/cellsize(cache); w .*= fact)
+@inline _scale_derivative!(w,cache::BasicILMCache{N,GridScaling}) where {N} = w ./= cellsize(cache)
 
 _scale_laplacian!(w,cache::BasicILMCache{N,IndexScaling}) where {N} = w
 _scale_laplacian!(w,cache::BasicILMCache{N,GridScaling}) where {N} = w # ./= cellsize(cache)^2
