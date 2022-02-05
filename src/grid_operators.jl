@@ -5,8 +5,8 @@ for f in [:divergence!, :grad!, :curl!]
 end
 
 
-_scale_derivative!(w,cache::BasicILMCache{N,IndexScaling}) where {N} = w
-_scale_derivative!(w,cache::BasicILMCache{N,GridScaling}) where {N} = w ./= cellsize(cache)
+@inline _scale_derivative!(w,cache::BasicILMCache{N,IndexScaling}) where {N} = w
+@inline _scale_derivative!(w,cache::BasicILMCache{N,GridScaling}) where {N} = (fact = 1.0/cellsize(cache); w .*= fact)
 
 _scale_laplacian!(w,cache::BasicILMCache{N,IndexScaling}) where {N} = w
 _scale_laplacian!(w,cache::BasicILMCache{N,GridScaling}) where {N} = w # ./= cellsize(cache)^2
@@ -23,11 +23,14 @@ by the grid spacing if `cache` (or `sys`) is of `GridScaling` type, or leaving i
 as a simple differencing if `cache` (or `sys`) is of `IndexScaling` type.
 """
 function divergence!(p::Nodes{C,NX,NY},q::Edges{C,NX,NY},cache::BasicILMCache) where {C,NX,NY}
-    _unscaled_divergence!(p,q,cache)
-    _scale_derivative!(p,cache)
+    fill!(p,0.0)
+    if !iszero(q)
+      _unscaled_divergence!(p,q,cache)
+      _scale_derivative!(p,cache)
+    end
 end
 
-_unscaled_divergence!(p,q,cache::BasicILMCache) = (fill!(p,0.0); divergence!(p,q))
+_unscaled_divergence!(p,q,cache::BasicILMCache) = divergence!(p,q)
 
 
 
@@ -40,11 +43,14 @@ by the grid spacing if `cache` (or `sys`) is of `GridScaling` type, or leaving i
 as a simple differencing if `cache` (or `sys`) is of `IndexScaling` type.
 """
 function grad!(q::Edges{C,NX,NY},p::Nodes{C,NX,NY},cache::BasicILMCache) where {C,NX,NY}
-    _unscaled_grad!(q,p,cache)
-    _scale_derivative!(q,cache)
+    fill!(q,0.0)
+    if !iszero(p)
+      _unscaled_grad!(q,p,cache)
+      _scale_derivative!(q,cache)
+    end
 end
 
-_unscaled_grad!(q,p,cache::BasicILMCache) = (fill!(q,0.0); grad!(q,p))
+_unscaled_grad!(q,p,cache::BasicILMCache) = grad!(q,p)
 
 """
     curl!(v::Edges{Primal},s::Nodes{Dual},cache::BasicILMCache)
@@ -55,11 +61,14 @@ by the grid spacing if `cache` (or `sys`) is of `GridScaling` type, or leaving i
 as a simple differencing if `cache` (or `sys`) is of `IndexScaling` type.
 """
 function curl!(q::Edges{Primal,NX,NY},s::Nodes{Dual,NX,NY},cache::BasicILMCache) where {NX,NY}
-    _unscaled_curl!(q,s,cache)
-    _scale_derivative!(q,cache)
+    fill!(q,0.0)
+    if !iszero(s)
+      _unscaled_curl!(q,s,cache)
+      _scale_derivative!(q,cache)
+    end
 end
 
-_unscaled_curl!(q::Edges,s::Nodes,cache::BasicILMCache) = (fill!(q,0.0); curl!(q,s))
+_unscaled_curl!(q::Edges,s::Nodes,cache::BasicILMCache) = curl!(q,s)
 
 """
     curl!(w::Nodes{Dual},v::Edges{Primal},cache::BasicILMCache)
@@ -70,12 +79,14 @@ by the grid spacing if `cache` (or `sys`) is of `GridScaling` type, or leaving i
 as a simple differencing if `cache` (or `sys`) is of `IndexScaling` type.
 """
 function curl!(w::Nodes{Dual,NX,NY},q::Edges{Primal,NX,NY},cache::BasicILMCache) where {NX,NY}
-    _unscaled_curl!(w,q,cache)
-    _scale_derivative!(w,cache)
+    fill!(w,0.0)
+    if !iszero(q)
+      _unscaled_curl!(w,q,cache)
+      _scale_derivative!(w,cache)
+    end
 end
 
-_unscaled_curl!(w::Nodes,q::Edges,cache::BasicILMCache) = (fill!(w,0.0); curl!(w,q))
-
+_unscaled_curl!(w::Nodes,q::Edges,cache::BasicILMCache) = curl!(w,q)
 
 """
     laplacian!(w::GridData,s::GridData,sys::ILMSystem)
@@ -99,7 +110,12 @@ function laplacian!(w::GridData,s::GridData,cache::BasicILMCache)
     _scale_laplacian!(w,cache)
 end
 
-_unscaled_laplacian!(w::GridData,s::GridData,L::CartesianGrids.Laplacian) = w .= L*s
+function _unscaled_laplacian!(w::GridData,s::GridData,L::CartesianGrids.Laplacian)
+  fill!(w,0.0)
+  if !iszero(s)
+    mul!(w,L,s)
+  end
+end
 
 
 """
@@ -120,8 +136,10 @@ respectively.
 """
 function inverse_laplacian!(w::GridData,cache::BasicILMCache)
     @unpack L = cache
-    _unscaled_inverse_laplacian!(w,L)
-    _scale_inverse_laplacian!(w,cache)
+    if !iszero(w)
+      _unscaled_inverse_laplacian!(w,L)
+      _scale_inverse_laplacian!(w,cache)
+    end
 end
 
 """
@@ -133,15 +151,17 @@ respectively, and return the result as `sol`.
 """
 function inverse_laplacian!(sol::GridData{NX,NY},rhs::GridData{NX,NY},cache::BasicILMCache) where {NX,NY}
     @unpack L = cache
-    _unscaled_inverse_laplacian!(sol,L,rhs)
-    _scale_inverse_laplacian!(sol,cache)
+    fill!(sol,0.0)
+    if !iszero(rhs)
+      _unscaled_inverse_laplacian!(sol,L,rhs)
+      _scale_inverse_laplacian!(sol,cache)
+    end
 end
 
 _unscaled_inverse_laplacian!(w::GridData,L::CartesianGrids.Laplacian) = w .= L\w
 
-function _unscaled_inverse_laplacian!(sol::GridData,L::CartesianGrids.Laplacian,rhs::GridData)
-  ldiv!(sol,L,rhs)
-end
+_unscaled_inverse_laplacian!(sol::GridData,L::CartesianGrids.Laplacian,rhs::GridData) = ldiv!(sol,L,rhs)
+
 
 
 ###  Convective derivative of velocity-like data by itself ###

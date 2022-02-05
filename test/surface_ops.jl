@@ -233,8 +233,7 @@ end
 @testset "Helmholtz decomposition" begin
 
   vcache = SurfaceVectorCache(body,g,scaling=GridScaling)
-  wcache = VectorPotentialCache(vcache)
-  dcache = ScalarPotentialCache(vcache)
+  veccache = VectorFieldCache(vcache)
 
   w = zeros_gridcurl(vcache)
   ψ = zeros_gridcurl(vcache)
@@ -248,29 +247,28 @@ end
 
   dv .= randn(size(dv))
 
-  vecfield_helmholtz!(v,w,d,dv,(0.0,0.0),vcache,wcache,dcache)
+  vecfield_helmholtz!(v,w,d,dv,(0.0,0.0),vcache,veccache)
 
   # Test that curl of the resulting vector field is zero
   w2 = zeros_gridcurl(vcache)
   curl!(w2,v,vcache)
   masked_w = zeros_gridcurl(vcache)
-  masked_curlv_from_curlv_masked!(masked_w,w2,dv,vcache,wcache)
+  masked_curlv_from_curlv_masked!(masked_w,w2,dv,vcache,veccache.wcache)
   @test maximum(abs.(masked_w[2:end-1,2:end-1] - w[2:end-1,2:end-1])) < 1e-8
 
   # Test that divergence of the resulting vector field is zero
   d2 = zeros_griddiv(vcache)
   divergence!(d2,v,vcache)
   masked_d = zeros_griddiv(vcache)
-  masked_divv_from_divv_masked!(masked_d,d2,dv,vcache,dcache)
+  masked_divv_from_divv_masked!(masked_d,d2,dv,vcache,veccache.dcache)
   @test maximum(abs.(masked_d[2:end-1,2:end-1]-d[2:end-1,2:end-1])) < 1e-8
 
-  vectorpotential_from_masked_curlv!(ψ,w,dv,vcache,wcache)
-  scalarpotential_from_masked_divv!(ϕ,d,dv,vcache,dcache)
+  vectorpotential_from_masked_curlv!(ψ,w,dv,vcache,veccache.wcache)
+  scalarpotential_from_masked_divv!(ϕ,d,dv,vcache,veccache.dcache)
 
   # Tests that no immersed points lead to no problems
   vcache = SurfaceVectorCache(g,scaling=GridScaling)
-  wcache = VectorPotentialCache(vcache)
-  dcache = ScalarPotentialCache(vcache)
+  veccache = VectorFieldCache(vcache)
 
   w = zeros_gridcurl(vcache)
   ψ = zeros_gridcurl(vcache)
@@ -279,9 +277,9 @@ end
   v = zeros_grid(vcache)
   dv = zeros_surface(vcache)
 
-  vectorpotential_from_masked_curlv!(ψ,w,dv,vcache,wcache)
-  scalarpotential_from_masked_divv!(ϕ,d,dv,vcache,dcache)
-  vecfield_helmholtz!(v,w,d,dv,(0.0,0.0),vcache,wcache,dcache)
+  vectorpotential_from_masked_curlv!(ψ,w,dv,vcache,veccache.wcache)
+  scalarpotential_from_masked_divv!(ϕ,d,dv,vcache,veccache.dcache)
+  vecfield_helmholtz!(v,w,d,dv,(0.0,0.0),vcache,veccache)
   @test maximum(abs.(ψ)) == 0.0
   @test maximum(abs.(ϕ)) == 0.0
   @test maximum(abs.(v)) == 0.0
