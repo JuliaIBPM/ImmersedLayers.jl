@@ -124,7 +124,25 @@ function inverse_laplacian!(w::GridData,cache::BasicILMCache)
     _scale_inverse_laplacian!(w,cache)
 end
 
+"""
+    inverse_laplacian!(sol::GridData,rhs::GridData,cache::BasicILMCache)
+
+Compute the iinverse Laplacian of grid data `rhs`, multiply the result
+by unity or by the grid cell size, depending on whether `cache` has `IndexScaling` or `GridScaling`,
+respectively, and return the result as `sol`.
+"""
+function inverse_laplacian!(sol::GridData{NX,NY},rhs::GridData{NX,NY},cache::BasicILMCache) where {NX,NY}
+    @unpack L = cache
+    _unscaled_inverse_laplacian!(sol,L,rhs)
+    _scale_inverse_laplacian!(sol,cache)
+end
+
 _unscaled_inverse_laplacian!(w::GridData,L::CartesianGrids.Laplacian) = w .= L\w
+
+function _unscaled_inverse_laplacian!(sol::GridData,L::CartesianGrids.Laplacian,rhs::GridData)
+  ldiv!(sol,L,rhs)
+end
+
 
 ###  Convective derivative of velocity-like data by itself ###
 

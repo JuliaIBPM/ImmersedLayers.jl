@@ -66,8 +66,10 @@ this assembly.
 #md # vectorpotential_from_curlv!
 #md # vecfield_from_vectorpotential!
 #md # masked_curlv_from_curlv_masked!
+#md # curlv_masked_from_masked_curlv!
 #md # scalarpotential_from_divv!
 #md # masked_divv_from_divv_masked!
+#md # divv_masked_from_masked_divv!
 #md # vecfield_from_scalarpotential!
 #md # vecfield_helmholtz!
 #md # vectorpotential_uniformvecfield!

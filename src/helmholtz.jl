@@ -6,6 +6,7 @@ struct ScalarPotentialCache{RT,DVT,VNT,VFT,FT} <: AbstractExtraILMCache
    dvn :: VNT
    vϕ :: VFT
    ftemp :: FT
+   divv_temp :: FT
 end
 
 struct VectorPotentialCache{RT,DVT,VNT,VST,ST} <: AbstractExtraILMCache
@@ -14,6 +15,7 @@ struct VectorPotentialCache{RT,DVT,VNT,VST,ST} <: AbstractExtraILMCache
    dvn :: VNT
    vψ :: VST
    stemp :: ST
+   curlv_temp :: ST
 end
 
 """
@@ -27,9 +29,10 @@ function ScalarPotentialCache(base_cache::AbstractBasicCache{N,GCT}) where {N,GC
     dv = zeros_surface(base_cache)
     vϕ = zeros_grid(base_cache)
     ftemp = zeros_griddiv(base_cache)
+    divv_temp = zeros_griddiv(base_cache)
     dvn = ScalarData(dv)
     Rc = RegularizationMatrix(base_cache,dvn,ftemp)
-    ScalarPotentialCache(Rc,dv,dvn,vϕ,ftemp)
+    ScalarPotentialCache(Rc,dv,dvn,vϕ,ftemp,divv_temp)
 end
 
 """
@@ -43,9 +46,10 @@ function VectorPotentialCache(base_cache::BasicILMCache)
     dv = zeros_surface(base_cache)
     vψ = zeros_grid(base_cache)
     stemp = zeros_gridcurl(base_cache)
+    curlv_temp = zeros_gridcurl(base_cache)
     dvn = ScalarData(dv)
     Rn = RegularizationMatrix(base_cache,dvn,stemp)
-    VectorPotentialCache(Rn,dv,dvn,vψ,stemp)
+    VectorPotentialCache(Rn,dv,dvn,vψ,stemp,curlv_temp)
 end
 
 
@@ -89,8 +93,9 @@ and returns ``\\psi``.
 """
 function vectorpotential_from_curlv!(ψ::Nodes{Dual},curlv::Nodes{Dual},base_cache::BasicILMCache,wcache::VectorPotentialCache)
 
-    ψ .= -curlv
-    inverse_laplacian!(ψ,base_cache)
+    #ψ .= -curlv
+    inverse_laplacian!(ψ,curlv,base_cache)
+    ψ .*= -1.0
     return ψ
 
 end
@@ -131,6 +136,26 @@ function masked_curlv_from_curlv_masked!(masked_curlv::Nodes{Dual},curlv::Nodes{
 end
 
 """
+    curlv_masked_from_masked_curlv!(curlv::Nodes{Dual},masked_curlv::Nodes{Dual},dv::VectorData,base_cache::BasicILMCache,wcache::VectorPotentialCache)
+
+Return the curl of the masked vector field ``\\nabla\\times\\overline{\\mathbf{v}}`` (`curlv`) from
+the masked curl of the vector field ``\\overline{\\nabla\\times\\mathbf{v}}`` (`masked_curlv`). It obtains
+this from
+
+``\\nabla\\times\\overline{\\mathbf{v}} = \\overline{\\nabla\\times\\mathbf{v}} + R_n\\mathbf{n}\\times[\\mathbf{v}]``
+"""
+function curlv_masked_from_masked_curlv!(curlv::Nodes{Dual},masked_curlv::Nodes{Dual},dv::VectorData,base_cache::BasicILMCache,wcache::VectorPotentialCache)
+    @unpack nrm = base_cache
+    @unpack dvn, Rn = wcache
+
+    fill!(curlv,0.0)
+    pointwise_cross!(dvn,nrm,dv)
+    regularize!(curlv,dvn,Rn)
+    curlv .+= masked_curlv
+    return curlv
+end
+
+"""
     scalarpotential_from_masked_divv!(ϕ::Nodes{Primal},masked_divv::Nodes{Primal},dv::VectorData,base_cache::BasicILMCache,dcache::ScalarPotentialCache)
 
 Return the scalar potential field `ϕ` from the masked divergence of the vector field, `masked_divv` (``\\overline{\\nabla\\cdot\\mathbf{v}}``)
@@ -166,8 +191,8 @@ and returns ``\\phi``.
 """
 function scalarpotential_from_divv!(ϕ::Nodes{Primal},divv::Nodes{Primal},base_cache::BasicILMCache,dcache::ScalarPotentialCache)
 
-    ϕ .= divv
-    inverse_laplacian!(ϕ,base_cache)
+    #ϕ .= divv
+    inverse_laplacian!(ϕ,divv,base_cache)
     return ϕ
 
 end
@@ -206,6 +231,25 @@ function masked_divv_from_divv_masked!(masked_divv::Nodes{Primal},divv::Nodes{Pr
     return masked_divv
 end
 
+"""
+    divv_masked_from_masked_divv!(divv::Nodes{Primal},masked_divv::Nodes{Primal},dv::VectorData,base_cache::BasicILMCache,dcache::ScalarPotentialCache)
+
+Return the divergence of the masked vector field ``\\nabla\\cdot\\overline{\\mathbf{v}}`` (`divv`) from the masked divergence
+of the vector field ``\\overline{\\nabla\\cdot\\mathbf{v}}`` (`masked_divv`). It obtains
+this from
+
+``\\nabla\\cdot\\overline{\\mathbf{v}} = \\overline{\\nabla\\cdot\\mathbf{v}} + R_c\\mathbf{n}\\cdot[\\mathbf{v}]``
+"""
+function divv_masked_from_masked_divv!(divv::Nodes{Primal},masked_divv::Nodes{Primal},dv::VectorData,base_cache::BasicILMCache,dcache::ScalarPotentialCache)
+    @unpack nrm = base_cache
+    @unpack dvn, Rc = dcache
+
+    fill!(divv,0.0)
+    pointwise_dot!(dvn,nrm,dv)
+    regularize!(divv,dvn,Rc)
+    divv .+= masked_divv
+    return divv
+end
 
 
 

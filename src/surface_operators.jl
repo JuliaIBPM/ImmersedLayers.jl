@@ -1,4 +1,5 @@
 # Basic surface operators
+using LinearAlgebra
 
 """
     regularize!(s::Nodes{Primal},f::ScalarData,cache::BasicILMCache)
@@ -35,11 +36,11 @@ to [`interpolate!`](@ref)
 @inline regularize!(v::Edges{Primal},vb::VectorData,cache::BasicILMCache) = regularize!(v,vb,cache.R)
 
 function regularize!(s::Nodes{C},f::ScalarData,Rc::RegularizationMatrix) where C
-  return s .= Rc*f
+  mul!(s,Rc,f)
 end
 
 function regularize!(v::Edges{C},vb::VectorData,Rf::RegularizationMatrix) where C
-  return v .= Rf*vb
+  mul!(v,Rf,vb)
 end
 
 """
@@ -75,11 +76,11 @@ to [`regularize!`](@ref)
 @inline interpolate!(vb::VectorData,v::Edges{Primal},cache::BasicILMCache) = interpolate!(vb,v,cache.E)
 
 function interpolate!(f::ScalarData,s::Nodes{C},Ec::InterpolationMatrix) where C
-  return f .= Ec*s
+  mul!(f,Ec,s)
 end
 
 function interpolate!(vb::VectorData,v::Edges{C},Ef::InterpolationMatrix) where C
-  return vb .= Ef*v
+  mul!(vb,Ef,v)
 end
 
 """
@@ -94,7 +95,7 @@ to [`normal_interpolate!`](@ref).
 
 function regularize_normal!(q::Edges{Primal,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,snorm_cache::VectorData{N}) where {NX,NY,N}
     product!(snorm_cache,nrm,f)
-    q .= Rf*snorm_cache
+    mul!(q,Rf,snorm_cache)
 end
 
 """
@@ -119,7 +120,7 @@ to [`normal_interpolate_symm!`](@ref).
 
 function regularize_normal!(q::EdgeGradient{Primal,Dual,NX,NY},f::VectorData{N},nrm::VectorData{N},Rf::RegularizationMatrix,snorm_cache::TensorData{N}) where {NX,NY,N}
     pointwise_tensorproduct!(snorm_cache,nrm,f)
-    q .= Rf*snorm_cache
+    mul!(q,Rf,snorm_cache)
 end
 
 function regularize_normal_symm!(q::EdgeGradient{Primal,Dual,NX,NY},f::VectorData{N},nrm::VectorData{N},Rf::RegularizationMatrix,snorm_cache::TensorData{N},snorm2_cache::TensorData{N}) where {NX,NY,N}
@@ -129,8 +130,7 @@ function regularize_normal_symm!(q::EdgeGradient{Primal,Dual,NX,NY},f::VectorDat
     # subtract the dot product of f and n from each diagonal entry
     snorm_cache.dudx .-= pointwise_dot(nrm,f)
     snorm_cache.dvdy .-= pointwise_dot(nrm,f)
-
-    q .= Rf*snorm_cache
+    mul!(q,Rf,snorm_cache)
 end
 
 
@@ -154,7 +154,7 @@ data `v` (like velocity). This is the negative adjoint to [`normal_cross_interpo
 
 function regularize_normal_cross!(q::Edges{Primal,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,snorm_cache::VectorData{N}) where {NX,NY,N}
     pointwise_cross!(snorm_cache,nrm,f)
-    q .= Rf*snorm_cache
+    mul!(q,Rf,snorm_cache)
 end
 
 """
@@ -170,7 +170,7 @@ with vector-data caches. This is the negative adjoint to [`normal_cross_interpol
 
 function regularize_normal_cross!(w::Nodes{Dual,NX,NY},vs::VectorData{N},nrm::VectorData{N},Rn::RegularizationMatrix,scache::ScalarData{N}) where {NX,NY,N}
     pointwise_cross!(scache,nrm,vs)
-    w .= Rn*scache
+    mul!(w,Rn,scache)
 end
 
 
@@ -192,7 +192,7 @@ a jump in velocity) to grid nodal data `f` (like scalar potential). This is the 
 
 function regularize_normal_dot!(f::Nodes{Primal,NX,NY},vs::VectorData{N},nrm::VectorData{N},Rn::RegularizationMatrix,scache::ScalarData{N}) where {NX,NY,N}
     pointwise_dot!(scache,nrm,vs)
-    f .= Rn*scache
+    mul!(f,Rn,scache)
 end
 
 """
@@ -207,7 +207,7 @@ a stress) to grid edge data `v` (like velocity). This is the negative adjoint to
 
 function regularize_normal_dot!(v::Edges{Primal,NX,NY},taus::TensorData{N},nrm::VectorData{N},R::RegularizationMatrix,scache::VectorData{N}) where {NX,NY,N}
     pointwise_dot!(scache,nrm,taus)
-    v .= R*scache
+    mul!(v,R,scache)
 end
 
 
@@ -224,7 +224,7 @@ adjoint to [`regularize_normal!`](@ref).
 @inline normal_interpolate!(vn::ScalarData,q::Edges{Primal},cache::BasicILMCache) = normal_interpolate!(vn,q,cache.nrm,cache.Esn,cache.snorm_cache)
 
 function normal_interpolate!(vn::ScalarData{N},q::Edges{Primal,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,snorm_cache::VectorData{N}) where {NX,NY,N}
-    snorm_cache .= Ef*q
+    mul!(snorm_cache,Ef,q)
     pointwise_dot!(vn,nrm,snorm_cache)
 end
 
@@ -248,7 +248,7 @@ surface data `τ` (like traction). This is the adjoint to [`regularize_normal_sy
 @inline normal_interpolate_symm!(vn::VectorData,q::EdgeGradient{Primal},cache::BasicILMCache) = normal_interpolate_symm!(vn,q,cache.nrm,cache.Esn,cache.gsnorm2_cache,cache.snorm_cache)
 
 function normal_interpolate!(vn::VectorData{N},q::EdgeGradient{Primal,Dual,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,snorm_cache::TensorData{N}) where {NX,NY,N}
-    snorm_cache .= Ef*q
+    mul!(snorm_cache,Ef,q)
     pointwise_dot!(vn,nrm,snorm_cache)
 end
 
@@ -258,7 +258,7 @@ function normal_interpolate_symm!(vn::VectorData{N},q::EdgeGradient{Primal,Dual,
     # subtract the trace of q from each diagonal element
     gsnorm_cache.dudx .-= q.dudx + q.dvdy
     gsnorm_cache.dvdy .-= q.dudx + q.dvdy
-    snorm_cache .= Ef*gsnorm_cache
+    mul!(snorm_cache,Ef,gsnorm_cache)
     pointwise_dot!(vn,nrm,snorm_cache)
 end
 
@@ -281,7 +281,7 @@ negative adjoint to [`regularize_normal_cross!`](@ref).
 
 
 function normal_cross_interpolate!(vn::ScalarData{N},q::Edges{Primal,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,scache::VectorData{N}) where {NX,NY,N}
-    scache .= Ef*q
+    mul!(scache,Ef,q)
     pointwise_cross!(vn,nrm,scache)
 end
 
@@ -298,7 +298,7 @@ negative adjoint to [`regularize_normal_cross!`](@ref).
           normal_cross_interpolate!(vs,s,cache.nrm,cache.Ecurl,cache.sscalar_cache)
 
 function normal_cross_interpolate!(vs::VectorData{N},s::Nodes{Dual,NX,NY},nrm::VectorData{N},E::InterpolationMatrix,scache::ScalarData{N}) where {NX,NY,N}
-    scache .= E*s
+    mul!(scache,E,s)
     pointwise_cross!(vs,nrm,scache)
 end
 
@@ -319,7 +319,7 @@ to surface vector data `vs` (like velocity). This is the negative adjoint to [`r
            normal_dot_interpolate!(vs,f,cache.nrm,cache.Ediv,cache.sscalar_cache)
 
 function normal_dot_interpolate!(vs::VectorData{N},f::Nodes{Primal,NX,NY},nrm::VectorData{N},En::InterpolationMatrix,scache::ScalarData{N}) where {NX,NY,N}
-    scache .= En*f
+    mul!(scache,En,f)
     product!(vs,nrm,scache)
 end
 
@@ -334,7 +334,7 @@ to surface tensor data `taus` (like stress). This is the negative adjoint to [`r
            normal_dot_interpolate!(taus,v,cache.nrm,cache.E,cache.sdata_cache)
 
 function normal_dot_interpolate!(taus::TensorData{N},v::Edges{Primal,NX,NY},nrm::VectorData{N},E::InterpolationMatrix,scache::VectorData{N}) where {NX,NY,N}
-    scache .= E*v
+    mul!(scache,E,v)
     pointwise_tensorproduct!(taus,nrm,scache)
 end
 
