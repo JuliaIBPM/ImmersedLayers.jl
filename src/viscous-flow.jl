@@ -126,7 +126,6 @@ function viscousflow_vorticity_bc_rhs!(vb,sys::ILMSystem,t)
 end
 
 function viscousflow_velocity_bc_rhs!(vb,sys::ILMSystem,t)
-    @unpack bc, forcing,extra_cache, base_cache, phys_params = sys
     prescribed_surface_average!(vb,t,sys)
     return vb
 end
@@ -240,7 +239,7 @@ function velocity!(v::Edges{Primal},w::Nodes{Dual},sys::ILMSystem,t)
     @unpack bc, forcing, phys_params, extra_cache, base_cache = sys
     @unpack dvb, velcache, divv_tmp, w_tmp = extra_cache
 
-    prescribed_surface_jump!(dvb,t,base_cache,bc,phys_params)
+    prescribed_surface_jump!(dvb,t,sys)
 
     Vinf = forcing["freestream"](t,phys_params)
 
@@ -318,15 +317,13 @@ scalarpotential(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem,t) = scalarp
 @snapshotoutput scalarpotential
 
 
-function pressure!(press::Nodes{Primal},u::ConstrainedSystems.ArrayPartition,sys::ILMSystem,t)
+function pressure!(press::Nodes{Primal},w::Nodes{Dual},τ,sys::ILMSystem,t)
     @unpack extra_cache, base_cache = sys
     @unpack velcache, v_tmp, dv_tmp, dv, divv_tmp = extra_cache
 
-    w, τ = state(u), constraint(u)
     velocity!(v_tmp,w,sys,t)
 
     viscousflow_velocity_ode_rhs!(dv,v_tmp,sys,t)
-
 
     viscousflow_velocity_constraint_force!(dv_tmp,τ,sys)
     dv .-= dv_tmp
@@ -336,9 +333,15 @@ function pressure!(press::Nodes{Primal},u::ConstrainedSystems.ArrayPartition,sys
     return press
 end
 
+pressure!(press::Nodes{Primal},u::ConstrainedSystems.ArrayPartition,sys::ILMSystem,t) = pressure!(press,state(u),constraint(u),sys,t)
+
 pressure(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem,t) = pressure!(zeros_griddiv(sys),u,sys,t)
 
 @snapshotoutput pressure
+
+#=
+- f(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem,t) =
+=#
 
 #= Surface fields =#
 
