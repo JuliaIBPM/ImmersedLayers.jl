@@ -67,8 +67,10 @@ scalarpotential_from_masked_divv!
 vectorpotential_from_curlv!
 vecfield_from_vectorpotential!
 masked_curlv_from_curlv_masked!
+curlv_masked_from_masked_curlv!
 scalarpotential_from_divv!
 masked_divv_from_divv_masked!
+divv_masked_from_masked_divv!
 vecfield_from_scalarpotential!
 vecfield_helmholtz!
 vectorpotential_uniformvecfield!

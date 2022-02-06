@@ -110,11 +110,9 @@ function ImmersedLayers.solve(prob::NeumannPoissonProblem,sys::ILMSystem)
     df = zeros_surface(base_cache)
     ds = zeros_surface(base_cache)
 
-    vnplus = bc["vnplus function"](base_cache,phys_params)
-    vnminus = bc["vnminus function"](base_cache,phys_params)
-
-    vn .= 0.5*(vnplus+vnminus)
-    dvn .= vnplus - vnminus
+    ## Get the precribed jump and average of the surface normal derivatives
+    prescribed_surface_jump!(dvn,sys)
+    prescribed_surface_average!(vn,sys)
 
     ## Find the potential
     regularize!(fstar,dvn,base_cache)
@@ -173,7 +171,7 @@ function get_vnplus(base_cache,phys_params)
 end
 get_vnminus(base_cache,phys_params) = zeros_surface(base_cache)
 
-bcdict = Dict("vnplus function"=>get_vnplus,"vnminus function"=>get_vnminus)
+bcdict = Dict("exterior"=>get_vnplus,"interior"=>get_vnminus)
 
 
 #=
@@ -260,7 +258,7 @@ function get_vnminus(base_cache,phys_params)
     vnminus = zeros_surface(base_cache)
     return vnminus
 end
-bcdict = Dict("vnplus function"=>get_vnplus,"vnminus function"=>get_vnminus)
+bcdict = Dict("exterior"=>get_vnplus,"interior"=>get_vnminus)
 
 #=
 Create the problem and system

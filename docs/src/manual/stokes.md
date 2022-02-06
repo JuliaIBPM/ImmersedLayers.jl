@@ -110,11 +110,8 @@ function ImmersedLayers.solve(prob::StokesFlowProblem,sys::ILMSystem)
     s = zeros_gridcurl(sys)
     v = zeros_grid(sys)
 
-    vsplus = bc["vsplus function"](base_cache,phys_params)
-    vsminus = bc["vsminus function"](base_cache,phys_params)
-
-    dv .= vsplus-vsminus
-    vb .= 0.5*(vsplus + vsminus)
+    # Get the jumps in velocity across surface
+    prescribed_surface_jump!(dv,sys)
 
     # Compute ψ*
     surface_divergence_symm!(v,dv,sys)
@@ -129,6 +126,9 @@ function ImmersedLayers.solve(prob::StokesFlowProblem,sys::ILMSystem)
     regularize!(ϕ,dvn,Rc)
     inverse_laplacian!(ϕ,sys)
     grad!(vϕ,ϕ,sys)
+
+    # Get the average velocity on the surface
+    prescribed_surface_average!(vb,sys)
     interpolate!(vprime,vϕ,sys)
     vprime .= vb - vprime
 
@@ -186,7 +186,7 @@ function get_vsplus(base_cache,phys_params)
 end
 get_vsminus(base_cache,phys_params) = zeros_surface(base_cache)
 
-bcdict = Dict("vsplus function"=>get_vsplus,"vsminus function"=>get_vsminus)
+bcdict = Dict("exterior"=>get_vsplus,"interior"=>get_vsminus)
 ````
 
 Set up the problem and the system, passing in the boundary condition information

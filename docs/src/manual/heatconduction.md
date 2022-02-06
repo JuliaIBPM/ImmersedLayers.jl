@@ -85,15 +85,12 @@ in the first argument. This represents this function's contribution to $dT/dt$.
 ````@example heatconduction
 function heatconduction_ode_rhs!(dT,T,sys::ILMSystem,t)
     @unpack bc, forcing, phys_params, extra_cache, base_cache = sys
-    @unpack dTb, Tbplus, Tbminus = extra_cache
+    @unpack dTb = extra_cache
 
     κ = phys_params["diffusivity"]
 
     # Calculate the double-layer term
-    fill!(dT,0.0)
-    Tbplus .= bc["Tbplus"](t,base_cache,phys_params)
-    Tbminus .= bc["Tbminus"](t,base_cache,phys_params)
-    dTb .= Tbplus - Tbminus
+    prescribed_surface_jump!(dTb,t,sys)
     surface_divergence!(dT,-κ*dTb,sys)
 
     return dT
@@ -106,13 +103,7 @@ and exterior prescribed values. The first argument `dTb` holds the result.
 
 ````@example heatconduction
 function heatconduction_bc_rhs!(dTb,sys::ILMSystem,t)
-    @unpack bc, extra_cache, base_cache, phys_params = sys
-    @unpack Tb, Tbplus, Tbminus = extra_cache
-
-    Tbplus .= bc["Tbplus"](t,base_cache,phys_params)
-    Tbminus .= bc["Tbminus"](t,base_cache,phys_params)
-    dTb .= 0.5*(Tbplus + Tbminus)
-
+    prescribed_surface_average!(dTb,t,sys)
     return dTb
 end
 ````
@@ -123,11 +114,7 @@ to the grid.
 
 ````@example heatconduction
 function heatconduction_constraint_force!(dT,σ,sys::ILMSystem)
-    @unpack extra_cache, base_cache = sys
-
-    fill!(dT,0.0)
     regularize!(dT,-σ,sys)
-
     return dT
 end
 ````
@@ -138,11 +125,7 @@ holds the result.
 
 ````@example heatconduction
 function heatconduction_bc_op!(dTb,T,sys::ILMSystem)
-    @unpack extra_cache, base_cache = sys
-
-    fill!(dTb,0.0)
     interpolate!(dTb,T,sys)
-
     return dTb
 end
 ````
@@ -162,11 +145,8 @@ force* vectors. Here, the state is the grid temperature data and the constraint
 is the Lagrange multipliers on the boundary.
 
 ````@example heatconduction
-struct DirichletHeatConductionCache{DTT,TBT,TBP,TBM,FT} <: AbstractExtraILMCache
+struct DirichletHeatConductionCache{DTT,FT} <: AbstractExtraILMCache
    dTb :: DTT
-   Tb :: TBT
-   Tbplus :: TBP
-   Tbminus :: TBM
    f :: FT
 end
 
@@ -176,9 +156,6 @@ function ImmersedLayers.prob_cache(prob::DirichletHeatConductionProblem,
     @unpack gdata_cache, g = base_cache
 
     dTb = zeros_surface(base_cache)
-    Tb = zeros_surface(base_cache)
-    Tbplus = zeros_surface(base_cache)
-    Tbminus = zeros_surface(base_cache)
 
     # Construct a Lapacian outfitted with the diffusivity
     κ = phys_params["diffusivity"]
@@ -193,7 +170,7 @@ function ImmersedLayers.prob_cache(prob::DirichletHeatConductionProblem,
                         constraint_force = heatconduction_constraint_force!,
                         bc_op = heatconduction_bc_op!)
 
-    DirichletHeatConductionCache(dTb,Tb,Tbplus,Tbminus,f)
+    DirichletHeatConductionCache(dTb,f)
 end
 ````
 
@@ -247,12 +224,15 @@ phys_params = Dict("diffusivity" => 1.0, "Fourier" => 1.0)
 ````
 
 The temperature boundary functions on the exterior and interior are
-defined here and assembled into a dict.
+defined here and assembled into a dict. Note that these functions
+must have a slightly more complex signature than in time-invariant
+problems: for generality, they must accept the time argument and
+another argument accepting possible motions of the surfaces.
 
 ````@example heatconduction
-get_Tbplus(t,base_cache,phys_params) = zeros_surface(base_cache)
-get_Tbminus(t,base_cache,phys_params) = ones_surface(base_cache)
-bcdict = Dict("Tbplus" => get_Tbplus,"Tbminus" => get_Tbminus)
+get_Tbplus(t,base_cache,phys_params,motions) = zeros_surface(base_cache)
+get_Tbminus(t,base_cache,phys_params,motions) = ones_surface(base_cache)
+bcdict = Dict("exterior" => get_Tbplus,"interior" => get_Tbminus)
 ````
 
 Construct the problem, passing in the data and functions we've just
