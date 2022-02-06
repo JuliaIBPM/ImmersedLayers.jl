@@ -91,6 +91,9 @@ include("matrix_operators.jl")
 include("helmholtz.jl")
 include("timemarching.jl")
 include("output.jl")
+include("bc.jl")
+
+include("viscous-flow.jl")
 
 include("plot_recipes.jl")
 
