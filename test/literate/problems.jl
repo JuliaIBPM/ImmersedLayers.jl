@@ -163,20 +163,21 @@ of freedom in this approach, as we will demonstrate.
 Here, we wish to construct functions that return the value of `f`
 on the outside and inside of the surface. These functions will
 get called in the `solve` function, and they will be passed
-the base cache and the physical parameters. So we can make use
+the base cache, the physical parameters. So we can make use
 of both of these to return the boundary data, e.g., here
 we return the `x` coordinate of the surface points on the outside
-of the surface, and zeros on the inside:
+of the surface, and zeros on the inside.
 =#
 get_fbplus(base_cache,phys_params) = points(base_cache).u
 get_fbminus(base_cache,phys_params) = zeros_surface(base_cache)
 
 #=
 Using the `bc` keyword, we can pass these along to the problem specification
-by various means. It's at the user's discretion how to do it, and how to make use of them
-in the solution. Here's an example, using a `Dict`:
+by various means. To make use of some routines that automate the
+application of these functions, we must pass them in a `Dict`, with the
+keys `exterior` and `interior`, respectively.
 =#
-bcdict = Dict("fbplus function"=>get_fbplus,"fbminus function"=>get_fbminus)
+bcdict = Dict("exterior"=>get_fbplus,"interior"=>get_fbminus)
 
 #=
 ### Forcing
@@ -261,24 +262,27 @@ function ImmersedLayers.solve(prob::DirichletPoissonProblem,sys::ILMSystem)
     f = zeros_grid(base_cache)
     s = zeros_surface(base_cache)
 
-    ## Get the boundary data on each side of the interface using
-    ## the functions we supplied via the `Dict`.
-    fbplus = bc["fbplus function"](base_cache,phys_params)
-    fbminus = bc["fbminus function"](base_cache,phys_params)
-
     ## apply_forcing! evaluates the forcing field on the grid and put
     ## the result in the `gdata_cache`.
     fill!(gdata_cache,0.0)
     apply_forcing!(gdata_cache,f,0.0,forcing_cache,phys_params)
 
+    ## Get the prescribed jump in boundary data across the interface using
+    ## the functions we supplied via the `Dict`.
+    prescribed_surface_jump!(fb,sys)
+
     ## Evaluate the double-layer term and add it to the right-hand side
-    surface_divergence!(fstar,fbplus-fbminus,base_cache)
+    surface_divergence!(fstar,fb,base_cache)
     fstar .+= gdata_cache
 
-    fb .= 0.5*(fbplus+fbminus)
-
+    ## Intermediate solution
     inverse_laplacian!(fstar,base_cache)
 
+    ## Get the prescribed average of boundary data on the interface using
+    ## the functions we supplied via the `Dict`.
+    prescribed_surface_average!(fb,sys)
+
+    ## Correction
     interpolate!(s,fstar,base_cache)
     s .= fb - s
     s .= -(S\s);
@@ -308,8 +312,8 @@ cache and system, simply by redefining our bc and forcing model functions. For
 example, to create an internal solution, with surface data equal to the $y$ coordinate,
 and four sources inside.
 =#
-get_fbplus(base_cache,phys_params) = zeros_surface(base_cache)
-get_fbminus(base_cache,phys_params) = points(base_cache).v
+get_fbplus(base_cache,phys_params,motions) = zeros_surface(base_cache)
+get_fbminus(base_cache,phys_params,motions) = points(base_cache).v
 
 function my_point_positions(state,t,fr::PointRegionCache,phys_params)
     x = [-0.2,0.2,-0.2,0.2]
