@@ -114,16 +114,6 @@ the jump in the vector field across immersed surface `dv`. It solves
 
 and returns ``\\psi``.
 """
-#=
-@inline function vectorpotential_from_curlv!(ψ::Nodes{Dual},curlv::Nodes{Dual},base_cache::BasicILMCache,wcache::VectorPotentialCache)
-
-    inverse_laplacian!(ψ,curlv,base_cache)
-    ψ .*= -1.0
-    #return ψ
-
-end
-=#
-
 function vectorpotential_from_curlv!(ψ::Nodes{Dual},curlv::Nodes{Dual},base_cache::BasicILMCache)
     inverse_laplacian!(ψ,curlv,base_cache)
     ψ .*= -1.0

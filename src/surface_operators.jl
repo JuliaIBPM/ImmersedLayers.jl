@@ -36,10 +36,12 @@ to [`interpolate!`](@ref)
 @inline regularize!(v::Edges{Primal},vb::VectorData,cache::BasicILMCache) = regularize!(v,vb,cache.R)
 
 function regularize!(s::Nodes{C},f::ScalarData,Rc::RegularizationMatrix) where C
+  fill!(s,0.0)
   mul!(s,Rc,f)
 end
 
 function regularize!(v::Edges{C},vb::VectorData,Rf::RegularizationMatrix) where C
+  fill!(v,0.0)
   mul!(v,Rf,vb)
 end
 
@@ -76,10 +78,12 @@ to [`regularize!`](@ref)
 @inline interpolate!(vb::VectorData,v::Edges{Primal},cache::BasicILMCache) = interpolate!(vb,v,cache.E)
 
 function interpolate!(f::ScalarData,s::Nodes{C},Ec::InterpolationMatrix) where C
+  fill!(f,0.0)
   mul!(f,Ec,s)
 end
 
 function interpolate!(vb::VectorData,v::Edges{C},Ef::InterpolationMatrix) where C
+  fill!(vb,0.0)
   mul!(vb,Ef,v)
 end
 

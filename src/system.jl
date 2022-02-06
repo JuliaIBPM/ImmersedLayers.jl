@@ -84,7 +84,18 @@ end
 _static_surfaces(::Nothing) = true
 _static_surfaces(::Any) = false
 
+# Extend surface_velocity! and allow for null motions
+function RigidBodyTools.surface_velocity!(u::AbstractVector,v::AbstractVector,sys::ILMSystem,t)
+  @unpack base_cache, motions = sys
+  @unpack bl = base_cache
+  fill!(u,0.0)
+  fill!(v,0.0)
+  if !isnothing(motions)
+    surface_velocity!(u,v,bl,motions,t)
+  end
+end
 
+RigidBodyTools.surface_velocity!(u::VectorData,sys::ILMSystem,t) = surface_velocity!(u.u,u.v,sys,t)
 
 # Create the basic solve function, to be extended
 function solve(prob::AbstractILMProblem,sys::ILMSystem) end

@@ -13,12 +13,13 @@ in the solution array. It can also take a range of values of `t`, e.g,
 macro snapshotoutput(name)
 
   return esc(quote
-      $name(integ::ConstrainedSystems.OrdinaryDiffEq.ODEIntegrator;kwargs...) = $name(integ.u,integ.p,integ.t;kwargs...)
 
-      $name(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,t;kwargs...) = $name(sol(t),sys,t;kwargs...)
+      $name(integ::ConstrainedSystems.OrdinaryDiffEq.ODEIntegrator,args...;kwargs...) = $name(integ.u,integ.p,integ.t,args...;kwargs...)
 
-      $name(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,t::AbstractArray;kwargs...) =
-          map(ti -> $name(sol(ti),sys,ti;kwargs...),t)
+      $name(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,t,args...;kwargs...) = $name(sol(t),sys,t,args...;kwargs...)
+
+      $name(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,t::AbstractArray,args...;kwargs...) =
+          map(ti -> $name(sol(ti),sys,ti,args...;kwargs...),t)
   end)
 
 end
