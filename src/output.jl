@@ -28,6 +28,7 @@ macro snapshotoutput(name)
       $name(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,t::AbstractArray,args...;kwargs...) =
           map(ti -> $name(sol(ti),sys,ti,args...;kwargs...),t)
 
+      export $name    
 
   end)
 
