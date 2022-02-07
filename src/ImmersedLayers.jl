@@ -56,7 +56,7 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         create_GLinvD_cross,create_surface_filter,
         AreaRegionCache,LineRegionCache,PointRegionCache,arccoord,
         ForcingModelAndRegion,apply_forcing!,
-        solve, @snapshotoutput,
+        solve, @snapshotoutput,@scalarsurfacemetric,@vectorsurfacemetric,
         prescribed_surface_jump!,prescribed_surface_average!
 
 abstract type LayerType{N} end

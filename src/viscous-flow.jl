@@ -290,7 +290,7 @@ function traction!(tract::VectorData{N},τ::VectorData{N},sys::ILMSystem,t) wher
     return tract
 
 end
-traction!(out,τ::VectorData{0},sys::ILMSystem,t) = out
+traction!(out::VectorData{0},τ::VectorData{0},sys::ILMSystem,t) = out
 traction(w::Nodes{Dual},τ::VectorData,sys::ILMSystem,t) = traction!(zeros_surface(sys),τ,sys,t)
 @snapshotoutput traction
 
@@ -304,14 +304,14 @@ function pressurejump!(dpb::ScalarData{N},τ::VectorData{N},sys::ILMSystem,t) wh
     dpb .*= -1.0
     return dpb
 end
-pressurejump!(out,τ::VectorData{0},sys::ILMSystem,t) = out
+pressurejump!(out::VectorData{0},τ::VectorData{0},sys::ILMSystem,t) = out
 pressurejump(w::Nodes{Dual},τ::VectorData,sys::ILMSystem,t) = pressurejump!(zeros_surfacescalar(sys),τ,sys,t)
 @snapshotoutput pressurejump
 
 
 #= Integrated metrics =#
 
-force(w::Nodes{Dual},τ,sys::ILMSystem{S,P,0},t,bodyi::Int) where {S,P} = Vector{Float64}(), Vector{Float64}()
+force(w::Nodes{Dual},τ::VectorData{0},sys::ILMSystem{S,P,0},t,bodyi::Int) where {S,P} = nothing, nothing #Vector{Float64}(), Vector{Float64}()
 
 function force(w::Nodes{Dual},τ::VectorData{N},sys::ILMSystem{S,P,N},t,bodyi::Int) where {S,P,N}
     @unpack base_cache = sys
@@ -323,16 +323,9 @@ function force(w::Nodes{Dual},τ::VectorData{N},sys::ILMSystem{S,P,N},t,bodyi::I
     return fx, fy
 end
 
-function force(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,bodyi::Int)
-    fx = map((u,t) -> force(u,sys,t,bodyi)[1],sol.u,sol.t)
-    fy = map((u,t) -> force(u,sys,t,bodyi)[2],sol.u,sol.t)
-    fx, fy
-end
+@vectorsurfacemetric force
 
-@snapshotoutput force
-
-
-moment(w::Nodes{Dual},τ,sys::ILMSystem{S,P,0},t,bodyi::Int;kwargs...) where {S,P} = Vector{Float64}()
+moment(w::Nodes{Dual},τ::VectorData{0},sys::ILMSystem{S,P,0},t,bodyi::Int;kwargs...) where {S,P} = nothing # Vector{Float64}()
 
 function moment(w::Nodes{Dual},τ::VectorData{N},sys::ILMSystem{S,P,N},t,bodyi::Int;center=(0.0,0.0)) where {S,P,N}
     @unpack base_cache = sys
@@ -349,9 +342,4 @@ function moment(w::Nodes{Dual},τ::VectorData{N},sys::ILMSystem{S,P,N},t,bodyi::
     return mom
 end
 
-function moment(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,bodyi::Int;kwargs...)
-    mom = map((u,t) -> moment(u,sys,t,bodyi;kwargs...),sol.u,sol.t)
-    mom
-end
-
-@snapshotoutput moment
+@scalarsurfacemetric moment
