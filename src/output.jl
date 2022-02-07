@@ -16,6 +16,8 @@ macro snapshotoutput(name)
 
       $name(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{S,P,N},t,args...;kwargs...) where {S,P,N} = $name(state(u),constraint(u),sys,t,args...;kwargs...)
 
+      $name(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{S,P,0},t,args...;kwargs...) where {S,P} = $name(state(u),zeros_surface(sys),sys,t,args...;kwargs...)
+
       $name(integ::ConstrainedSystems.OrdinaryDiffEq.ODEIntegrator,args...;kwargs...) = $name(integ.u,integ.p,integ.t,args...;kwargs...)
 
       $name(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,t,args...;kwargs...) = $name(sol(t),sys,t,args...;kwargs...)

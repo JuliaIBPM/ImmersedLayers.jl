@@ -168,32 +168,6 @@ function viscousflow_velocity_bc_op!(vb,v,sys::ILMSystem)
     return vb
 end
 
-#= Support functions =#
-
-#=
-function surface_fluid_velocity_jump!(dvb,t,base_cache::BasicILMCache{N},bc,phys_params) where N
-    dvb .= bc["vbplus"](t,base_cache,phys_params)
-    dvb .-= bc["vbminus"](t,base_cache,phys_params)
-    return dvb
-end
-
-function surface_fluid_velocity_jump!(dvb,t,base_cache::BasicILMCache{0},bc,phys_params)
-    fill!(dvb,0.0)
-    return dvb
-end
-
-function surface_fluid_velocity_average!(vb,t,base_cache::BasicILMCache{N},bc,phys_params) where N
-    vb .= 0.5*bc["vbplus"](t,base_cache,phys_params)
-    vb .+= 0.5*bc["vbminus"](t,base_cache,phys_params)
-    return vb
-end
-
-function surface_fluid_velocity_average!(vb,t,base_cache::BasicILMCache{0},bc,phys_params)
-    fill!(vb,0.0)
-    return vb
-end
-=#
-
 
 #= Fields =#
 
@@ -208,12 +182,11 @@ for f in [:vorticity,:total_vorticity]
     f! = Symbol(string(f)*"!")
 
     @eval function $f!(masked_w::Nodes{Dual},w::Nodes{Dual},τ,sys::ILMSystem,t)
-        @unpack bc, forcing, phys_params, extra_cache, base_cache = sys
+        @unpack extra_cache, base_cache = sys
         @unpack dvb, velcache = extra_cache
         @unpack wcache = velcache
 
         prescribed_surface_jump!(dvb,t,sys)
-
         $f!(masked_w,w,dvb,base_cache,wcache)
     end
 
@@ -223,7 +196,7 @@ for f in [:vorticity,:total_vorticity]
 end
 
 function velocity!(v::Edges{Primal},curl_vmasked::Nodes{Dual},masked_divv::Nodes{Primal},dv::VectorData,vp,base_cache::BasicILMCache,velcache::VectorFieldCache,w_tmp::Nodes{Dual})
-    @unpack wcache, dcache  = velcache
+    @unpack wcache  = velcache
 
     masked_curlv = w_tmp
 
@@ -234,7 +207,7 @@ function velocity!(v::Edges{Primal},curl_vmasked::Nodes{Dual},masked_divv::Nodes
 end
 
 function velocity!(v::Edges{Primal},w::Nodes{Dual},sys::ILMSystem,t)
-    @unpack bc, forcing, phys_params, extra_cache, base_cache = sys
+    @unpack forcing, phys_params, extra_cache, base_cache = sys
     @unpack dvb, velcache, divv_tmp, w_tmp = extra_cache
 
     prescribed_surface_jump!(dvb,t,sys)
@@ -317,8 +290,9 @@ function traction!(tract::VectorData{N},τ::VectorData{N},sys::ILMSystem,t) wher
     return tract
 
 end
+traction!(out,τ::VectorData{0},sys::ILMSystem,t) = out
 traction(w::Nodes{Dual},τ::VectorData,sys::ILMSystem,t) = traction!(zeros_surface(sys),τ,sys,t)
-
+@snapshotoutput traction
 
 function pressurejump!(dpb::ScalarData{N},τ::VectorData{N},sys::ILMSystem,t) where {N}
     @unpack base_cache = sys
@@ -330,18 +304,10 @@ function pressurejump!(dpb::ScalarData{N},τ::VectorData{N},sys::ILMSystem,t) wh
     dpb .*= -1.0
     return dpb
 end
+pressurejump!(out,τ::VectorData{0},sys::ILMSystem,t) = out
 pressurejump(w::Nodes{Dual},τ::VectorData,sys::ILMSystem,t) = pressurejump!(zeros_surfacescalar(sys),τ,sys,t)
+@snapshotoutput pressurejump
 
-
-for f in [:traction,:pressurejump]
-  f! = Symbol(string(f)*"!")
-  @eval $f!(out,τ::VectorData{0},sys::ILMSystem,t) = out
-
-  @eval $f(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{S,P,0},t) where {S,P} = $f(zeros_gridcurl(u),zeros_surface(sys),sys,t)
-
-  @eval @snapshotoutput $f
-
-end
 
 #= Integrated metrics =#
 
@@ -363,8 +329,10 @@ function force(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem
     fx, fy
 end
 
-moment(w::Nodes{Dual},τ,sys::ILMSystem{S,P,0},t,bodyi::Int;kwargs...) where {S,P} = Vector{Float64}()
+@snapshotoutput force
 
+
+moment(w::Nodes{Dual},τ,sys::ILMSystem{S,P,0},t,bodyi::Int;kwargs...) where {S,P} = Vector{Float64}()
 
 function moment(w::Nodes{Dual},τ::VectorData{N},sys::ILMSystem{S,P,N},t,bodyi::Int;center=(0.0,0.0)) where {S,P,N}
     @unpack base_cache = sys
@@ -386,13 +354,4 @@ function moment(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSyste
     mom
 end
 
-
-for f in [:force,:moment]
-
-    @eval $f(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{S,P,0},t,bodyi) where {S,P} = $f(zeros_gridcurl(u),zeros_surface(sys),sys,t,bodyi)
-
-    @eval @snapshotoutput $f
-
-
-
-end
+@snapshotoutput moment

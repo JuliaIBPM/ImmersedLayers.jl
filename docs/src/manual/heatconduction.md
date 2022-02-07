@@ -315,7 +315,7 @@ if we simply pass in the integrator to `temperature`, it will pick off the `u`
 field for us.
 
 ````@example heatconduction
-temperature(u,sys::ILMSystem,t) = state(u)
+temperature(T,σ,sys::ILMSystem,t) = T
 @snapshotoutput temperature
 ````
 

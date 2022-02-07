@@ -221,8 +221,7 @@ end
 #=
 As in the last example, we also define the temperature output function for output
 =#
-temperature(u,sys::ILMSystem,t) = state(u)
-
+temperature(T,σ,sys::ILMSystem,t) = T
 @snapshotoutput temperature
 
 #=
