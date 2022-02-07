@@ -366,11 +366,11 @@ end
 Return a vector potential field `ϕ` associated with a uniform vector field with the components `Vx` and `Vy`.
 """
 function scalarpotential_uniformvecfield!(ϕ::Nodes{Primal},Vx::Real,Vy::Real,base_cache::BasicILMCache)
-    @unpack gcurl_cache = base_cache
-    gcurl_cache .= x_gridcurl(base_cache)
-    ϕ .= Vx*gcurl_cache
-    gcurl_cache .= y_gridcurl(base_cache)
-    ϕ .+= Vy*gcurl_cache
+    @unpack gdiv_cache = base_cache
+    gdiv_cache .= x_griddiv(base_cache)
+    ϕ .= Vx*gdiv_cache
+    gdiv_cache .= y_griddiv(base_cache)
+    ϕ .+= Vy*gdiv_cache
     return ϕ
 end
 
