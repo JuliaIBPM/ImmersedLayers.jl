@@ -207,7 +207,7 @@ for f in [:vorticity,:total_vorticity]
 
     f! = Symbol(string(f)*"!")
 
-    @eval function $f!(masked_w::Nodes{Dual},w::Nodes{Dual},sys::ILMSystem,t)
+    @eval function $f!(masked_w::Nodes{Dual},w::Nodes{Dual},τ,sys::ILMSystem,t)
         @unpack bc, forcing, phys_params, extra_cache, base_cache = sys
         @unpack dvb, velcache = extra_cache
         @unpack wcache = velcache
@@ -217,9 +217,7 @@ for f in [:vorticity,:total_vorticity]
         $f!(masked_w,w,dvb,base_cache,wcache)
     end
 
-    @eval $f(w::Nodes{Dual},sys::ILMSystem,t) = $f!(zeros_gridcurl(sys),w,sys,t)
-
-    @eval $f(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem,t) = $f(state(u),sys,t)
+    @eval $f(w::Nodes{Dual},τ,sys::ILMSystem,t) = $f!(zeros_gridcurl(sys),w,τ,sys,t)
 
     @eval @snapshotoutput $f
 end
@@ -247,9 +245,7 @@ function velocity!(v::Edges{Primal},w::Nodes{Dual},sys::ILMSystem,t)
     velocity!(v,w,divv_tmp,dvb,Vinf,base_cache,velcache,w_tmp)
 end
 
-velocity(w::Nodes{Dual},sys::ILMSystem,t) = velocity!(zeros_grid(sys),w,sys,t)
-
-velocity(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem,t) = velocity(state(u),sys,t)
+velocity(w::Nodes{Dual},τ,sys::ILMSystem,t) = velocity!(zeros_grid(sys),w,sys,t)
 
 @snapshotoutput velocity
 
@@ -278,70 +274,28 @@ function streamfunction!(ψ::Nodes{Dual},w::Nodes{Dual},sys::ILMSystem,t)
 
 end
 
-streamfunction(w::Nodes{Dual},sys::ILMSystem,t) = streamfunction!(zeros_gridcurl(sys),w,sys,t)
-
-streamfunction(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem,t) = streamfunction(state(u),sys,t)
+streamfunction(w::Nodes{Dual},τ,sys::ILMSystem,t) = streamfunction!(zeros_gridcurl(sys),w,sys,t)
 
 @snapshotoutput streamfunction
 
-
-function scalarpotential!(ϕ::Nodes{Primal},divv::Nodes{Primal},vp::Tuple,base_cache::BasicILMCache,dcache::ScalarPotentialCache)
-    @unpack ftemp = dcache
-
-    fill!(ϕ,0.0)
-    scalarpotential_from_curlv!(ftemp,divv,base_cache)
-    ϕ .+= ftemp
-
-    scalarpotential_uniformvecfield!(ftemp,vp...,base_cache)
-    ϕ .+= ftemp
-
-    return ϕ
-end
-
-
-function scalarpotential!(ϕ::Nodes{Primal},divv::Nodes{Primal},sys::ILMSystem,t)
-    @unpack phys_params, forcing, extra_cache, base_cache = sys
-    @unpack velcache = extra_cache
-    @unpack dcache = velcache
-
-    Vinf = forcing["freestream"](t,phys_params)
-
-    scalarpotential!(ϕ,divv,Vinf,base_cache,dcache)
-
-end
-
-scalarpotential(divv::Nodes{Primal},sys::ILMSystem,t) = scalarpotential!(zeros_griddiv(sys),divv,sys,t)
-
-scalarpotential(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem,t) = scalarpotential(zeros_griddiv(sys),sys,t)
-
-@snapshotoutput scalarpotential
-
-
 function pressure!(press::Nodes{Primal},w::Nodes{Dual},τ,sys::ILMSystem,t)
-    @unpack extra_cache, base_cache = sys
-    @unpack velcache, v_tmp, dv_tmp, dv, divv_tmp = extra_cache
+      @unpack extra_cache, base_cache = sys
+      @unpack velcache, v_tmp, dv_tmp, dv, divv_tmp = extra_cache
 
-    velocity!(v_tmp,w,sys,t)
+      velocity!(v_tmp,w,sys,t)
+      viscousflow_velocity_ode_rhs!(dv,v_tmp,sys,t)
+      viscousflow_velocity_constraint_force!(dv_tmp,τ,sys)
+      dv .-= dv_tmp
 
-    viscousflow_velocity_ode_rhs!(dv,v_tmp,sys,t)
-
-    viscousflow_velocity_constraint_force!(dv_tmp,τ,sys)
-    dv .-= dv_tmp
-
-    divergence!(divv_tmp,dv,base_cache)
-    inverse_laplacian!(press,divv_tmp,base_cache)
-    return press
+      divergence!(divv_tmp,dv,base_cache)
+      inverse_laplacian!(press,divv_tmp,base_cache)
+      return press
 end
 
-pressure!(press::Nodes{Primal},u::ConstrainedSystems.ArrayPartition,sys::ILMSystem,t) = pressure!(press,state(u),constraint(u),sys,t)
-
-pressure(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem,t) = pressure!(zeros_griddiv(sys),u,sys,t)
+pressure(w::Nodes{Dual},τ,sys::ILMSystem,t) = pressure!(zeros_griddiv(sys),w,τ,sys,t)
 
 @snapshotoutput pressure
 
-#=
-- f(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem,t) =
-=#
 
 #= Surface fields =#
 
@@ -363,7 +317,7 @@ function traction!(tract::VectorData{N},τ::VectorData{N},sys::ILMSystem,t) wher
     return tract
 
 end
-traction(τ::VectorData,sys::ILMSystem,t) = traction!(zeros_surface(sys),τ,sys,t)
+traction(w::Nodes{Dual},τ::VectorData,sys::ILMSystem,t) = traction!(zeros_surface(sys),τ,sys,t)
 
 
 function pressurejump!(dpb::ScalarData{N},τ::VectorData{N},sys::ILMSystem,t) where {N}
@@ -376,15 +330,14 @@ function pressurejump!(dpb::ScalarData{N},τ::VectorData{N},sys::ILMSystem,t) wh
     dpb .*= -1.0
     return dpb
 end
-pressurejump(τ::VectorData,sys::ILMSystem,t) = pressurejump!(zeros_surfacescalar(sys),τ,sys,t)
+pressurejump(w::Nodes{Dual},τ::VectorData,sys::ILMSystem,t) = pressurejump!(zeros_surfacescalar(sys),τ,sys,t)
 
 
 for f in [:traction,:pressurejump]
   f! = Symbol(string(f)*"!")
   @eval $f!(out,τ::VectorData{0},sys::ILMSystem,t) = out
 
-  @eval $f(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{S,P,N},t) where {S,P,N} = $f(constraint(u),sys,t)
-  @eval $f(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{S,P,0},t) where {S,P} = $f(zeros_surface(sys),sys,t)
+  @eval $f(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{S,P,0},t) where {S,P} = $f(zeros_gridcurl(u),zeros_surface(sys),sys,t)
 
   @eval @snapshotoutput $f
 
@@ -392,9 +345,9 @@ end
 
 #= Integrated metrics =#
 
-force(τ,sys::ILMSystem{S,P,0},t,bodyi::Int) where {S,P} = Vector{Float64}(), Vector{Float64}()
+force(w::Nodes{Dual},τ,sys::ILMSystem{S,P,0},t,bodyi::Int) where {S,P} = Vector{Float64}(), Vector{Float64}()
 
-function force(τ::VectorData{N},sys::ILMSystem{S,P,N},t,bodyi::Int) where {S,P,N}
+function force(w::Nodes{Dual},τ::VectorData{N},sys::ILMSystem{S,P,N},t,bodyi::Int) where {S,P,N}
     @unpack base_cache = sys
     @unpack sdata_cache = base_cache
     traction!(sdata_cache,τ,sys,t)
@@ -410,10 +363,10 @@ function force(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem
     fx, fy
 end
 
-moment(τ,sys::ILMSystem{S,P,0},t,bodyi::Int;kwargs...) where {S,P} = Vector{Float64}()
+moment(w::Nodes{Dual},τ,sys::ILMSystem{S,P,0},t,bodyi::Int;kwargs...) where {S,P} = Vector{Float64}()
 
 
-function moment(τ::VectorData{N},sys::ILMSystem{S,P,N},t,bodyi::Int;center=(0.0,0.0)) where {S,P,N}
+function moment(w::Nodes{Dual},τ::VectorData{N},sys::ILMSystem{S,P,N},t,bodyi::Int;center=(0.0,0.0)) where {S,P,N}
     @unpack base_cache = sys
     @unpack sdata_cache, sscalar_cache = base_cache
     xc, yc = center
@@ -436,8 +389,7 @@ end
 
 for f in [:force,:moment]
 
-    @eval $f(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{S,P,N},t,bodyi) where {S,P,N} = $f(constraint(u),sys,t,bodyi)
-    @eval $f(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{S,P,0},t,bodyi) where {S,P} = $f(zeros_surface(sys),sys,t,bodyi)
+    @eval $f(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{S,P,0},t,bodyi) where {S,P} = $f(zeros_gridcurl(u),zeros_surface(sys),sys,t,bodyi)
 
     @eval @snapshotoutput $f
 

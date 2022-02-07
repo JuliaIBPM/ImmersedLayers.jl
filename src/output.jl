@@ -14,12 +14,16 @@ macro snapshotoutput(name)
 
   return esc(quote
 
+      $name(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{S,P,N},t,args...;kwargs...) where {S,P,N} = $name(state(u),constraint(u),sys,t,args...;kwargs...)
+
       $name(integ::ConstrainedSystems.OrdinaryDiffEq.ODEIntegrator,args...;kwargs...) = $name(integ.u,integ.p,integ.t,args...;kwargs...)
 
       $name(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,t,args...;kwargs...) = $name(sol(t),sys,t,args...;kwargs...)
 
       $name(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,t::AbstractArray,args...;kwargs...) =
           map(ti -> $name(sol(ti),sys,ti,args...;kwargs...),t)
+
+
   end)
 
 end
