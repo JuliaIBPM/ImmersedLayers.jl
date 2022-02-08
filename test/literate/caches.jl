@@ -193,6 +193,7 @@ dot(os,os,cache)
 #md # areas(::BasicILMCache)
 #md # normals(::BasicILMCache)
 #md # points(::BasicILMCache)
+#md # arcs(::BasicILMCache)
 #md # ```
 
 #md # ## Inner products, norms, and integrals

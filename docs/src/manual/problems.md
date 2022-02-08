@@ -374,7 +374,7 @@ AreaRegionCache
 LineRegionCache
 PointRegionCache
 ForcingModelAndRegion
-arccoord(::LineRegionCache)
+arcs(::LineRegionCache)
 mask(::AreaRegionCache)
 points(::PointRegionCache)
 apply_forcing!

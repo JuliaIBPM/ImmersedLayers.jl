@@ -37,6 +37,15 @@ associated with `b`.
 """
 areas(b::Union{Body,BodyList}) = ScalarData(dlengthmid(b))
 
+"""
+    arcs(b::Body/BodyList)
+
+Return `ScalarData` filled with the arclength coordinates
+associated with `b`.
+"""
+arcs(b::Union{Body,BodyList}) = ScalarData(arccoord(b))
+
+
 ## Tools for partitioned operations via body lists
 
 """

@@ -885,3 +885,12 @@ Copy the data in `v` to the elements in `u` associated with body `i` in the body
 """ copyto!(u::ScalarData,v::AbstractVector,cache::BasicILMCache,i::Int)
 
 @inline copyto!(u::PointData{N},v,cache::BasicILMCache{N},i::Int) where {N} = copyto!(u,v,cache.bl,i)
+
+
+"""
+    arcs(cache::BasicILMCache)
+
+Return `ScalarData` of arc length coordinates for the body surface(s) in
+the given cache `cache`.
+"""
+arcs(cache::BasicILMCache) = arcs(cache.bl)

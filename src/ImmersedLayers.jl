@@ -108,8 +108,6 @@ include("timemarching.jl")
 include("output.jl")
 include("bc.jl")
 
-include("viscous-flow.jl")
-
 include("plot_recipes.jl")
 
 @deprecate DoubleLayer surface_divergence!

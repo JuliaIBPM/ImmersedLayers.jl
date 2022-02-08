@@ -206,6 +206,7 @@ y_gridgrad
 areas(::BasicILMCache)
 normals(::BasicILMCache)
 points(::BasicILMCache)
+arcs(::BasicILMCache)
 ```
 
 ## Inner products, norms, and integrals

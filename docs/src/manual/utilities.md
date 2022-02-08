@@ -10,6 +10,7 @@ CurrentModule = ImmersedLayers
 areas(::Body)
 normals(::Body)
 points(::Body)
+arcs(::Body)
 dot(::ScalarData{N},::ScalarData{N},::ScalarData{N}) where {N}
 norm(::PointData{N},::ScalarData{N}) where {N}
 integrate(::ScalarData{N},::ScalarData{N}) where {N}

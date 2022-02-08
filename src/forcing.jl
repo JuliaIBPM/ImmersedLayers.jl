@@ -123,9 +123,7 @@ for f in [:Scalar,:Vector]
     @eval function LineRegionCache(g::PhysicalGrid,shape::BodyList,data_prototype::$gdtype;kwargs...)
         cache = $cname(shape,g;kwargs...)
         pts = points(shape)
-
-        s = ScalarData(arccoord(shape))
-
+        s = arcs(shape)
         str = similar_surface(cache)
         return LineRegionCache{typeof(s),typeof(str),typeof(cache)}(s,str,cache)
     end
@@ -164,11 +162,11 @@ Return the mask for the given area region `ar`.
 mask(ar::AreaRegionCache) = ar.mask
 
 """
-    arccoord(lr::LineRegionCache)
+    arcs(lr::LineRegionCache)
 
 Return the vector of arc length coordinates for the given line region `lr`.
 """
-RigidBodyTools.arccoord(lr::LineRegionCache) = lr.s
+arcs(lr::LineRegionCache) = lr.s
 
 """
     points(pr::PointRegionCache)
@@ -193,7 +191,7 @@ A type that holds the forcing model function, region, and cache
 
 These forms gets called generally when building the extra cache. They
 also gracefully generate an empty list of models if one passes along `nothing`
-in the first argument. 
+in the first argument.
 """ ForcingModelAndRegion(::AbstractForcingModel,::BasicILMCache)
 
 struct ForcingModelAndRegion{RT<:AbstractRegionCache,ST,MT,KT}

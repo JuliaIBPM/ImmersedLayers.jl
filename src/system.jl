@@ -110,7 +110,7 @@ for f in [:zeros_surface,:zeros_surfacescalar,
           :ones_surface,:ones_surfacescalar,
           :ones_grid,:ones_gridgrad,:ones_gridcurl,:ones_griddiv,:ones_gridgradcurl,
           :x_grid,:y_grid,:x_gridcurl,:y_gridcurl,:x_griddiv,:y_griddiv,
-          :normals,:areas,:points,
+          :normals,:areas,:points,:arcs,
           :create_nRTRn,:create_GLinvD,:create_CLinvCT,:create_CL2invCT,
           :create_RTLinvR,:create_GLinvD_symm,
           :create_GLinvD_cross,:create_surface_filter]

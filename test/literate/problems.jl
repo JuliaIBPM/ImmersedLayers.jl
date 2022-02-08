@@ -360,7 +360,7 @@ it's very fast.
 #md # LineRegionCache
 #md # PointRegionCache
 #md # ForcingModelAndRegion
-#md # arccoord(::LineRegionCache)
+#md # arcs(::LineRegionCache)
 #md # mask(::AreaRegionCache)
 #md # points(::PointRegionCache)
 #md # apply_forcing!
