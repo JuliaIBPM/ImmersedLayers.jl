@@ -1,12 +1,4 @@
 
-abstract type AbstractBasicCache{N,GCT} end
-
-
-abstract type AbstractScalingType end
-
-abstract type GridScaling <: AbstractScalingType end
-abstract type IndexScaling <: AbstractScalingType end
-
 """
 $(TYPEDEF)
 
@@ -121,7 +113,7 @@ See [`SurfaceScalarCache`](@ref) for details.
 """ SurfaceVectorCache(::PhysicalGrid)
 
 """
-    SurfaceVectorCache(body::Body/BodyList,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling])
+    SurfaceVectorCache(body::Body/BodyList,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=Gridcaling])
 
 Create a cache of type `BasicILMCache`, holding operators and storage data
 for use in immersed layer operations on vector data. See [`SurfaceScalarCache`](@ref)
@@ -129,7 +121,7 @@ for details.
 """ SurfaceVectorCache(::Union{Body,BodyList},::PhysicalGrid)
 
 """
-    SurfaceScalarCache(body::Body/BodyList,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling])
+    SurfaceScalarCache(body::Body/BodyList,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=GridScaling])
 
 Create a cache of type `BasicILMCache`, holding operators and storage data
 for use in immersed layer operations on scalar data. This is sometimes called from within`ILMSystem` rather than directly.
@@ -145,7 +137,7 @@ be symmetric matrices (i.e., interpolation is the adjoint of regularization with
 """ SurfaceScalarCache(::Union{Body,BodyList},::PhysicalGrid)
 
 """
-    SurfaceScalarCache(X::VectorData,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling])
+    SurfaceScalarCache(X::VectorData,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=GridScaling])
 
 Create a cache of type `BasicILMCache`, holding operators and storage data
 for use in immersed layer operations on scalar data. The `X` specifies the
@@ -153,7 +145,7 @@ is assumed to hold the endpoints of the immersed surface segments, and `g` the p
 """ SurfaceScalarCache(::VectorData,::ScalarData,::VectorData,::PhysicalGrid)
 
 """
-    SurfaceVectorCache(X::VectorData,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling])
+    SurfaceVectorCache(X::VectorData,g::PhysicalGrid[,ddftype=CartesianGrids.Yang3][,scaling=GridScaling])
 
 Create a cache of type `BasicILMCache`, holding operators and storage data
 for use in immersed layer operations on vector data. See [`SurfaceScalarCache`](@ref)
@@ -163,9 +155,9 @@ for details.
 
 
 function SurfaceScalarCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid;
-                              ddftype = CartesianGrids.Yang3,
-                              scaling = IndexScaling,
-                              dtype = Float64) where {N}
+                              ddftype = DEFAULT_DDF,
+                              scaling = DEFAULT_SCALING,
+                              dtype = DEFAULT_DATA_TYPE) where {N}
 
 	X = points(bl)
   sscalar_cache = nothing
@@ -182,9 +174,9 @@ function SurfaceScalarCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::
 end
 
 function SurfaceVectorCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid;
-                              ddftype = CartesianGrids.Yang3,
-                              scaling = IndexScaling,
-                              dtype = Float64) where {N}
+                              ddftype = DEFAULT_DDF,
+                              scaling = DEFAULT_SCALING,
+                              dtype = DEFAULT_DATA_TYPE) where {N}
 
 	X = points(bl)
   sscalar_cache = ScalarData(X, dtype = dtype)
@@ -271,13 +263,13 @@ struct PointCollectionCache{N,GCT,ND,PT,REGT<:Regularize,SST} <: AbstractBasicCa
     sdata_cache :: SST
 end
 
-function ScalarPointCollectionCache(X::VectorData{N},g::PhysicalGrid{ND};ddftype = CartesianGrids.Yang3,dtype = Float64) where {N,ND}
+function ScalarPointCollectionCache(X::VectorData{N},g::PhysicalGrid{ND};ddftype = DEFAULT_DDF,dtype = DEFAULT_DATA_TYPE) where {N,ND}
     gdata_cache = Nodes(Primal,size(g),dtype = dtype)
     sdata_cache = ScalarData(X,dtype = dtype)
     return _pointcollectioncache(X,g,gdata_cache,sdata_cache,ddftype)
 end
 
-function VectorPointCollectionCache(X::VectorData{N},g::PhysicalGrid{ND};ddftype = CartesianGrids.Yang3,dtype = Float64) where {N,ND}
+function VectorPointCollectionCache(X::VectorData{N},g::PhysicalGrid{ND};ddftype = DEFAULT_DDF,dtype = DEFAULT_DATA_TYPE) where {N,ND}
     gdata_cache = Edges(Primal,size(g),dtype = dtype)
     sdata_cache = VectorData(X,dtype = dtype)
     return _pointcollectioncache(X,g,gdata_cache,sdata_cache,ddftype)
