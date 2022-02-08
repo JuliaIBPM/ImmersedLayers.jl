@@ -1,5 +1,6 @@
 abstract type AbstractILMProblem{DT,ST,DTP} end
 
+
 function regenerate_problem() end
 
 """
@@ -30,7 +31,7 @@ resulting type then automatically has a constructor that allows one to pass
 in the grid information and bodies, as well as optional choices for the
 DDF function and the scaling type. For the example, this constructor would be
 
-    StokesFlowProblem(grid,bodies[,ddftype=CartesianGrids.Yang3][,scaling=IndexScaling])
+    StokesFlowProblem(grid,bodies[,ddftype=CartesianGrids.Yang3][,scaling=GridScaling])
 
 Note that there is another constructor for problems with no surfaces that only
 requires that the grid information be passed, e.g.,
@@ -72,9 +73,9 @@ macro ilmproblem(name,vector_or_scalar)
              forcing :: FF
              timestep_func :: DTF
              motions :: MTF
-             $typename(g::PT,bodies::BodyList;ddftype=CartesianGrids.Yang3,
-                                              scaling=IndexScaling,
-                                              dtype=Float64,
+             $typename(g::PT,bodies::BodyList;ddftype=ImmersedLayers.DEFAULT_DDF,
+                                              scaling=ImmersedLayers.DEFAULT_SCALING,
+                                              dtype=ImmersedLayers.DEFAULT_DATA_TYPE,
                                               phys_params=nothing,
                                               bc=nothing,
                                               forcing=nothing,

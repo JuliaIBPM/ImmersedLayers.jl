@@ -185,11 +185,15 @@ Assembly of the forcing model and forcing region
     ForcingModelAndRegion
 
 A type that holds the forcing model function, region, and cache
-# Constructor
+# Constructors
 
 `ForcingModelAndRegion(model::AbstractForcingModel,cache::BasicILMCache)`
 
-This form gets called generally when building the extra cache.
+`ForcingModelAndRegion(modellist::Vector{AbstractForcingModel},cache::BasicILMCache)`
+
+These forms gets called generally when building the extra cache. They
+also gracefully generate an empty list of models if one passes along `nothing`
+in the first argument. 
 """ ForcingModelAndRegion(::AbstractForcingModel,::BasicILMCache)
 
 struct ForcingModelAndRegion{RT<:AbstractRegionCache,ST,MT,KT}
@@ -215,6 +219,8 @@ function ForcingModelAndRegion(flist::Vector{<:AbstractForcingModel},cache::Basi
    end
    return fmlist
 end
+
+ForcingModelAndRegion(::Nothing,cache::BasicILMCache) = ForcingModelAndRegion(AbstractForcingModel[],cache)
 
 #=
 Application of forcing

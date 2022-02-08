@@ -59,7 +59,21 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         solve, @snapshotoutput,@scalarsurfacemetric,@vectorsurfacemetric,
         prescribed_surface_jump!,prescribed_surface_average!
 
+
+abstract type AbstractBasicCache{N,GCT} end
+
+
+abstract type AbstractScalingType end
+
+abstract type GridScaling <: AbstractScalingType end
+abstract type IndexScaling <: AbstractScalingType end
+
 abstract type LayerType{N} end
+
+const DEFAULT_SCALING = GridScaling
+const DEFAULT_DATA_TYPE = Float64
+const DEFAULT_DDF = CartesianGrids.Yang3
+
 
 """
 $(TYPEDEF)
