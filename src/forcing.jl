@@ -218,7 +218,7 @@ function ForcingModelAndRegion(flist::Vector{<:AbstractForcingModel},cache::Basi
    return fmlist
 end
 
-ForcingModelAndRegion(::Nothing,cache::BasicILMCache) = ForcingModelAndRegion(AbstractForcingModel[],cache)
+ForcingModelAndRegion(::Any,cache::BasicILMCache) = ForcingModelAndRegion(AbstractForcingModel[],cache)
 
 #=
 Application of forcing
