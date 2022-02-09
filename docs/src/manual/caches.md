@@ -94,7 +94,7 @@ plot(cache,xlims=(-2,2),ylims=(-2,2))
 
 In this plotting demonstration, we have used the `points` function
 to obtain the coordinates of the immersed points. Other useful
-utilities are `normals` and `areas`, e.g.
+utilities are `normals`, `areas`, and `arcs`, e.g.
 
 ````@example caches
 normals(cache)

@@ -138,7 +138,7 @@ f, s = solve(pts.u,prob,sys)
 
 #!jl plot(f,sys)
 #-
-#!jl plot(s)
+#!jl plot(s,sys)
 
 #=
 ## More advanced use, with keyword arguments

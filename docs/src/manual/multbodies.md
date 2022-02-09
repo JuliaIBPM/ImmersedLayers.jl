@@ -128,6 +128,12 @@ Let's plot the data to verify this worked
 plot(u)
 ````
 
+We can also plot just the data on body 3
+
+````@example multbodies
+plot(u,sys,3)
+````
+
 It is also possible to use [`copyto!`](@ref) to copy a vector of just the right
 size of the subarray associated with the body.
 

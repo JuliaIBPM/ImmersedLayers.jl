@@ -207,7 +207,7 @@ plot(s,sys,layers=true,levels=30,title="ψ"))
 and the Lagrange multiplier field, $[\phi]$, on the surface
 
 ````@example neumann
-plot(df)
+plot(df,sys)
 ````
 
 If, instead, we set the inner boundary condition to $n_x$ and the

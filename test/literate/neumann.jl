@@ -196,7 +196,7 @@ and plot the field
 #=
 and the Lagrange multiplier field, $[\phi]$, on the surface
 =#
-#!jl plot(df)
+#!jl plot(df,sys)
 
 #=
 If, instead, we set the inner boundary condition to $n_x$ and the

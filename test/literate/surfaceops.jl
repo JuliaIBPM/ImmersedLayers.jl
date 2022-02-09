@@ -85,8 +85,8 @@ comparing to the actual $x$ coordinate of the points on the body:
 =#
 xg = x_grid(cache)
 interpolate!(f,xg,cache)
-#!jl plot(f,ylim=(-2,2),label="Interpolated from grid",ylabel="x",xlabel="Index")
-#!jl plot!(pts.u,label="Actual body coordinate")
+#!jl plot(f,cache,ylim=(-2,2),label="Interpolated from grid",ylabel="x",xlabel="arclength")
+#!jl plot!(pts.u,cache,label="Actual body coordinate",legend=:true)
 
 #=
 ## A double layer

@@ -92,7 +92,7 @@ usual attribute keywords of the basic plot function.
 #=
 In this plotting demonstration, we have used the `points` function
 to obtain the coordinates of the immersed points. Other useful
-utilities are `normals` and `areas`, e.g.
+utilities are `normals`, `areas`, and `arcs`, e.g.
 =#
 normals(cache)
 

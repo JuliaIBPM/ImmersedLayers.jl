@@ -144,7 +144,7 @@ plot(f,sys)
 ````
 
 ````@example problems
-plot(s)
+plot(s,sys)
 ````
 
 ## More advanced use, with keyword arguments

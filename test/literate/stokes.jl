@@ -208,8 +208,8 @@ Note that the velocity is zero inside, as desired. Let's look at the streamlines
 #=
 We'll plot the surface traction components, too.
 =#
-#!jl plot(σ.u,label="σx")
-#!jl plot!(σ.v,label="σy")
+#!jl plot(σ.u,sys,label="σx")
+#!jl plot!(σ.v,sys,label="σy")
 
 
 #=

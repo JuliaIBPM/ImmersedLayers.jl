@@ -122,6 +122,11 @@ Let's plot the data to verify this worked
 #!jl plot(u)
 
 #=
+We can also plot just the data on body 3
+=#
+#!jl plot(u,sys,3)
+
+#=
 It is also possible to use [`copyto!`](@ref) to copy a vector of just the right
 size of the subarray associated with the body.
 =#

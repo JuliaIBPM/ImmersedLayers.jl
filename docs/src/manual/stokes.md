@@ -220,8 +220,8 @@ plot(s,sys)
 We'll plot the surface traction components, too.
 
 ````@example stokes
-plot(σ.u,label="σx")
-plot!(σ.v,label="σy")
+plot(σ.u,sys,label="σx")
+plot!(σ.v,sys,label="σy")
 ````
 
 Now, let's apply a different motion, where we rotate it counter-clockwise

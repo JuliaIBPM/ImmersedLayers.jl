@@ -96,8 +96,8 @@ comparing to the actual $x$ coordinate of the points on the body:
 ````@example surfaceops
 xg = x_grid(cache)
 interpolate!(f,xg,cache)
-plot(f,ylim=(-2,2),label="Interpolated from grid",ylabel="x",xlabel="Index")
-plot!(pts.u,label="Actual body coordinate")
+plot(f,cache,ylim=(-2,2),label="Interpolated from grid",ylabel="x",xlabel="arclength")
+plot!(pts.u,cache,label="Actual body coordinate",legend=:true)
 ````
 
 ## A double layer

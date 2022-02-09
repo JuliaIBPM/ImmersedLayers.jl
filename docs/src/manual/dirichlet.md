@@ -136,8 +136,8 @@ several times to smooth it out.
 
 ````@example dirichlet
 C = create_surface_filter(cache)
-plot(s,label="Original solution")
-plot!(C^5*s,label="Filtered solution")
+plot(s,sys,label="Original solution")
+plot!(C^5*s,sys,label="Filtered solution")
 ````
 
 [^1]: Eldredge, J. D. (2021) "A method of immersed layers on Cartesian grids, with application to incompressible flows," arXiv:2103.04521.
