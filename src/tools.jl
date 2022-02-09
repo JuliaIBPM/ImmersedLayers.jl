@@ -4,7 +4,7 @@ import LinearAlgebra: dot, norm
 import RigidBodyTools: view
 import CartesianGrids: integrate
 import Base: ones, copyto!
-export points, normals, areas
+export points, normals, areas, arcs
 
 
 """

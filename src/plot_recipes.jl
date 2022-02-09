@@ -60,6 +60,26 @@ end
 
 end
 
+@recipe function f(w::T,cache::BasicILMCache; bodyid=1) where {T<:ScalarData}
+
+  legend --> :none
+  grid --> false
+  @series begin
+    view(arcs(cache),cache,bodyid), view(w,cache,bodyid)
+  end
+end
+
+@recipe function f(w::T,cache::BasicILMCache; bodyid=1) where {T<:VectorData}
+
+  @series begin
+    w.u, cache
+  end
+
+  @series begin
+    w.v, cache
+  end
+end
+
 @recipe function f(cache::BasicILMCache)
   pts = points(cache)
   #x = [pts.u; pts.u[1]]
@@ -88,7 +108,7 @@ end
     sys.base_cache
 end
 
-@recipe function f(w::T,sys::ILMSystem) where T<:Union{GridData,VectorData}
+@recipe function f(w::T,sys::ILMSystem) where T<:Union{GridData,ScalarData,VectorData}
     w, sys.base_cache
 end
 
