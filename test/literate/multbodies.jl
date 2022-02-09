@@ -122,9 +122,9 @@ Let's plot the data to verify this worked
 #!jl plot(u)
 
 #=
-We can also plot just the data on body 3
+We can also plot just the data on body 3 (versus the arclength)
 =#
-#!jl plot(u,sys,3)
+#!jl plot(u,cache,bodyid=3,xlabel="arc length")
 
 #=
 It is also possible to use [`copyto!`](@ref) to copy a vector of just the right

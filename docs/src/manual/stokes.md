@@ -59,8 +59,9 @@ the Schur complement. We need a few more intermediate variable for this problem.
 We'll also construct the filtering matrix for showing the traction field.
 
 ````@example stokes
-struct StokesFlowCache{SMT,CMT,RCT,DVT,VNT,ST,VFT,FT} <: AbstractExtraILMCache
+struct StokesFlowCache{SMT,SSMT,CMT,RCT,DVT,VNT,ST,VFT,FT} <: AbstractExtraILMCache
    S :: SMT
+   Ss :: SSMT
    C :: CMT
    Rc :: RCT
    dv :: DVT
@@ -78,6 +79,7 @@ Extend the `prob_cache` function to construct the extra cache
 ````@example stokes
 function ImmersedLayers.prob_cache(prob::StokesFlowProblem,base_cache::BasicILMCache)
     S = create_CL2invCT(base_cache)
+    Ss = create_CLinvCT_scalar(base_cache)
     C = create_surface_filter(base_cache)
 
     dv = zeros_surface(base_cache)
@@ -91,7 +93,7 @@ function ImmersedLayers.prob_cache(prob::StokesFlowProblem,base_cache::BasicILMC
 
     Rc = RegularizationMatrix(base_cache,dvn,ϕ)
 
-    StokesFlowCache(S,C,Rc,dv,vb,vprime,dvn,sstar,vϕ,ϕ)
+    StokesFlowCache(S,Ss,C,Rc,dv,vb,vprime,dvn,sstar,vϕ,ϕ)
 end
 ````
 
@@ -104,7 +106,7 @@ traction
 function ImmersedLayers.solve(prob::StokesFlowProblem,sys::ILMSystem)
     @unpack extra_cache, base_cache, bc, phys_params = sys
     @unpack nrm = base_cache
-    @unpack S, C, Rc, dv, vb, vprime, sstar, dvn, vϕ, ϕ  = extra_cache
+    @unpack S, Ss, C, Rc, dv, vb, vprime, sstar, dvn, vϕ, ϕ  = extra_cache
 
     σ = zeros_surface(sys)
     s = zeros_gridcurl(sys)
@@ -152,6 +154,15 @@ function ImmersedLayers.solve(prob::StokesFlowProblem,sys::ILMSystem)
     # Assemble the velocity
     curl!(v,s,sys)
     v .+= vϕ
+
+    # Add the streamfunction equivalent to scalar potential
+    ds = zeros_surfacescalar(base_cache)
+    surface_grad_cross!(ds,ϕ,base_cache)
+    ds .= Ss\ds
+    surface_curl_cross!(sstar,ds,base_cache)
+    sstar .*= -1.0
+    inverse_laplacian!(sstar,base_cache)
+    s .+= sstar
 
     # Filter the traction twice to clean it up a bit
     σ .= C^2*σ

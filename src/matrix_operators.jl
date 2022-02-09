@@ -61,6 +61,37 @@ function create_CLinvCT(cache::BasicILMCache{N};scale=1.0) where {N}
 end
 
 """
+    create_CLinvCT_scalar(cache::BasicILMCache[;scale=1.0])
+
+Using the provided cache `cache`, construct the square matrix ``-C_s L^{-1}C_s^T``, which maps
+data of the scalar point data type of the cache to data of the same type. The operators `C_s` and `C_s^T` correspond to [`surface_curl!`](@ref)
+and `L` is the grid Laplacian. The optional keyword `scale` multiplies the
+matrix by the designated value.
+"""
+function create_CLinvCT_scalar(cache::BasicILMCache{N,SCA,G};scale=1.0) where {N,SCA,G<:Edges{Primal}}
+    @unpack L, sscalar_cache, gcurl_cache = cache
+
+    len = length(sscalar_cache)
+    A = Matrix{eltype(sscalar_cache)}(undef,len,len)
+    fill!(sscalar_cache,0.0)
+
+    for col in 1:len
+        sscalar_cache[col] = 1.0
+        fill!(gcurl_cache,0.0)
+        surface_curl!(gcurl_cache,sscalar_cache,cache)
+
+        inverse_laplacian!(gcurl_cache,cache)
+        surface_curl!(sscalar_cache,gcurl_cache,cache)
+
+        A[:,col] = -scale*sscalar_cache
+        fill!(sscalar_cache,0.0)
+    end
+
+    return A
+
+end
+
+"""
     create_CL2invCT(cache::BasicILMCache[;scale=1.0])
 
 Using the provided cache `cache`, construct the square matrix ``-C_s L^{-2} C_s^T``, which maps

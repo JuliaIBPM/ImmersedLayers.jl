@@ -106,7 +106,9 @@ function ImmersedLayers.solve(fbplus,prob::DirichletPoissonProblem,sys::ILMSyste
     inverse_laplacian!(f,base_cache)
     f .+= fstar;
 
-    return f, C^6*s
+    s .= C^6*s
+
+    return f, s
 end
 ````
 
@@ -324,8 +326,8 @@ example, to create an internal solution, with surface data equal to the $y$ coor
 and four sources inside.
 
 ````@example problems
-get_fbplus(base_cache,phys_params,motions) = zeros_surface(base_cache)
-get_fbminus(base_cache,phys_params,motions) = points(base_cache).v
+get_fbplus(base_cache,phys_params) = zeros_surface(base_cache)
+get_fbminus(base_cache,phys_params) = points(base_cache).v
 
 function my_point_positions(state,t,fr::PointRegionCache,phys_params)
     x = [-0.2,0.2,-0.2,0.2]

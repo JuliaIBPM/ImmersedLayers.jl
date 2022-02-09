@@ -355,9 +355,17 @@ depending on whether `sys` has been designated with `IndexScaling` or `GridScali
 respectively.
 """
 function surface_curl!(w::Nodes{Dual},f::ScalarData,cache::BasicILMCache)
-  _unscaled_surface_curl!(w,f,cache.nrm,cache.Rsn,cache.gsnorm_cache,cache.snorm_cache)
+  _unscaled_surface_curl!(w,f,cache,Val(cache_datatype(cache)))
   _scale_derivative!(w,cache)
 end
+
+@inline _unscaled_surface_curl!(w::Nodes{Dual,NX,NY},f::ScalarData{N},cache::BasicILMCache,::Val{:scalar}) where {NX,NY,N} =
+          _unscaled_surface_curl!(w,f,cache.nrm,cache.Rsn,cache.gsnorm_cache,cache.snorm_cache)
+
+@inline _unscaled_surface_curl!(w::Nodes{Dual,NX,NY},f::ScalarData{N},cache::BasicILMCache,::Val{:vector}) where {NX,NY,N} =
+          _unscaled_surface_curl!(w,f,cache.nrm,cache.R,cache.gdata_cache,cache.sdata_cache)
+
+
 
 function _unscaled_surface_curl!(w::Nodes{Dual,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::Edges{Primal,NX,NY},snorm_cache::VectorData{N}) where {NX,NY,N}
     fill!(w,0.0)
@@ -402,9 +410,16 @@ depending on whether `sys` has been designated with `IndexScaling` or `GridScali
 respectively.
 """
 function surface_curl!(vn::ScalarData,s::Nodes{Dual},cache::BasicILMCache)
-  _unscaled_surface_curl!(vn,s,cache.nrm,cache.Esn,cache.gsnorm_cache,cache.snorm_cache)
+  _unscaled_surface_curl!(vn,s,cache,Val(cache_datatype(cache)))
   _scale_derivative!(vn,cache)
 end
+
+@inline _unscaled_surface_curl!(vn::ScalarData{N},s::Nodes{Dual,NX,NY},cache::BasicILMCache,::Val{:scalar}) where {NX,NY,N} =
+          _unscaled_surface_curl!(vn,s,cache.nrm,cache.Esn,cache.gsnorm_cache,cache.snorm_cache)
+
+@inline _unscaled_surface_curl!(vn::ScalarData{N},s::Nodes{Dual,NX,NY},cache::BasicILMCache,::Val{:vector}) where {NX,NY,N} =
+          _unscaled_surface_curl!(vn,s,cache.nrm,cache.E,cache.gdata_cache,cache.sdata_cache)
+
 
 function _unscaled_surface_curl!(vn::ScalarData{N},s::Nodes{Dual,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,q_cache::Edges{Primal,NX,NY},snorm_cache::VectorData{N}) where {NX,NY,N}
     fill!(vn,0.0)
@@ -450,9 +465,16 @@ depending on whether `sys` has been designated with `IndexScaling` or `GridScali
 respectively.
 """
 function surface_curl_cross!(w::Nodes{Dual},f::ScalarData,cache::BasicILMCache)
-  _unscaled_surface_curl_cross!(w,f,cache.nrm,cache.Rsn,cache.gsnorm_cache,cache.snorm_cache)
+  _unscaled_surface_curl_cross!(w,f,cache,Val(cache_datatype(cache)))
   _scale_derivative!(w,cache)
 end
+
+@inline _unscaled_surface_curl_cross!(w::Nodes{Dual,NX,NY},f::ScalarData{N},cache::BasicILMCache,::Val{:scalar}) where {NX,NY,N} =
+          _unscaled_surface_curl_cross!(w,f,cache.nrm,cache.Rsn,cache.gsnorm_cache,cache.snorm_cache)
+
+@inline _unscaled_surface_curl_cross!(w::Nodes{Dual,NX,NY},f::ScalarData{N},cache::BasicILMCache,::Val{:vector}) where {NX,NY,N} =
+          _unscaled_surface_curl_cross!(w,f,cache.nrm,cache.R,cache.gdata_cache,cache.sdata_cache)
+
 
 function _unscaled_surface_curl_cross!(w::Nodes{Dual,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::Edges{Primal,NX,NY},snorm_cache::VectorData{N}) where {NX,NY,N}
     fill!(w,0.0)
@@ -474,9 +496,16 @@ depending on whether `sys` has been designated with `IndexScaling` or `GridScali
 respectively.
 """
 function surface_curl_cross!(vn::ScalarData,s::Nodes{Dual},cache::BasicILMCache)
-  _unscaled_surface_curl_cross!(vn,s,cache.nrm,cache.Esn,cache.gsnorm_cache,cache.snorm_cache)
+  _unscaled_surface_curl_cross!(vn,s,cache,Val(cache_datatype(cache)))
   _scale_derivative!(vn,cache)
 end
+
+@inline _unscaled_surface_curl_cross!(vn::ScalarData{N},s::Nodes{Dual,NX,NY},cache::BasicILMCache,::Val{:scalar}) where {NX,NY,N} =
+          _unscaled_surface_curl_cross!(vn,s,cache.nrm,cache.Esn,cache.gsnorm_cache,cache.snorm_cache)
+
+@inline _unscaled_surface_curl_cross!(vn::ScalarData{N},s::Nodes{Dual,NX,NY},cache::BasicILMCache,::Val{:vector}) where {NX,NY,N} =
+          _unscaled_surface_curl_cross!(vn,s,cache.nrm,cache.E,cache.gdata_cache,cache.sdata_cache)
+
 
 function _unscaled_surface_curl_cross!(vn::ScalarData{N},s::Nodes{Dual,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,q_cache::Edges{Primal,NX,NY},snorm_cache::VectorData{N}) where {NX,NY,N}
     fill!(vn,0.0)
@@ -499,9 +528,16 @@ depending on whether `sys` has been designated with `IndexScaling` or `GridScali
 respectively.
 """
 function surface_divergence!(θ::Nodes{Primal},f::ScalarData,cache::BasicILMCache)
-  _unscaled_surface_divergence!(θ,f,cache.nrm,cache.Rsn,cache.gsnorm_cache,cache.snorm_cache)
+  _unscaled_surface_divergence!(θ,f,cache,Val(cache_datatype(cache)))
   _scale_derivative!(θ,cache)
 end
+
+@inline _unscaled_surface_divergence!(Θ::Nodes{Primal,NX,NY},f::ScalarData{N},cache,::Val{:scalar}) where {NX,NY,N} =
+          _unscaled_surface_divergence!(Θ,f,cache.nrm,cache.Rsn,cache.gsnorm_cache,cache.snorm_cache)
+
+@inline _unscaled_surface_divergence!(Θ::Nodes{Primal,NX,NY},f::ScalarData{N},cache,::Val{:vector}) where {NX,NY,N} =
+          _unscaled_surface_divergence!(Θ,f,cache.nrm,cache.R,cache.gdata_cache,cache.sdata_cache)
+
 
 function _unscaled_surface_divergence!(θ::Nodes{Primal,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::Edges{Primal,NX,NY},snorm_cache::VectorData{N}) where {NX,NY,N}
     fill!(θ,0.0)
@@ -566,9 +602,15 @@ depending on whether `sys` has been designated with `IndexScaling` or `GridScali
 respectively.
 """
 function surface_grad!(vn::ScalarData,ϕ::Nodes{Primal},cache::BasicILMCache)
-  _unscaled_surface_grad!(vn,ϕ,cache.nrm,cache.Esn,cache.gsnorm_cache,cache.snorm_cache)
+  _unscaled_surface_grad!(vn,ϕ,cache,Val(cache_datatype(cache)))
   _scale_derivative!(vn,cache)
 end
+
+@inline _unscaled_surface_grad!(vn::ScalarData{N},ϕ::Nodes{Primal,NX,NY},cache,::Val{:scalar}) where {NX,NY,N} =
+          _unscaled_surface_grad!(vn,ϕ,cache.nrm,cache.Esn,cache.gsnorm_cache,cache.snorm_cache)
+
+@inline _unscaled_surface_grad!(vn::ScalarData{N},ϕ::Nodes{Primal,NX,NY},cache,::Val{:vector}) where {NX,NY,N} =
+          _unscaled_surface_grad!(vn,ϕ,cache.nrm,cache.E,cache.gdata_cache,cache.sdata_cache)
 
 function _unscaled_surface_grad!(vn::ScalarData{N},ϕ::Nodes{Primal,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,q_cache::Edges{Primal,NX,NY},snorm_cache::VectorData{N}) where {NX,NY,N}
     fill!(vn,0.0)
@@ -635,9 +677,15 @@ depending on whether `sys` has been designated with `IndexScaling` or `GridScali
 respectively.
 """
 function surface_divergence_cross!(θ::Nodes{Primal},f::ScalarData,cache::BasicILMCache)
-  _unscaled_surface_divergence_cross!(θ,f,cache.nrm,cache.Rsn,cache.gsnorm_cache,cache.snorm_cache)
+  _unscaled_surface_divergence_cross!(Θ,f,cache,Val(cache_datatype(cache)))
   _scale_derivative!(θ,cache)
 end
+
+@inline _unscaled_surface_divergence_cross!(Θ,f,cache,::Val{:scalar}) =
+          _unscaled_surface_divergence_cross!(Θ,f,cache.nrm,cache.Rsn,cache.gsnorm_cache,cache.snorm_cache)
+
+@inline _unscaled_surface_divergence_cross!(Θ,f,cache,::Val{:vector}) =
+          _unscaled_surface_divergence_cross!(Θ,f,cache.nrm,cache.R,cache.gdata_cache,cache.sdata_cache)
 
 function _unscaled_surface_divergence_cross!(θ::Nodes{Primal,NX,NY},f::ScalarData{N},nrm::VectorData{N},Rf::RegularizationMatrix,q_cache::Edges{Primal,NX,NY},snorm_cache::VectorData{N}) where {NX,NY,N}
     fill!(θ,0.0)
@@ -658,9 +706,16 @@ depending on whether `sys` has been designated with `IndexScaling` or `GridScali
 respectively.
 """
 function surface_grad_cross!(vn::ScalarData,ϕ::Nodes{Primal},cache::BasicILMCache)
-  _unscaled_surface_grad_cross!(vn,ϕ,cache.nrm,cache.Esn,cache.gsnorm_cache,cache.snorm_cache)
+  _unscaled_surface_grad_cross!(vn,ϕ,cache,Val(cache_datatype(cache)))
   _scale_derivative!(vn,cache)
 end
+
+@inline _unscaled_surface_grad_cross!(vn,ϕ,cache,::Val{:scalar}) =
+          _unscaled_surface_grad_cross!(vn,ϕ,cache.nrm,cache.Esn,cache.gsnorm_cache,cache.snorm_cache)
+
+@inline _unscaled_surface_grad_cross!(vn,ϕ,cache,::Val{:vector}) =
+          _unscaled_surface_grad_cross!(vn,ϕ,cache.nrm,cache.E,cache.gdata_cache,cache.sdata_cache)
+
 
 function _unscaled_surface_grad_cross!(vn::ScalarData{N},ϕ::Nodes{Primal,NX,NY},nrm::VectorData{N},Ef::InterpolationMatrix,q_cache::Edges{Primal,NX,NY},snorm_cache::VectorData{N}) where {NX,NY,N}
     fill!(vn,0.0)

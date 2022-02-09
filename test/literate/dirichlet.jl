@@ -120,8 +120,9 @@ Let's also plot the solution for $s$ on the surface. We will plot the
 several times to smooth it out.
 =#
 C = create_surface_filter(cache)
-#!jl plot(s,sys,label="Original solution")
-#!jl plot!(C^5*s,sys,label="Filtered solution")
+#!jl plot(s,cache,label="Original solution")
+s .= C^5*s;
+#!jl plot!(s,cache,label="Filtered solution")
 
 
 #md # [^1]: Eldredge, J. D. (2021) "A method of immersed layers on Cartesian grids, with application to incompressible flows," arXiv:2103.04521.
