@@ -124,9 +124,32 @@ end
 """
     init_sol(sys::ILMSystem)
 
-Return the initial solution vector.
+Return the initial solution vector, with the state component
+set to zero.
 """
-function init_sol(sys::ILMSystem{true,SCA,0}) where {SCA}
+function init_sol(sys::ILMSystem)
+    sol = zeros_sol(sys)
+    _initialize_motion!(sol,sys)
+end
+
+"""
+    init_sol(s::AbstractSpatialField,sys::ILMSystem)
+
+Return the initial solution vector, with the state component
+set to the field established by `s`.
+"""
+function init_sol(s::AbstractSpatialField,sys::ILMSystem)
+    @unpack base_cache = sys
+    @unpack g = base_cache
+    sol = zeros_sol(sys)
+    _initialize_motion!(sol,sys)
+    gf = GeneratedField(state(sol),s,g)
+    state(sol) .= gf()
+    return sol
+end
+
+#=
+function init_sol(sys::ILMSystem) where {SCA}
     @unpack extra_cache = sys
     @unpack f = extra_cache
     return solvector(state=zero(f.state))
@@ -146,6 +169,19 @@ function init_sol(sys::ILMSystem{false})
                      constraint=zero(f.constraint),
                      aux_state=motion_state(bl,motions))
 end
+=#
+
+function _initialize_motion!(sol,sys::ILMSystem{false})
+  @unpack motions, base_cache = sys
+  @unpack bl  = base_cache
+  aux_state(sol) = motion_state(bl,motions)
+  return sol
+end
+
+function _initialize_motion!(sol,sys::ILMSystem{true})
+   return sol
+end
+
 
 function body_rhs!(dx::Vector{T},x::Vector{T},sys::ILMSystem,t::Real) where {T<:Real}
   @unpack motions, base_cache = sys
