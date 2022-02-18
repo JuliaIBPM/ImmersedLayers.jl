@@ -433,4 +433,12 @@ end
 
    @test_throws DimensionMismatch apply_forcing!(dT2,T2,t,fcache2,phys_params)
 
+   # Area forcing with no shape mask
+   function model2!(σ,T,t,fr::AreaRegionCache,phys_params)
+       σ .= phys_params["areaheater1_flux"]
+    end
+    afm = AreaForcingModel(model2!)
+    fcache = ForcingModelAndRegion(afm,scache)
+    apply_forcing!(dT,T,t,fcache,phys_params)
+
 end

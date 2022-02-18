@@ -24,7 +24,7 @@ for ftype in [:Area,:Line,:Point]
 
         Bundles a `shape` (i.e., a `Body`, `BodyList`, or `VectorData`) and a `model_function!` (a function
         that returns the strength of the forcing) for $($typename)-type forcing.
-        `model_function!` be in-place with a signature of the form
+        `model_function!` must be in-place with a signature of the form
 
             model_function!(str,state,t,fcache,phys_params)
 
@@ -64,6 +64,23 @@ and a `model_function` (a function that returns the strength of the forcing) for
   where `str` is the strength to be returned.
 """ PointForcingModel(::Function,::Function)
 
+"""
+    AreaForcingModel(model_function!)
+
+  Creates area-type forcing over the entire domain, using a `model_function!` (a function
+  that returns the strength of the forcing).
+
+  `model_function!` must be in-place with a signature of the form
+
+      model_function!(str,state,t,fcache,phys_params)
+
+  where `str` is the strength to be returned, `state` the state vector,
+  `t` is time, `fcache` is a corresponding `AreaRegionCache`
+  and `phys_params` are user-supplied physical parameters. Any of these can
+  be utilized to compute the strength.
+"""
+AreaForcingModel(fcn::Function;kwargs...) = AreaForcingModel(nothing,fcn;kwargs...)
+
 #=
 Region caches
 =#
@@ -89,8 +106,16 @@ end
     AreaRegionCache(shape::Body/BodyList,cache::BasicILMCache)
 
 Create an area region (basically, a mask) of the shape(s) `shape`, using
-the data in `cache` to provide the details of the regularization.
+the data in `cache` to provide the details of the grid and regularization.
 """ AreaRegionCache(::Union{Body,BodyList},::BasicILMCache)
+
+"""
+    AreaRegionCache(cache::BasicILMCache)
+
+Create an area region that spans the entire domain, using
+the data in `cache` to provide the grid details.
+""" AreaRegionCache(::BasicILMCache)
+
 
 """
     LineRegionCache(shape::Body/BodyList,cache::BasicILMCache)
@@ -115,6 +140,13 @@ for f in [:Scalar,:Vector]
     gdtype = Symbol(string(f)*"GridData")
     @eval function AreaRegionCache(g::PhysicalGrid,shape::BodyList,data_prototype::$gdtype;kwargs...)
         cache = $cname(shape,g;kwargs...)
+        m = mask(cache)
+        str = similar_grid(cache)
+        return AreaRegionCache{typeof(m),typeof(str),typeof(cache)}(m,str,cache)
+    end
+
+    @eval function AreaRegionCache(g::PhysicalGrid,data_prototype::$gdtype;kwargs...)
+        cache = $cname(g;kwargs...)
         m = mask(cache)
         str = similar_grid(cache)
         return AreaRegionCache{typeof(m),typeof(str),typeof(cache)}(m,str,cache)
@@ -148,6 +180,13 @@ for f in [:AreaRegionCache,:LineRegionCache]
     @eval $f(shape::Union{Body,BodyList},cache::BasicILMCache{N,SCA};scaling=SCA,kwargs...) where {N,SCA} = $f(cache.g,shape,similar_grid(cache);scaling=scaling,kwargs...)
     @eval $f(g,shape::Body,a...;kwargs...) = $f(g,BodyList([shape]),a...;kwargs...)
 end
+
+AreaRegionCache(cache::AbstractBasicCache;kwargs...) =
+      AreaRegionCache(cache.g,similar_grid(cache);kwargs...)
+
+AreaRegionCache(::Nothing,cache::AbstractBasicCache;kwargs...) =
+      AreaRegionCache(cache;kwargs...)
+
 
 PointRegionCache(pts::Union{VectorData,Function},cache::AbstractBasicCache;kwargs...) =
       PointRegionCache(cache.g,pts,similar_grid(cache);kwargs...)

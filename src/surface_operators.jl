@@ -732,8 +732,10 @@ end
 Create grid data that consist of 1s inside of a surface (i.e., on a side opposite
   the normal vectors) and 0s outside. The grid data are the same type as the
   output data type of `sys`.  Only allows `sys` to have `GridScaling`.
+  If the cache has no immersed surface, then it reverts to 1s everywhere.
 """
 @inline mask(cache::BasicILMCache{N,GridScaling}) where {N} = _mask!(zeros_grid(cache),cache)
+
 
 """
     complementary_mask(cache::BasicILMCache) -> GridData
@@ -742,6 +744,7 @@ Create grid data that consist of 1s inside of a surface (i.e., on a side opposit
 Create grid data that consist of 0s inside of a surface (i.e., on a side opposite
   the normal vectors) and 1s outside. The grid data are the same type as the
   output data type of `cache`.  Only allows `cache` to have `GridScaling`.
+  If the cache has no immersed surface, then it reverts to 0s everywhere.
 """
 @inline complementary_mask(cache::BasicILMCache{N,GridScaling}) where {N} =
           _complementary_mask!(zeros_grid(cache),cache)
@@ -775,7 +778,7 @@ function complementary_mask!(w::T,cache::BasicILMCache{N,GridScaling}) where {T 
   product!(w,gdata_cache,w)
 end
 
-function _mask!(msk,cache)
+function _mask!(msk,cache::BasicILMCache{N}) where {N}
   @unpack sdata_cache, gdata_cache, L = cache
   typeof(msk) == typeof(gdata_cache) || error("Wrong data type")
   fill!(sdata_cache,1.0)
@@ -784,7 +787,18 @@ function _mask!(msk,cache)
   msk .*= -1.0
 end
 
-function _complementary_mask!(msk,cache)
+function _mask!(msk,cache::BasicILMCache{0})
+  @unpack gdata_cache = cache
+  typeof(msk) == typeof(gdata_cache) || error("Wrong data type")
+  fill!(msk,1.0)
+end
+
+
+function _complementary_mask!(msk,cache::BasicILMCache{N}) where {N}
     _mask!(msk,cache)
     msk .= 1.0 - msk
+end
+
+function _complementary_mask!(msk,cache::BasicILMCache{0})
+    fill!(msk,0.0)
 end
