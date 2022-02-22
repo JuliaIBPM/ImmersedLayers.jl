@@ -9,6 +9,7 @@ using DocStringExtensions
 @reexport using CartesianGrids
 @reexport using RigidBodyTools
 @reexport using ConstrainedSystems
+#@reexport using SpaceTimeFields
 
 import CartesianGrids: Laplacian
 
