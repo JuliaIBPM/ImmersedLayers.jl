@@ -19,28 +19,89 @@ for ftype in [:Area,:Line,:Point]
     eval(quote
       export $fmname
 
-      @doc """
-            $($fmname)(shape::Union{Body,BodyList,VectorData},model_function!)
-
-        Bundles a `shape` (i.e., a `Body`, `BodyList`, or `VectorData`) and a `model_function!` (a function
-        that returns the strength of the forcing) for $($typename)-type forcing.
-        `model_function!` must be in-place with a signature of the form
-
-            model_function!(str,state,t,fcache,phys_params)
-
-        where `str` is the strength to be returned, `state` the state vector,
-        `t` is time, `fcache` is a corresponding `$($fmcache)`
-        and `phys_params` are user-supplied physical parameters. Any of these can
-        be utilized to compute the strength.
-        """
-        struct $fmname{RT,KT,MDT<:Function} <: AbstractForcingModel
+      struct $fmname{RT,KT,MDT<:Function} <: AbstractForcingModel
           shape :: RT
           kwargs :: KT
           fcn :: MDT
           $fmname(shape,fcn;kwargs...) = new{typeof(shape),typeof(kwargs),typeof(fcn)}(shape,kwargs,fcn)
-        end
-      end)
+      end
+    end)
 end
+
+"""
+      AreaForcingModel(shape::Union{Body,BodyList},model_function!)
+
+  Bundles a `shape` (i.e., a `Body`, `BodyList`,) and a `model_function!` (a function
+  that returns the strength of the forcing) for area-type forcing.
+  `model_function!` must be in-place with a signature of the form
+
+      model_function!(str,state,t,fcache,phys_params)
+
+  where `str` is the strength to be returned, `state` the state vector,
+  `t` is time, `fcache` is a corresponding `AreaRegionCache`
+  and `phys_params` are user-supplied physical parameters. Any of these can
+  be utilized to compute the strength.
+
+  There are a number of keyword arguments that can be passed in:
+  `ddf = `,specifying the type of DDF; `spatialfield =` to provide
+  an `AbstractSpatialField` to help in evaluating the strength.
+  (The resulting field is available to `model_function!` in the `generated_field` field
+    of `fcache`.)
+""" AreaForcingModel(::Union{Body,BodyList},::Function)
+
+"""
+    AreaForcingModel(model_function!)
+
+  Creates area-type forcing over the entire domain, using a `model_function!` (a function
+  that returns the strength of the forcing).
+
+  `model_function!` must be in-place with a signature of the form
+
+      model_function!(str,state,t,fcache,phys_params)
+
+  where `str` is the strength to be returned, `state` the state vector,
+  `t` is time, `fcache` is a corresponding `AreaRegionCache`
+  and `phys_params` are user-supplied physical parameters. Any of these can
+  be utilized to compute the strength.
+
+  The keyword `spatialfield =` can provide
+  an `AbstractSpatialField` to help in evaluating the strength.
+  (The resulting field is available to `model_function!` in the `generated_field` field
+    of `fcache`.)
+"""
+AreaForcingModel(fcn::Function;kwargs...) = AreaForcingModel(nothing,fcn;kwargs...)
+
+"""
+      LineForcingModel(shape::Union{Body,BodyList},model_function!)
+
+  Bundles a `shape` (i.e., a `Body`, `BodyList`,) and a `model_function!` (a function
+  that returns the strength of the forcing) for line-type forcing.
+  `model_function!` must be in-place with a signature of the form
+
+      model_function!(str,state,t,fcache,phys_params)
+
+  where `str` is the strength to be returned, `state` the state vector,
+  `t` is time, `fcache` is a corresponding `LineRegionCache`
+  and `phys_params` are user-supplied physical parameters. Any of these can
+  be utilized to compute the strength.
+
+  The keyword `ddf = `,specifying the type of DDF.
+""" LineForcingModel(::Union{Body,BodyList},::Function)
+
+"""
+      PointForcingModel(pts::VectorData,model_function!)
+
+  Bundles point coordinates `pts` and a `model_function!` (a function
+  that returns the strength of the forcing) for point-type forcing.
+  `model_function!` must be in-place with a signature of the form
+
+      model_function!(str,state,t,fcache,phys_params)
+
+  where `str` is the strength to be returned, `state` the state vector,
+  `t` is time, `fcache` is a corresponding `PointRegionCache`
+  and `phys_params` are user-supplied physical parameters. Any of these can
+  be utilized to compute the strength.
+""" PointForcingModel(::VectorData,::Function)
 
 """
     PointForcingModel(point_function::Function,model_function!::Function)
@@ -64,30 +125,15 @@ and a `model_function` (a function that returns the strength of the forcing) for
   where `str` is the strength to be returned.
 """ PointForcingModel(::Function,::Function)
 
-"""
-    AreaForcingModel(model_function!)
-
-  Creates area-type forcing over the entire domain, using a `model_function!` (a function
-  that returns the strength of the forcing).
-
-  `model_function!` must be in-place with a signature of the form
-
-      model_function!(str,state,t,fcache,phys_params)
-
-  where `str` is the strength to be returned, `state` the state vector,
-  `t` is time, `fcache` is a corresponding `AreaRegionCache`
-  and `phys_params` are user-supplied physical parameters. Any of these can
-  be utilized to compute the strength.
-"""
-AreaForcingModel(fcn::Function;kwargs...) = AreaForcingModel(nothing,fcn;kwargs...)
 
 #=
 Region caches
 =#
 
-struct AreaRegionCache{MT,ST,CT<:BasicILMCache} <: AbstractRegionCache
+struct AreaRegionCache{MT,ST,SGT,CT<:BasicILMCache} <: AbstractRegionCache
     mask :: MT
     str :: ST
+    generated_field :: SGT
     cache :: CT
 end
 
@@ -138,18 +184,20 @@ for f in [:Scalar,:Vector]
     cname = Symbol("Surface"*string(f)*"Cache")
     pcname = Symbol(string(f)*"PointCollectionCache")
     gdtype = Symbol(string(f)*"GridData")
-    @eval function AreaRegionCache(g::PhysicalGrid,shape::BodyList,data_prototype::$gdtype;kwargs...)
+    @eval function AreaRegionCache(g::PhysicalGrid,shape::BodyList,data_prototype::$gdtype;spatialfield=nothing,kwargs...)
         cache = $cname(shape,g;kwargs...)
         m = mask(cache)
         str = similar_grid(cache)
-        return AreaRegionCache{typeof(m),typeof(str),typeof(cache)}(m,str,cache)
+        gf = _generatedfield(str,spatialfield,g)
+        return AreaRegionCache{typeof(m),typeof(str),typeof(gf),typeof(cache)}(m,str,gf,cache)
     end
 
-    @eval function AreaRegionCache(g::PhysicalGrid,data_prototype::$gdtype;kwargs...)
+    @eval function AreaRegionCache(g::PhysicalGrid,data_prototype::$gdtype;spatialfield=nothing,kwargs...)
         cache = $cname(g;kwargs...)
         m = mask(cache)
         str = similar_grid(cache)
-        return AreaRegionCache{typeof(m),typeof(str),typeof(cache)}(m,str,cache)
+        gf = _generatedfield(str,spatialfield,g)
+        return AreaRegionCache{typeof(m),typeof(str),typeof(gf),typeof(cache)}(m,str,gf,cache)
     end
 
     @eval function LineRegionCache(g::PhysicalGrid,shape::BodyList,data_prototype::$gdtype;kwargs...)
@@ -191,6 +239,9 @@ AreaRegionCache(::Nothing,cache::AbstractBasicCache;kwargs...) =
 PointRegionCache(pts::Union{VectorData,Function},cache::AbstractBasicCache;kwargs...) =
       PointRegionCache(cache.g,pts,similar_grid(cache);kwargs...)
 
+
+_generatedfield(field_prototype::GridData,::Nothing,g::PhysicalGrid) = nothing
+_generatedfield(field_prototype::GridData,s,g::PhysicalGrid) = GeneratedField(field_prototype,s,g)
 
 
 """

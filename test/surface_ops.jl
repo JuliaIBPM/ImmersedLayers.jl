@@ -434,11 +434,17 @@ end
    @test_throws DimensionMismatch apply_forcing!(dT2,T2,t,fcache2,phys_params)
 
    # Area forcing with no shape mask
-   function model2!(σ,T,t,fr::AreaRegionCache,phys_params)
-       σ .= phys_params["areaheater1_flux"]
-    end
-    afm = AreaForcingModel(model2!)
+    afm = AreaForcingModel(model1!)
     fcache = ForcingModelAndRegion(afm,scache)
     apply_forcing!(dT,T,t,fcache,phys_params)
+
+    function model6!(σ,T,t,fr::AreaRegionCache,phys_params)
+        σ .= fr.generated_field()
+     end
+    afm = AreaForcingModel(model6!,spatialfield=SpatialGaussian(0.5,0.1,0,0,10))
+    fcache = ForcingModelAndRegion(afm,scache)
+    apply_forcing!(dT,T,t,fcache,phys_params)
+
+    @test dT == fcache.region_cache.generated_field()
 
 end
