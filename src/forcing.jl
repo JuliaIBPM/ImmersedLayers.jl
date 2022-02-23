@@ -43,7 +43,7 @@ end
   be utilized to compute the strength.
 
   There are a number of keyword arguments that can be passed in:
-  `ddf = `,specifying the type of DDF; `spatialfield =` to provide
+  `ddftype =`,specifying the type of DDF; `spatialfield =` to provide
   an `AbstractSpatialField` to help in evaluating the strength.
   (The resulting field is available to `model_function!` in the `generated_field` field
     of `fcache`.)
@@ -85,7 +85,7 @@ AreaForcingModel(fcn::Function;kwargs...) = AreaForcingModel(nothing,fcn;kwargs.
   and `phys_params` are user-supplied physical parameters. Any of these can
   be utilized to compute the strength.
 
-  The keyword `ddf = `,specifying the type of DDF.
+  The keyword `ddftype =` can be used to specify the type of DDF.
 """ LineForcingModel(::Union{Body,BodyList},::Function)
 
 """
@@ -101,6 +101,8 @@ AreaForcingModel(fcn::Function;kwargs...) = AreaForcingModel(nothing,fcn;kwargs.
   `t` is time, `fcache` is a corresponding `PointRegionCache`
   and `phys_params` are user-supplied physical parameters. Any of these can
   be utilized to compute the strength.
+
+  The keyword `ddftype =` can be used to specify the type of DDF.
 """ PointForcingModel(::VectorData,::Function)
 
 """
@@ -226,13 +228,13 @@ end
 
 for f in [:AreaRegionCache,:LineRegionCache]
     @eval $f(shape::Union{Body,BodyList},cache::BasicILMCache{N,SCA};scaling=SCA,kwargs...) where {N,SCA} = $f(cache.g,shape,similar_grid(cache);scaling=scaling,kwargs...)
-    @eval $f(g,shape::Body,a...;kwargs...) = $f(g,BodyList([shape]),a...;kwargs...)
+    @eval $f(g::PhysicalGrid,shape::Body,a...;kwargs...) = $f(g,BodyList([shape]),a...;kwargs...)
 end
 
 AreaRegionCache(cache::AbstractBasicCache;kwargs...) =
       AreaRegionCache(cache.g,similar_grid(cache);kwargs...)
 
-AreaRegionCache(::Nothing,cache::AbstractBasicCache;kwargs...) =
+AreaRegionCache(::Any,cache::AbstractBasicCache;kwargs...) =
       AreaRegionCache(cache;kwargs...)
 
 
@@ -240,8 +242,9 @@ PointRegionCache(pts::Union{VectorData,Function},cache::AbstractBasicCache;kwarg
       PointRegionCache(cache.g,pts,similar_grid(cache);kwargs...)
 
 
-_generatedfield(field_prototype::GridData,::Nothing,g::PhysicalGrid) = nothing
-_generatedfield(field_prototype::GridData,s,g::PhysicalGrid) = GeneratedField(field_prototype,s,g)
+_generatedfield(field_prototype::GridData,s,g::PhysicalGrid) = nothing
+_generatedfield(field_prototype::GridData,s::Union{T,Vector{T}},g::PhysicalGrid) where {T<:AbstractSpatialField} =
+          GeneratedField(field_prototype,s,g)
 
 
 """
@@ -350,7 +353,7 @@ function _apply_forcing!(dx,x,t,fcache::ForcingModelAndRegion{<:AreaRegionCache}
     fill!(str,0.0)
     fcn(str,x,t,region_cache,phys_params)
 
-    dx .+= str*mask(region_cache)
+    dx .+= str.*mask(region_cache)
     return dx
 end
 
