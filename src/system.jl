@@ -136,6 +136,17 @@ function surfaces(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{true,SCA,0
     return nothing
 end
 
+"""
+    surfaces(sys::ILMSystem) -> BodyList
+
+Return the list of surfaces (as a `BodyList`) in the system `sys`.
+"""
+function surfaces(sys::ILMSystem)
+  @unpack base_cache, motions = sys
+  @unpack bl = base_cache
+  return bl
+end
+
 
 ## Extend functions on `BasicILMCache` type to `ILMSystem`
 @inline CartesianGrids.cellsize(sys::ILMSystem) = cellsize(sys.base_cache)
