@@ -39,9 +39,10 @@ subsequent operators in `sysold`.
 function update_system!(sys::ILMSystem,u,sysold::ILMSystem,t)
     @unpack base_cache, motions = sysold
     @unpack bl = base_cache
-    x = aux_state(u)
-    bodies = deepcopy(bl)
-    update_body!(bodies,x,motions)
+    bodies = surfaces(u,sysold,t)
+    #x = aux_state(u)
+    #bodies = deepcopy(bl)
+    #update_body!(bodies,x,motions)
     sysnew = update_system(sysold,bodies)
     sys.base_cache = sysnew.base_cache
     sys.extra_cache = sysnew.extra_cache
@@ -111,6 +112,29 @@ end
 # Create the basic solve function, to be extended
 function solve(prob::AbstractILMProblem,sys::ILMSystem) end
 
+
+"""
+    surfaces(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem,t) -> BodyList
+
+Return the list of surfaces (as a `BodyList`) in the solution vector `u`. If the
+surfaces are stationary, then this simply returns them from `sys` and ignores the
+time argument.
+"""
+function surfaces(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{false},t)
+    @unpack base_cache, motions = sys
+    @unpack bl = base_cache
+    x = aux_state(u)
+    current_bl = deepcopy(bl)
+    update_body!(current_bl,x,motions)
+    return current_bl
+end
+
+surfaces(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{true},t) = surfaces(sys)
+
+
+function surfaces(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{true,SCA,0},t) where SCA
+    return nothing
+end
 
 
 ## Extend functions on `BasicILMCache` type to `ILMSystem`

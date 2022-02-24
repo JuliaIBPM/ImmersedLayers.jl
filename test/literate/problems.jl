@@ -367,3 +367,11 @@ it's very fast.
 #md # points(::PointRegionCache)
 #md # apply_forcing!
 #md # ```
+
+#md # ## Output functions and macros
+#md # ```@docs
+#md # @snapshotoutput
+#md # @scalarsurfacemetric
+#md # @vectorsurfacemetric
+#md # surfaces
+#md # ```

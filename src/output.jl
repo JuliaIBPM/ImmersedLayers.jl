@@ -28,7 +28,7 @@ macro snapshotoutput(name)
       $name(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,t::AbstractArray,args...;kwargs...) =
           map(ti -> $name(sol(ti),sys,ti,args...;kwargs...),t)
 
-      export $name    
+      export $name
 
   end)
 
@@ -89,4 +89,58 @@ macro vectorsurfacemetric(name)
 
         @snapshotoutput $name
     end)
+end
+
+#=
+Provide the surfaces, constructing them where necessary
+=#
+
+"""
+    surfaces(sol::ODESolution,sys::ILMSystem,t) -> BodyList
+
+Return the list of surfaces (as a `BodyList`) at the time `t`, using
+the ODE solution array `sol`. If the surfaces are stationary, then
+this simply returns them and ignores the time argument.
+"""
+surfaces(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem{false},t) = surfaces(sol(t),sys,t)
+
+"""
+    surfaces(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem,t) -> BodyList
+
+Return the list of surfaces (as a `BodyList`) in the solution vector `u`. If the
+surfaces are stationary, then this simply returns them from `sys` and ignores the
+time argument.
+"""
+function surfaces(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{false},t)
+    @unpack base_cache, motions = sys
+    @unpack bl = base_cache
+    x = aux_state(u)
+    current_bl = deepcopy(bl)
+    update_body!(current_bl,x,motions)
+    return current_bl
+end
+
+surfaces(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{true},t) = surfaces(sys)
+
+
+function surfaces(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{true,SCA,0},t) where SCA
+    return nothing
+end
+
+"""
+    surfaces(int::ConstrainedSystems.OrdinaryDiffEq.ODEIntegrator) -> BodyList
+
+Return the list of surfaces (as a `BodyList`) in the integrator `int`.
+"""
+surfaces(integ::ConstrainedSystems.OrdinaryDiffEq.ODEIntegrator) = surfaces(integ.u,integ.p,integ.t)
+
+"""
+    surfaces(sys::ILMSystem) -> BodyList
+
+Return the list of surfaces (as a `BodyList`) in the system `sys`.
+"""
+function surfaces(sys::ILMSystem)
+  @unpack base_cache, motions = sys
+  @unpack bl = base_cache
+  return bl
 end
