@@ -284,6 +284,7 @@ end
 Convenience functions
 =#
 
+@inline get_grid(s::AbstractBasicCache) = s.g
 @inline CartesianGrids.cellsize(s::AbstractBasicCache) = cellsize(s.g)
 @inline Base.length(s::AbstractBasicCache{N}) where {N} = N
 Base.eltype(s::AbstractBasicCache) = eltype(s.gdata_cache)

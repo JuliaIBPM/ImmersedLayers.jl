@@ -191,6 +191,8 @@ function body_rhs!(dx::Vector{T},x::Vector{T},sys::ILMSystem,t::Real) where {T<:
   return dx
 end
 
+RigidBodyTools.maxlistvelocity(sys::ILMSystem) = maxlistvelocity(sys.base_cache.bl,sys.motions)
+
 _norm_sq(u) = dot(u,u)
 _norm_sq(u::ConstrainedSystems.ArrayPartition) = sum(_norm_sq,u.x)
 state_norm(u,t) = sqrt(_norm_sq(u))
@@ -202,11 +204,10 @@ Initialize the integrator for a time-varying immersed-layer system of PDEs,
 described in `sys`.
 """
 function init(u0,tspan,sys::ILMSystem;alg=ConstrainedSystems.LiskaIFHERK(),kwargs...)
-    @unpack timestep_func, phys_params, extra_cache,base_cache = sys
-    @unpack g = base_cache
+    @unpack timestep_func = sys
     fode = ConstrainedODEFunction(sys)
 
     prob = ODEProblem(fode,u0,tspan,sys)
-    dt_calc = timestep_func(g,phys_params)
+    dt_calc = timestep_func(sys)
     return init(prob, alg,dt=dt_calc,internal_norm=state_norm,kwargs...)
 end
