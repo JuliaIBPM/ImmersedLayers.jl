@@ -258,7 +258,7 @@ solution prototype that we have stored in the extra cache. We also
 get the time step size for our own inspection.
 =#
 u0 = init_sol(sys)
-Δt = timestep_fourier(g,phys_params)
+Δt = timestep_fourier(sys)
 
 #=
 It is instructive to note that `u0` has two parts: a *state* and a *constraint*,
