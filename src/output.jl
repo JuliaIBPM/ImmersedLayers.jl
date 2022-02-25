@@ -102,7 +102,7 @@ Return the list of surfaces (as a `BodyList`) at the time `t`, using
 the ODE solution array `sol`. If the surfaces are stationary, then
 this simply returns them and ignores the time argument.
 """
-surfaces(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem{false},t) = surfaces(sol(t),sys,t)
+surfaces(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,t) = surfaces(sol(t),sys,t)
 
 
 """
