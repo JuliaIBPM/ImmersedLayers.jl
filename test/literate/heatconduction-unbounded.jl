@@ -208,7 +208,9 @@ end
 The last definition we need is for a timestep function. This time,
 we take into account both the Fourier and the CFL conditions:
 =#
-function timestep_fourier_cfl(g,phys_params)
+function timestep_fourier_cfl(sys)
+    @unpack phys_params = sys
+    g = get_grid(sys)
     κ = phys_params["diffusivity"]
     Ω = phys_params["angular velocity"]
     L = phys_params["length scale"]

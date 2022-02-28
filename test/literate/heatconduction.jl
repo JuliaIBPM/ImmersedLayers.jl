@@ -176,7 +176,9 @@ time step directly, e.g., by supplying it in `phys_params`. But it
 is better to use a stability condition (a Fourier condition) to determine
 it based on the other data.
 =#
-function timestep_fourier(g,phys_params)
+function timestep_fourier(sys)
+    @unpack phys_params = sys
+    g = get_grid(sys)
     κ = phys_params["diffusivity"]
     Fo = phys_params["Fourier"]
     Δt = Fo*cellsize(g)^2/κ
@@ -256,7 +258,7 @@ solution prototype that we have stored in the extra cache. We also
 get the time step size for our own inspection.
 =#
 u0 = init_sol(sys)
-Δt = timestep_fourier(g,phys_params)
+Δt = timestep_fourier(sys)
 
 #=
 It is instructive to note that `u0` has two parts: a *state* and a *constraint*,

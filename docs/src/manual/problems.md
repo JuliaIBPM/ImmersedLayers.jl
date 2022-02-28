@@ -382,6 +382,14 @@ points(::PointRegionCache)
 apply_forcing!
 ```
 
+## Output functions and macros
+```@docs
+@snapshotoutput
+@scalarsurfacemetric
+@vectorsurfacemetric
+surfaces
+```
+
 ---
 
 *This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
