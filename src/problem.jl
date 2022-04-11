@@ -41,7 +41,7 @@ requires that the grid information be passed, e.g.,
 There are several keyword arguments for the problem constructor
 
 - `ddftype = ` to set the DDF type. The default is `Yang3`.
-- `scaling = ` to set the scaling type, `IndexScaling` (default) or `GridScaling`.
+- `scaling = ` to set the scaling type, `GridScaling` (default) or `IndexScaling`.
 - `dtype = ` to set the element type to `Float64` (default) or `ComplexF64`.
 - `phys_params = ` to pass in physical parameters
 - `bc = ` to pass in boundary condition data or functions
