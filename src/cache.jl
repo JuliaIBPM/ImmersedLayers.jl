@@ -445,11 +445,9 @@ Get an instance of the basic grid data in the cache, with values set to zero.
 @inline zeros_grid(cache::AbstractBasicCache,kwargs...) = _zero(cache.gdata_cache,kwargs...)
 
 """
-    zeros_gridgrad(::BasicILMCache,dim)
+    zeros_gridgrad(::BasicILMCache)
 
-Get an instance of the gradient of the grid data in the cache, , in direction `dim`,
-with values set to zero. If the data are of type `TensorGridData`, then
-`dim` takes values from 1 to 2^2.
+Get an instance of the gradient of the grid data in the cache`, with values set to zero.
 """
 @inline zeros_gridgrad(cache::BasicILMCache,kwargs...) = _zero(cache.gsnorm_cache,kwargs...)
 
