@@ -82,4 +82,4 @@ You might want to install that, too, to follow the examples.
 
 ## References
 
-[1] Eldredge, J. D. (2021) "A method of immersed layers on Cartesian grids, with application to incompressible flows," [arXiv:2103.04521](https://arxiv.org/abs/2103.04521).
+[1] Eldredge, J. D. (2022) "A method of immersed layers on Cartesian grids, with application to incompressible flows," Journal of Computational Physics 448: 110716.
