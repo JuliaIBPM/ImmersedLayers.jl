@@ -208,6 +208,6 @@ function init(u0,tspan,sys::ILMSystem;alg=ConstrainedSystems.LiskaIFHERK(),kwarg
     fode = ConstrainedODEFunction(sys)
 
     prob = ODEProblem(fode,u0,tspan,sys)
-    dt_calc = timestep_func(sys)
+    dt_calc = _get_function_name(timestep_func(sys))
     return init(prob, alg,dt=dt_calc,internalnorm=state_norm,kwargs...)
 end
