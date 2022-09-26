@@ -95,7 +95,7 @@ mutable struct ILMSystem{static,PT,N,PHT,BCF,FF,DTF,MTF,BCT,ECT}
 
 end
 
-_get_function_name(f::Function) = f
+_get_function_name(f) = f
 _get_function_name(f::Symbol) = eval(f)
 
 
