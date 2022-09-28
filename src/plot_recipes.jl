@@ -2,7 +2,7 @@ using RecipesBase
 using ColorTypes
 
 
-@recipe function f(w::T,cache::BasicILMCache; layers=true) where {T<:GridData}
+@recipe function f(w::T,cache::BasicILMCache; layers=true,bodyfill=false) where {T<:GridData}
 
   framestyle --> :frame
   xlims --> (-Inf,Inf)
@@ -20,6 +20,7 @@ using ColorTypes
   if layers
     if typeof(w) <: ScalarGridData
       @series begin
+        fill --> bodyfill
         cache
       end
     else
@@ -31,6 +32,7 @@ using ColorTypes
       for i in 1:nsub
         @series begin
           subplot := i
+          fill --> bodyfill
           cache
         end
       end
@@ -86,7 +88,7 @@ end
   #y = [pts.v; pts.v[1]]
   x = [pts.u;]
   y = [pts.v;]
-  seriestype := :scatter
+  #seriestype := :scatter
   markersize --> 1
   markershape --> :circle
   markercolor --> :black
@@ -95,6 +97,7 @@ end
   aspect_ratio := 1
   legend --> :none
   grid --> false
+  linewidth --> 0
   #linecolor --> :black
   #fillrange --> 0
   #fillalpha --> 0
