@@ -197,7 +197,7 @@ end
 
   cdr_cache = RotConvectiveDerivativeCache(zeros_gridcurl(vcache))
   vw = zeros_grid(vcache)
-  convective_derivative_rot!(vw,v,w,vcache,cdr_cache)
+  w_cross_v!(vw,w,v,vcache,cdr_cache)
 
 end
 

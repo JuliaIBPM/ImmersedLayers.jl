@@ -1,4 +1,4 @@
-import CartesianGrids: convective_derivative!, convective_derivative_rot!, divergence!, grad!, curl!
+import CartesianGrids: convective_derivative!, divergence!, grad!, curl!
 
 for f in [:divergence!, :grad!, :curl!]
   @eval $f(a,b,sys::ILMSystem) = $f(a,b,sys.base_cache)
