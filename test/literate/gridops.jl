@@ -99,6 +99,9 @@ nothing #hide
 #md # convective_derivative!
 #md # convective_derivative
 #md # ConvectiveDerivativeCache
+#md # w_cross_v!
+#md # w_cross_v
+#md # RotConvectiveDerivativeCache
 #md # laplacian!
 #md # inverse_laplacian!
 #md # ```

@@ -371,26 +371,26 @@ RotConvectiveDerivativeCache(cache::BasicILMCache) = RotConvectiveDerivativeCach
 
 
 """
-    convective_derivative_rot!(vw::Nodes{Dual},v::Edges,w::Nodes{Dual},base_cache::BasicILMCache,extra_cache::RotConvectiveDerivativeCache)
+    w_cross_v!(vw::Edges{Primal},w::Nodes{Dual},v::Edges{Primal},base_cache::BasicILMCache,extra_cache::RotConvectiveDerivativeCache)
 
-Compute the rotational form of the convective derivative, `w \\times v`, with vorticity `w` and velocity `v`, and
+Compute the term `w \\times v`, with vorticity `w` and velocity `v`, and
 return the result in `vw`. This version of the method uses `extra_cache` of type
 [`RotConvectiveDerivativeCache`](@ref).
 """
-function convective_derivative_rot!(uw::Edges{Primal},u::Edges{Primal},w::Nodes{Dual},base_cache::BasicILMCache,extra_cache::RotConvectiveDerivativeCache)
+function w_cross_v!(uw::Edges{Primal},w::Nodes{Dual},u::Edges{Primal},base_cache::BasicILMCache,extra_cache::RotConvectiveDerivativeCache)
     fill!(uw,0.0)
     if !iszero(w) && !iszero(u)
-      _unscaled_convective_derivative_rot!(uw,u,w,extra_cache)
+      _unscaled_w_cross_v!(uw,w,u,extra_cache)
     end
 end
 
-function convective_derivative_rot(u::Edges{Primal},w::Nodes{Dual},base_cache::BasicILMCache)
+function w_cross_v(w::Nodes{Dual},u::Edges{Primal},base_cache::BasicILMCache)
     extra_cache = RotConvectiveDerivativeCache(similar_gridcurl(base_cache))
     uw = similar(u)
-    convective_derivative_rot!(uw,u,w,base_cache,extra_cache)
+    w_cross_v!(uw,w,u,base_cache,extra_cache)
 end
 
-function _unscaled_convective_derivative_rot!(uw::Edges{Primal},u::Edges{Primal},w::Nodes{Dual},extra_cache::RotConvectiveDerivativeCache)
+function _unscaled_w_cross_v!(uw::Edges{Primal},w::Nodes{Dual},u::Edges{Primal},extra_cache::RotConvectiveDerivativeCache)
     @unpack vt1_cache = extra_cache
 
     fill!(vt1_cache,0.0)
