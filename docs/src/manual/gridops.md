@@ -107,6 +107,28 @@ Plot it
 plot(vdv,vcache)
 ````
 
+Finally, let's compute
+
+$$(\curl\mathbf{v})\times\mathbf{v}$$
+
+For this, we create a cache called
+`RotConvectiveDerivativeCache` to go along with it.
+
+````@example gridops
+w = zeros_gridcurl(vcache)
+curl!(w,v,vcache)
+wv = zeros_grid(vcache)
+cdrcache = RotConvectiveDerivativeCache(vcache)
+w_cross_v!(wv,w,v,vcache,cdrcache) #hide
+@time w_cross_v!(wv,w,v,vcache,cdrcache)
+````
+
+Plot it
+
+````@example gridops
+plot(wv,vcache)
+````
+
 ## Grid operator functions
 ```@docs
 divergence!
@@ -115,6 +137,9 @@ curl!
 convective_derivative!
 convective_derivative
 ConvectiveDerivativeCache
+w_cross_v!
+w_cross_v
+RotConvectiveDerivativeCache
 laplacian!
 inverse_laplacian!
 ```
