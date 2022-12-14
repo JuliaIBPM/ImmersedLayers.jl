@@ -90,6 +90,23 @@ nothing #hide
 # Plot it
 #!jl plot(vdv,vcache)
 
+#=
+Finally, let's compute
+
+$$(\curl\mathbf{v})\times\mathbf{v}$$
+
+For this, we create a cache called
+`RotConvectiveDerivativeCache` to go along with it.
+=#
+w = zeros_gridcurl(vcache)
+curl!(w,v,vcache)
+wv = zeros_grid(vcache)
+cdrcache = RotConvectiveDerivativeCache(vcache)
+w_cross_v!(wv,w,v,vcache,cdrcache) #hide
+@time w_cross_v!(wv,w,v,vcache,cdrcache)
+
+# Plot it
+#!jl plot(wv,vcache)
 
 #md # ## Grid operator functions
 #md # ```@docs
@@ -99,6 +116,9 @@ nothing #hide
 #md # convective_derivative!
 #md # convective_derivative
 #md # ConvectiveDerivativeCache
+#md # w_cross_v!
+#md # w_cross_v
+#md # RotConvectiveDerivativeCache
 #md # laplacian!
 #md # inverse_laplacian!
 #md # ```

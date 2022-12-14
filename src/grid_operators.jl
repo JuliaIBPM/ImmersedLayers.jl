@@ -294,6 +294,7 @@ function convective_derivative!(udu::Edges{Primal},u::Edges{Primal},base_cache::
     end
 end
 
+# u.∇p, where u is primal edge data and p is primal node data
 function _unscaled_convective_derivative!(udp::Nodes{Primal},u::Edges{Primal},p::Nodes{Primal},extra_cache::ConvectiveDerivativeCache)
     @unpack vt1_cache, vt3_cache = extra_cache
 
@@ -305,6 +306,7 @@ function _unscaled_convective_derivative!(udp::Nodes{Primal},u::Edges{Primal},p:
     udp
 end
 
+# u.∇w, where u is primal edge data and w is dual node data
 function _unscaled_convective_derivative!(udw::Nodes{Dual},u::Edges{Primal},w::Nodes{Dual},extra_cache::ConvectiveDerivativeCache{VT}) where {VT<:Edges{Dual}}
     @unpack vt1_cache, vt2_cache, vt3_cache = extra_cache
 
@@ -318,6 +320,7 @@ function _unscaled_convective_derivative!(udw::Nodes{Dual},u::Edges{Primal},w::N
     udw
 end
 
+# u.∇u, where u is primal edge data
 function _unscaled_convective_derivative!(udu::Edges{Primal},u::Edges{Primal},extra_cache::ConvectiveDerivativeCache)
     @unpack vt1_cache, vt2_cache, vt3_cache = extra_cache
 
@@ -332,6 +335,7 @@ function _unscaled_convective_derivative!(udu::Edges{Primal},u::Edges{Primal},ex
     udu
 end
 
+# v.∇u, where v and u are both primal edge data
 function _unscaled_convective_derivative!(vdu::Edges{Primal},v::Edges{Primal},u::Edges{Primal},extra_cache::ConvectiveDerivativeCache)
     @unpack vt1_cache, vt2_cache, vt3_cache = extra_cache
 
@@ -344,4 +348,55 @@ function _unscaled_convective_derivative!(vdu::Edges{Primal},v::Edges{Primal},u:
     fill!(udv,0.0)
     grid_interpolate!(udv,vt3_cache)
     udu
+end
+
+# Rotational form of the convective derivative
+"""
+    RotConvectiveDerivativeCache(w::Nodes{Dual})
+
+Create a cache (a subtype of [`AbstractExtraILMCache`](@ref)) for computing
+the convective derivative in rotational form, using `w` to define the cache data.
+"""
+struct RotConvectiveDerivativeCache{VTT} <: AbstractExtraILMCache
+   vt1_cache :: VTT
+end
+
+"""
+    RotConvectiveDerivativeCache(cache::BasicILMCache)
+
+Create a cache for computing the rotational convective derivative, based on
+the basic ILM cache `cache`.
+"""
+RotConvectiveDerivativeCache(cache::BasicILMCache) = RotConvectiveDerivativeCache(similar_gridcurl(cache))
+
+
+"""
+    w_cross_v!(vw::Edges{Primal},w::Nodes{Dual},v::Edges{Primal},base_cache::BasicILMCache,extra_cache::RotConvectiveDerivativeCache)
+
+Compute the term `w \\times v`, with vorticity `w` and velocity `v`, and
+return the result in `vw`. This version of the method uses `extra_cache` of type
+[`RotConvectiveDerivativeCache`](@ref).
+"""
+function w_cross_v!(uw::Edges{Primal},w::Nodes{Dual},u::Edges{Primal},base_cache::BasicILMCache,extra_cache::RotConvectiveDerivativeCache)
+    fill!(uw,0.0)
+    if !iszero(w) && !iszero(u)
+      _unscaled_w_cross_v!(uw,w,u,extra_cache)
+    end
+end
+
+function w_cross_v(w::Nodes{Dual},u::Edges{Primal},base_cache::BasicILMCache)
+    extra_cache = RotConvectiveDerivativeCache(similar_gridcurl(base_cache))
+    uw = similar(u)
+    w_cross_v!(uw,w,u,base_cache,extra_cache)
+end
+
+function _unscaled_w_cross_v!(uw::Edges{Primal},w::Nodes{Dual},u::Edges{Primal},extra_cache::RotConvectiveDerivativeCache)
+    @unpack vt1_cache = extra_cache
+
+    fill!(vt1_cache,0.0)
+    grid_interpolate!(uw.u,grid_interpolate!(vt1_cache, -u.v) ∘ w)
+    fill!(vt1_cache,0.0)
+    grid_interpolate!(uw.v,grid_interpolate!(vt1_cache,  u.u) ∘ w)
+    return uw
+
 end
