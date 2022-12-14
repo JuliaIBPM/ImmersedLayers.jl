@@ -140,7 +140,7 @@ end
 ## Extend functions on `BasicILMCache` type to `ILMSystem`
 @inline CartesianGrids.cellsize(sys::ILMSystem) = cellsize(sys.base_cache)
 
-for f in [:get_grid,:zeros_surface,:zeros_surfacescalar,
+for f in [:get_grid,:get_bodies,:zeros_surface,:zeros_surfacescalar,
           :zeros_grid,:zeros_gridcurl,:zeros_griddiv,:zeros_gridgrad,:zeros_gridgradcurl,
           :similar_surface,:similar_surfacescalar,
           :similar_grid,:similar_gridcurl,:similar_griddiv,:similar_gridgrad,:similar_gridgradcurl,

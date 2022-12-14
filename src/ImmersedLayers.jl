@@ -28,7 +28,7 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         AbstractScalingType,GridScaling,IndexScaling,
         BasicILMCache,ILMSystem,
         ODEFunctionList,zeros_sol,init_sol,
-        get_grid,
+        get_grid,get_bodies,
         similar_grid,similar_gridgrad,similar_gridcurl,similar_griddiv,similar_gridgradcurl,
         similar_surface,similar_surfacescalar,
         zeros_grid,zeros_gridgrad,zeros_gridcurl,zeros_griddiv,zeros_gridgradcurl,
@@ -60,7 +60,8 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         AreaRegionCache,LineRegionCache,PointRegionCache,arccoord,
         ForcingModelAndRegion,apply_forcing!,
         solve, @snapshotoutput,@scalarsurfacemetric,@vectorsurfacemetric,surfaces,
-        prescribed_surface_jump!,prescribed_surface_average!
+        prescribed_surface_jump!,prescribed_surface_average!,
+        timestep
 
 
 abstract type AbstractBasicCache{N,GCT} end

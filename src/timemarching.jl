@@ -198,16 +198,22 @@ _norm_sq(u::ConstrainedSystems.ArrayPartition) = sum(_norm_sq,u.x)
 state_norm(u,t) = sqrt(_norm_sq(u))
 
 """
+    timestep(sys::ILMSystem) -> Float64
+
+Return the timestep of the system `sys`
+"""
+timestep(sys::ILMSystem) = _get_function_name(sys.timestep_func)(sys)
+
+"""
     ConstrainedSystems.init(u0,tspan,sys::ILMSystem,[alg=ConstrainedSystems.LiskaIFHERK()])
 
 Initialize the integrator for a time-varying immersed-layer system of PDEs,
 described in `sys`.
 """
 function init(u0,tspan,sys::ILMSystem;alg=ConstrainedSystems.LiskaIFHERK(),kwargs...)
-    @unpack timestep_func = sys
     fode = ConstrainedODEFunction(sys)
 
     prob = ODEProblem(fode,u0,tspan,sys)
-    dt_calc = _get_function_name(timestep_func)(sys)
+    dt_calc = timestep(sys)
     return init(prob, alg,dt=dt_calc,internalnorm=state_norm,kwargs...)
 end
