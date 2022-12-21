@@ -2,7 +2,7 @@ name = "ImmersedLayers"
 uuid = "cdc13194-334e-4e1c-bc8d-fc3a28509c85"
 authors = ["Jeff Eldredge <jdeldre@g.ucla.edu>"]
 repo = "https://github.com/JuliaIBPM/ImmersedLayers.jl.git"
-version = "0.3.8"
+version = "0.3.9"
 
 [deps]
 CartesianGrids = "3e975e5d-2cf8-4263-9573-8460aaf534d9"
@@ -26,7 +26,7 @@ RecipesBase = "1.0"
 Reexport = "0.2.0, 1"
 RigidBodyTools = "0.4"
 UnPack = "1.0.2"
-julia = "1.4"
+julia = "1.6"
 
 [extras]
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
