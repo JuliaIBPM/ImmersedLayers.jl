@@ -154,7 +154,7 @@ function ImmersedLayers.prob_cache(prob::DirichletHeatConductionProblem,
 
     ## Construct a Lapacian outfitted with the diffusivity
     κ = phys_params["diffusivity"]
-    heat_L = Laplacian(base_cache,gdata_cache,κ)
+    heat_L = Laplacian(base_cache,κ)
 
     ## State (grid temperature data) and constraint (surface Lagrange multipliers)
     f = ODEFunctionList(state = zeros_grid(base_cache),

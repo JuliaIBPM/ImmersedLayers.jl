@@ -237,7 +237,7 @@ function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},d
 
   coeff_factor = 1.0
   with_inverse = true
-  L = _get_laplacian(gdata_cache,coeff_factor,g,with_inverse,scaling;dtype=dtype)
+  L = _get_laplacian(coeff_factor,g,with_inverse,scaling;dtype=dtype)
 
   return BasicILMCache{N,scaling,typeof(gdata_cache),ND,typeof(bl),typeof(nrm),typeof(a),typeof(regop),
                        typeof(Rsn),typeof(Esn),typeof(R),typeof(E),typeof(Rcurl),typeof(Ecurl),typeof(Rdiv),typeof(Ediv),typeof(L),
@@ -307,10 +307,10 @@ _get_regularization(body::Union{Body,BodyList},args...;kwargs...) = _get_regular
 
 
 # Standardize the Laplacian
-_get_laplacian(a,coeff_factor::Real,g::PhysicalGrid,with_inverse,::Type{IndexScaling};dtype=Float64) =
-               CartesianGrids.plan_laplacian(a,with_inverse=with_inverse,factor=coeff_factor,dtype=dtype)
-_get_laplacian(a,coeff_factor::Real,g::PhysicalGrid,with_inverse,::Type{GridScaling};dtype=Float64) =
-               CartesianGrids.plan_laplacian(a,with_inverse=with_inverse,factor=coeff_factor/cellsize(g)^2,dtype=dtype)
+_get_laplacian(coeff_factor::Real,g::PhysicalGrid,with_inverse,::Type{IndexScaling};dtype=Float64) =
+               CartesianGrids.plan_laplacian(g,with_inverse=with_inverse,factor=coeff_factor,dtype=dtype)
+_get_laplacian(coeff_factor::Real,g::PhysicalGrid,with_inverse,::Type{GridScaling};dtype=Float64) =
+               CartesianGrids.plan_laplacian(g,with_inverse=with_inverse,factor=coeff_factor/cellsize(g)^2,dtype=dtype)
 
 # This is needed to stabilize the type-unstable `RegularizationMatrix` function in
 # CartesianGrids
@@ -362,12 +362,12 @@ CartesianGrids.InterpolationMatrix(cache::BasicILMCache,src::GridData,trg::Point
 """
     Laplacian(cache::BasicILMCache,src::GridData,coeff_factor::Real[,with_inverse=true])
 
-Create an invertible Laplacian operator for data `src` (of the same size as the grid in `cache`),
+Create an invertible Laplacian operator for the grid in `cache`,
 using the index or grid scaling associated with `cache`. The operator is pre-multiplied
 by the factor `coeff_factor`.
 """
-Laplacian(cache::BasicILMCache{N,SCA},src::GridData,coeff_factor; with_inverse=true, dtype=Float64) where {N,SCA} =
-    _get_laplacian(src,coeff_factor,cache.g,with_inverse,SCA;dtype=dtype)
+Laplacian(cache::BasicILMCache{N,SCA},coeff_factor; with_inverse=true, dtype=Float64) where {N,SCA} =
+    _get_laplacian(coeff_factor,cache.g,with_inverse,SCA;dtype=dtype)
 
 
 # Some utilities to get the DDF type of the cache
@@ -668,7 +668,7 @@ and the coordinates of each component are in `u`, `v` fields.
 function y_grid(cache::BasicILMCache{N,SCA,GT}) where {N,SCA,GT<:Nodes{Primal}}
     _, yc  = coordinates(cache.gdata_cache,cache.g)
     p = zeros_grid(cache)
-    p .= yc
+    p .= yc'
     return p
 end
 
