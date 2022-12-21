@@ -360,7 +360,7 @@ CartesianGrids.InterpolationMatrix(cache::BasicILMCache,src::GridData,trg::Point
     _interpolation_matrix(cache.regop,src,trg)
 
 """
-    Laplacian(cache::BasicILMCache,src::GridData,coeff_factor::Real[,with_inverse=true])
+    Laplacian(cache::BasicILMCache,coeff_factor::Real[,with_inverse=true])
 
 Create an invertible Laplacian operator for the grid in `cache`,
 using the index or grid scaling associated with `cache`. The operator is pre-multiplied
