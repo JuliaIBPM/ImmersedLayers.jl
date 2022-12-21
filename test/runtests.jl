@@ -22,7 +22,7 @@ end
 if GROUP == "All" || GROUP == "Literate"
   for (root, dirs, files) in walkdir(litdir)
     for file in files
-      #endswith(file,".jl") && startswith(file,"gridops") && @testset "$file" begin include(joinpath(root,file)) end
+      #endswith(file,".jl") && startswith(file,"caches") && @testset "$file" begin include(joinpath(root,file)) end
       endswith(file,".jl") && @testset "$file" begin include(joinpath(root,file)) end
     end
   end
