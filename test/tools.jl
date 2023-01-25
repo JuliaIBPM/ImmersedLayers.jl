@@ -34,15 +34,17 @@ os .= 1
    @test_throws MethodError dot(w,u,g)
    @test_throws AssertionError dot(u,u,g)
 
-   new_xlim = limits(g,1)
-   new_ylim = limits(g,2)
-
-   @test norm(w,g) == sqrt((new_xlim[2]-new_xlim[1])*(new_ylim[2]-new_ylim[1]))
+   newxlim, newylim = limits(g,1), limits(g,2)
+   @test norm(w,g) == sqrt((newxlim[2]-newxlim[1])*(newylim[2]-newylim[1]))
 
    @test isapprox(dot(os,os,ds),2π,atol=1e-3)
 
    nrm = normals(body)
    @test isapprox(integrate(pointwise_dot(nrm,nrm),areas(body)),2π,atol=1e-3)
+
+   res = integrate(w,g)
+   @test res ≈ (newxlim[2]-newxlim[1])*(newylim[2]-newylim[1])
+
 
 end
 
