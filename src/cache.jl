@@ -836,6 +836,18 @@ dot(u1::PointData{N},u2::PointData{N},cache::BasicILMCache{N,IndexScaling},i::In
 
 ## Integration
 """
+    integrate(u::GridData,cache::BasicILMCache)
+
+Calculate the discrete volume integral of grid data `u`.
+If `u` is `VectorGridData`, then this returns a vector of the integrals in
+each coordinate direction. This integral produces the same result regardless
+if `GridScaling` or `IndexScaling` is used.
+"""
+@inline integrate(u::GridData,cache::BasicILMCache) = integrate(u,cache.g)
+
+
+
+"""
     integrate(u::PointData,cache::BasicILMCache)
 
 Calculate the discrete surface integral of data `u` on the immersed points in `cache`.

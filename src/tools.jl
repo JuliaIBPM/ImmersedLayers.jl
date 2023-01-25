@@ -135,6 +135,20 @@ function ones(u::Union{VectorGridData,TensorGridData},dim::Integer)
   o
 end
 
+"""
+    integrate(u::GridData,g::PhysicalGrid)
+
+Calculate the discrete integral of grid data `u`, using the
+ cell volumes of grid `g`. If `u` is `VectorData`, then this returns a vector
+ of the integrals in each coordinate direction.
+"""
+integrate(u::ScalarGridData,g::PhysicalGrid) = dot(u,ones(u),g)
+
+integrate(u::VectorGridData,g::PhysicalGrid) = [dot(u,ones(u,1),g),dot(u,ones(u,2),g)]
+
+
+
+
 
 ### POINT OPERATIONS
 
