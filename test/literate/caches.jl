@@ -185,6 +185,7 @@ dot(os,os,cache)
 #md # y_griddiv
 #md # x_gridgrad
 #md # y_gridgrad
+#md # evaluate_field!
 #md # ```
 
 #md # ## Utilities for accessing surface information

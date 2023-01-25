@@ -198,7 +198,7 @@ function ImmersedLayers.prob_cache(prob::UnboundedHeatConductionProblem,
 
     # Construct a Lapacian outfitted with the diffusivity
     κ = phys_params["diffusivity"]
-    heat_L = Laplacian(base_cache,gdata_cache,κ)
+    heat_L = Laplacian(base_cache,κ)
 
     # Create cache for the convective derivative
     v = zeros_gridgrad(base_cache)
