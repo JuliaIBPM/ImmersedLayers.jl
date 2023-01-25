@@ -30,6 +30,18 @@ _size(::CartesianGrids.Laplacian{NX,NY}) where {NX,NY} = NX, NY
   @test size(g) == _size(scache1.L)
 end
 
+@testset "Fields" begin
+  scache1 = SurfaceScalarCache(g,scaling=GridScaling)
+  myfun(x,y) = exp(-x)*exp(-y)
+  field = SpatialField(myfun)
+  evaluate_field!(w,field,scache1)
+  xc, yc = coordinates(w,g)
+
+  @test w[104,24] ≈ myfun(xc[24],yc[104])
+
+end
+
+
 @testset "Scalar surface ops" begin
   scache = SurfaceScalarCache(body,g,scaling=GridScaling)
 

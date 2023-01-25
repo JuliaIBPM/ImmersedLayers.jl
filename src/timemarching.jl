@@ -143,8 +143,7 @@ function init_sol(s::AbstractSpatialField,sys::ILMSystem)
     @unpack g = base_cache
     sol = zeros_sol(sys)
     _initialize_motion!(sol,sys)
-    gf = GeneratedField(state(sol),s,g)
-    state(sol) .= gf()
+    evaluate_field!(state(sol),s,sys)
     return sol
 end
 

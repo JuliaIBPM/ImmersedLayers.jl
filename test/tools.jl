@@ -34,7 +34,10 @@ os .= 1
    @test_throws MethodError dot(w,u,g)
    @test_throws AssertionError dot(u,u,g)
 
-   @test norm(w,g) == sqrt((xlim[2]-xlim[1])*(ylim[2]-ylim[1]))
+   new_xlim = limits(g,1)
+   new_ylim = limits(g,2)
+
+   @test norm(w,g) == sqrt((new_xlim[2]-new_xlim[1])*(new_ylim[2]-new_ylim[1]))
 
    @test isapprox(dot(os,os,ds),2π,atol=1e-3)
 

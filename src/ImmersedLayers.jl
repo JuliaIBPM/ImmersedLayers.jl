@@ -27,7 +27,7 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         BasicScalarILMProblem,BasicVectorILMProblem,prob_cache,
         AbstractScalingType,GridScaling,IndexScaling,
         BasicILMCache,ILMSystem,
-        ODEFunctionList,zeros_sol,init_sol,
+        ODEFunctionList,zeros_sol,init_sol,evaluate_field!,
         get_grid,get_bodies,
         similar_grid,similar_gridgrad,similar_gridcurl,similar_griddiv,similar_gridgradcurl,
         similar_surface,similar_surfacescalar,
@@ -106,6 +106,7 @@ include("tools.jl")
 include("cache.jl")
 include("problem.jl")
 include("system.jl")
+include("fields.jl")
 include("layers.jl")
 include("grid_operators.jl")
 include("surface_operators.jl")
@@ -115,6 +116,7 @@ include("helmholtz.jl")
 include("timemarching.jl")
 include("output.jl")
 include("bc.jl")
+
 
 include("plot_recipes.jl")
 
