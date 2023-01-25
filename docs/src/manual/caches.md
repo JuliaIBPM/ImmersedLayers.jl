@@ -198,6 +198,7 @@ x_griddiv
 y_griddiv
 x_gridgrad
 y_gridgrad
+evaluate_field!
 ```
 
 ## Utilities for accessing surface information

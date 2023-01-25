@@ -143,8 +143,7 @@ function init_sol(s::AbstractSpatialField,sys::ILMSystem)
     @unpack g = base_cache
     sol = zeros_sol(sys)
     _initialize_motion!(sol,sys)
-    gf = GeneratedField(state(sol),s,g)
-    state(sol) .= gf()
+    evaluate_field!(state(sol),s,sys)
     return sol
 end
 
@@ -215,5 +214,5 @@ function init(u0,tspan,sys::ILMSystem;alg=ConstrainedSystems.LiskaIFHERK(),kwarg
 
     prob = ODEProblem(fode,u0,tspan,sys)
     dt_calc = timestep(sys)
-    return init(prob, alg,dt=dt_calc,internalnorm=state_norm,kwargs...)
+    return init(prob, alg;dt=dt_calc,internalnorm=state_norm,kwargs...)
 end
