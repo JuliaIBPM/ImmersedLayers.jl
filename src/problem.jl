@@ -108,8 +108,7 @@ end
 regenerate_problem(sys,body::Body) = regenerate_problem(sys,BodyList([body]))
 
 
-_list(m::RigidBodyTools.AbstractMotion) = MotionList([m])
-_list(m::MotionList) = m
+_list(m::RigidBodyTools.AbstractMotion) = m
 _list(::Nothing) = nothing
 _list(::Any) = nothing
 

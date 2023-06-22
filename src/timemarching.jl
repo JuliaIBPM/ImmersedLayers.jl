@@ -82,7 +82,7 @@ function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{false})
     @unpack f = extra_cache
 
     rhs! = ConstrainedSystems.r1vector(state_r1 = f.ode_rhs,
-                                       aux_r1 = body_rhs!)
+                                       aux_r1 = motion_rhs!)
 
     _constrained_ode_function(f.lin_op,rhs!,f.bc_rhs,f.constraint_force,
                               f.bc_op;_func_cache=zeros_sol(sys),
@@ -118,7 +118,7 @@ function zeros_sol(sys::ILMSystem{false})
     @unpack f = extra_cache
     return solvector(state=zero(f.state),
                      constraint=zero(f.constraint),
-                     aux_state=zero(motion_state(bl,motions)))
+                     aux_state=zero_motion_state(bl,motions))
 end
 
 """
@@ -173,7 +173,7 @@ end
 function _initialize_motion!(sol,sys::ILMSystem{false})
   @unpack motions, base_cache = sys
   @unpack bl  = base_cache
-  aux_state(sol) = motion_state(bl,motions)
+  aux_state(sol) .= init_motion_state(bl,motions)
   return sol
 end
 
@@ -182,15 +182,18 @@ function _initialize_motion!(sol,sys::ILMSystem{true})
 end
 
 
-function body_rhs!(dx::Vector{T},x::Vector{T},sys::ILMSystem,t::Real) where {T<:Real}
+function RigidBodyTools.motion_rhs!(dx::Vector{T},sol,sys::ILMSystem,t::Real) where {T<:Real}
   @unpack motions, base_cache = sys
+  @unpack exogenous_function!, a_edof_buffer, a_udof_buffer = motions
   @unpack bl = base_cache
+  x = aux_state(sol)
   length(dx) == length(x) || error("wrong length for vector")
-  dx .= motion_velocity(bl,motions,t)
+  exogenous_function!(a_edof_buffer,u,ls,t)
+  motion_rhs!(dx,x,t,a_edof_buffer,a_udof_buffer,motions,bl)
   return dx
 end
 
-RigidBodyTools.maxlistvelocity(sys::ILMSystem) = maxlistvelocity(sys.base_cache.bl,sys.motions)
+RigidBodyTools.maxvelocity(sol,sys::ILMSystem) = maxvelocity(sys.base_cache.bl,aux_state(sol),sys.motions)
 
 _norm_sq(u) = dot(u,u)
 _norm_sq(u::ConstrainedSystems.ArrayPartition) = sum(_norm_sq,u.x)

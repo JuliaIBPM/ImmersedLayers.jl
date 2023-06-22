@@ -86,16 +86,16 @@ _static_surfaces(::Nothing) = true
 _static_surfaces(::Any) = false
 
 # Extend surface_velocity! and allow for null motions
-RigidBodyTools.surface_velocity!(vec::VectorData,bl::Union{Body,BodyList},motions::Union{RigidBodyTools.AbstractMotion,MotionList},t;kwargs...) =
-    surface_velocity!(vec.u,vec.v,bl,motions,t;kwargs...)
+RigidBodyTools.surface_velocity!(vec::VectorData,bl::Union{Body,BodyList},x::AbstractVector,motions::RigidBodyTools.AbstractMotion,t;kwargs...) =
+    surface_velocity!(vec.u,vec.v,bl,x,motions,t;kwargs...)
 
-RigidBodyTools.surface_velocity!(vec::VectorData,bl::Union{Body,BodyList},motions,t) = fill!(vec,0.0)
+RigidBodyTools.surface_velocity!(vec::VectorData,bl::Union{Body,BodyList},x::AbstractVector,motions,t) = fill!(vec,0.0)
 
-RigidBodyTools.surface_velocity!(vec::VectorData,base_cache::BasicILMCache,motions,t;kwargs...) =
-    surface_velocity!(vec,base_cache.bl,motions,t;kwargs...)
+RigidBodyTools.surface_velocity!(vec::VectorData,base_cache::BasicILMCache,x::AbstractVector,motions,t;kwargs...) =
+    surface_velocity!(vec,base_cache.bl,x,motions,t;kwargs...)
 
-RigidBodyTools.surface_velocity!(vec::VectorData,sys::ILMSystem,t;kwargs...) =
-    surface_velocity!(vec,sys.base_cache,sys.motions,t;kwargs...)
+RigidBodyTools.surface_velocity!(vec::VectorData,x::AbstractVector,sys::ILMSystem,t;kwargs...) =
+    surface_velocity!(vec,sys.base_cache,x,sys.motions,t;kwargs...)
 
 
 # Create the basic solve function, to be extended
