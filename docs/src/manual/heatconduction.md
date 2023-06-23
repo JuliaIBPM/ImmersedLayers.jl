@@ -100,9 +100,11 @@ end
 Now, we create the function that calculates the RHS of the boundary condition.
 For this Dirichlet condition, we simply take the average of the interior
 and exterior prescribed values. The first argument `dTb` holds the result.
+The argument `x` isn't used here, but would generally hold information about
+the body state.
 
 ````@example heatconduction
-function heatconduction_bc_rhs!(dTb,sys::ILMSystem,t)
+function heatconduction_bc_rhs!(dTb,x,sys::ILMSystem,t)
     prescribed_surface_average!(dTb,t,sys)
     return dTb
 end
@@ -110,10 +112,10 @@ end
 
 This function calculates the contribution to $dT/dt$ from the Lagrange
 multiplier (the input σ). Here, we simply regularize the negative of this
-to the grid.
+to the grid. Again, `x` isn't used here.
 
 ````@example heatconduction
-function heatconduction_constraint_force!(dT,σ,sys::ILMSystem)
+function heatconduction_constraint_force!(dT,σ,x,sys::ILMSystem)
     regularize!(dT,-σ,sys)
     return dT
 end
@@ -124,7 +126,7 @@ interpolates the temperature (state vector) onto the boundary. The first argumen
 holds the result.
 
 ````@example heatconduction
-function heatconduction_bc_op!(dTb,T,sys::ILMSystem)
+function heatconduction_bc_op!(dTb,T,x,sys::ILMSystem)
     interpolate!(dTb,T,sys)
     return dTb
 end

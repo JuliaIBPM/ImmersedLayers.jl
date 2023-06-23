@@ -27,11 +27,11 @@ of the same form.
 
 - `ode_rhs =` specifies the right-hand side of the ODEs, ``r_1``. The in-place form of the function is `r1(dy,y,sys::ILMSystem,t)`, the state vector `y`, IL system `sys`, time `t`, and returning ``dy/dt``. The out-of-place form is `r1(y,sys,t)`.
 
-- `bc_rhs = ` specifies the right-hand side of the boundary conditions, ``r_2``. If there are no constraints, this can be omitted. The in-place form is `r2(dz,sys,t)`, returning `dz`, the part of the boundary constraint not dependent on the state vector. The out-of-place form is `r2(sys,t)`.
+- `bc_rhs = ` specifies the right-hand side of the boundary conditions, ``r_2``. If there are no constraints, this can be omitted. The in-place form is `r2(dz,x,sys,t)`, returning `dz`, the part of the boundary constraint not dependent on the state vector. The out-of-place form is `r2(x,sys,t)`.
 
-- `constraint_force = ` supplies the constraint force term in the ODEs, ``B_1 z``. If there are no constraints, this can be omitted. The in-place form is `B1(dy,z,sys)`, returning the contribution to ``dy/dt`` (with the sign convention shown in the equations above) and the out-of-place form is `B1(z,sys)`.
+- `constraint_force = ` supplies the constraint force term in the ODEs, ``B_1 z``. If there are no constraints, this can be omitted. The in-place form is `B1(dy,z,x,sys)`, returning the contribution to ``dy/dt`` (with the sign convention shown in the equations above) and the out-of-place form is `B1(z,x,sys)`.
 
-- `bc_op = ` supplies the left-hand side of the boundary constraint, ``B_2 y``. If there are no constraints, this can be omitted. The in-place form is `B2(dz,y,sys)`, the out-of-place form is `B2(y,sys)`.
+- `bc_op = ` supplies the left-hand side of the boundary constraint, ``B_2 y``. If there are no constraints, this can be omitted. The in-place form is `B2(dz,y,x,sys)`, the out-of-place form is `B2(y,x,sys)`.
 
 - `lin_op = ` is optional and specifies a linear operator on the state vector ``L``, to be treated with an exponential integral (i.e., integrating factor) in the time marching. (Alternatively, this part can simply be included in `r_1`). It should have an associated `mul!` operation that acts upon the state vector.
 
