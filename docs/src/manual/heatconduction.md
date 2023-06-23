@@ -216,6 +216,27 @@ body = Circle(1.0,Δs);
 nothing #hide
 ````
 
+Though the body is stationary, we still need to provide some minimal information
+about its placement and (lack of) motion. We do this with the help of
+the `RigidBodyMotion` structure. Technically, the placement of a body
+constitutes a basic *joint* with the inertial coordinate system.
+the `MotionTransform` below places the joint at the origin of the
+inertial coordinate system (the first argument), with no relative rotation (the second argument).
+
+````@example heatconduction
+X = MotionTransform([0,0],0)
+joint = Joint(X)
+m = RigidBodyMotion(joint,body)
+````
+
+We don't have to do anything more here because the placement of the body
+is trivial. However, to demonstrate how we might do it in other problems,
+
+````@example heatconduction
+x = zero_motion_state(body,m)
+update_body!(body,x,m)
+````
+
 ### Specify the physical parameters, data, etc.
 These can be changed later without having to regenerate the system.
 
@@ -238,12 +259,14 @@ bcdict = Dict("exterior" => get_Tbplus,"interior" => get_Tbminus)
 ````
 
 Construct the problem, passing in the data and functions we've just
-created.
+created. We pass in the body's motion (however trivial) via the
+`motions` keyword.
 
 ````@example heatconduction
 prob = DirichletHeatConductionProblem(g,body,scaling=GridScaling,
                                              phys_params=phys_params,
                                              bc=bcdict,
+                                             motions=m,
                                              timestep_func=timestep_fourier);
 nothing #hide
 ````
@@ -345,38 +368,63 @@ nothing #hide
 ````
 
 ## Motions
-It is straightforward to make bodies move in time-varying problems.
-For each body that we create, we can provide a corresponding motion,
-via the `motions = ` keyword. (If a `BodyList` is provided, then
-a corresponding `MotionList` must be provided.)
-The only caveat is that the time-stepping becomes considerably slower
+It is straightforward to make bodies move in time-varying problems,
+using the `RigidBodyMotion` function. In the previous example
+we used this in a trivial fashion. Here, we will use it
+in a non-trivial example. The only caveat is that the time-stepping becomes slower
 in such problems, since the system operators must be regenerated at
 every time step.
 
 The `RigidBodyTools.jl` package provides a versatile set of motions,
-both rigid-body and deforming, and associated tools. For example,
-to simply make the body move at constant velocity 1 in the `x` direction.
+both rigid-body and deforming, and associated tools.
+
+### Rigid body motion
+For example, to simply make the body move at constant velocity 1 in the `x` direction.
 
 ````@example heatconduction
-m = RigidBodyMotion((1.0,0.0),0.0)
+Xp_to_jp = MotionTransform([0,0],0)
+Xc_to_jc = MotionTransform([0,0],0)
+dofs = [ConstantVelocityDOF(0),ConstantVelocityDOF(1),ConstantVelocityDOF(0)]
+joint = Joint(FreeJoint2d,0,Xp_to_jp,1,Xc_to_jc,dofs)
+m = RigidBodyMotion(joint,body)
 ````
 
-Here's an example of a deforming motion
+The `MotionTransform` operator `Xp_to_jp` places the parent side of the joint at the origin of the
+inertial coordinate system (body 0) with no rotation, and `Xc_to_jc` places
+the child side of the joint at the origin of the body's system (body 1), also with no rotation.
+We are creating a *free* joint, with all degrees of freedom possibly in motion.
+
+These three degrees of freedom are all assigned a prescribed behavior in the `dofs`
+vector. They are ordered as [rotation, x position, y position].
+The rotational and y degrees of freedom are all set to zero velocity
+and the x degree is set to velocity of 1.
+
+### Surface deformation
+Deformations to the body surface can be superposed on rigid body
+motions. Here's an example of a deforming motion on a stationary body
 
 ````@example heatconduction
 ufcn(x,y,t) = 0.25*x*y*cos(t)
 vfcn(x,y,t) = 0.25*(x^2-y^2)*cos(t)
-m = DeformationMotion(ufcn,vfcn)
+def = DeformationMotion(ufcn,vfcn)
+X = MotionTransform([0,0],0)
+joint = Joint(X)
+m = RigidBodyMotion(joint,body,def)
 ````
 
-Either of these would be provided in the `motions = ` keyword of the problem
+Either of these would be provided in the `motions` keyword of the problem
 construction. Consult the documentation of `RigidBodyTools.jl` to learn more
 about these. However, for time-marching purposes, it is helpful to know that the
 maximum surface velocity is provided by the `maxvelocity` function:
 
 ````@example heatconduction
-maxvelocity(body,m)
+x = zero_motion_state(body,m)
+maxvelocity(body,x,m)
 ````
+
+The first element of the output is the maximum velocity,
+the second is the index on which it occurs, the third is the time
+at which it occurs, and the fourth is the body on which it occurs.
 
 ## Time-varying PDE functions
 

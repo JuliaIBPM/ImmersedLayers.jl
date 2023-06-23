@@ -83,7 +83,7 @@ end
               SurfaceVectorCache(bodies,g,ddftype=DT,scaling=ST,dtype=DTP)
 
 _static_surfaces(::Nothing) = true
-_static_surfaces(::Any) = false
+_static_surfaces(m::RigidBodyMotion) = !ismoving(m)
 
 # Extend surface_velocity! and allow for null motions
 RigidBodyTools.surface_velocity!(vec::VectorData,bl::Union{Body,BodyList},x::AbstractVector,motions::RigidBodyTools.AbstractMotion,t;kwargs...) =

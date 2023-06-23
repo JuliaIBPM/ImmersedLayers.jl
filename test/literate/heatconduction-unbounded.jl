@@ -92,7 +92,7 @@ using [`LineForcingModel`](@ref).
 =#
 fregion1 = Square(0.5,1.4*Δx)
 T = RigidTransform((0.0,1.0),0.0)
-T(fregion1)
+update_body!(fregion1,T)
 
 function model1!(σ,T,t,fr::LineRegionCache,phys_params)
     σ .= phys_params["lineheater_flux"]
@@ -107,7 +107,7 @@ of the target temperature. These are bundled with [`AreaForcingModel`](@ref).
 
 fregion2 = Circle(0.2,1.4*Δx)
 T = RigidTransform((0.0,-0.5),0.0)
-T(fregion2)
+update_body!(fregion2,T)
 
 function model2!(σ,T,t,fr::AreaRegionCache,phys_params)
     f = phys_params["areaheater_freq"]

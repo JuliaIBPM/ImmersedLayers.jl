@@ -62,6 +62,7 @@ function ODEFunctionList(;ode_rhs=nothing,lin_op=nothing,bc_rhs=nothing,constrai
                     typeof(bc_op),typeof(state),typeof(constraint)}(ode_rhs,lin_op,bc_rhs,constraint_force,bc_op,state,constraint)
 end
 
+# For no bodies
 function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{true,SCA,0}) where {SCA}
     @unpack extra_cache = sys
     @unpack f = extra_cache
@@ -69,11 +70,17 @@ function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{true,SCA,0}) where
     _constrained_ode_function(f.lin_op,f.ode_rhs;_func_cache=zeros_sol(sys))
 end
 
+# Both `ILMSystem{true}` and `ILMSystem{false}` update the auxiliary state
+# but only `ILMSystem{false}` updates the system (updating surfaces, operators, etc.)
+
 function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{true})
     @unpack extra_cache = sys
     @unpack f = extra_cache
 
-    _constrained_ode_function(f.lin_op,f.ode_rhs,f.bc_rhs,f.constraint_force,
+    rhs! = ConstrainedSystems.r1vector(state_r1 = f.ode_rhs,
+                                       aux_r1 = motion_rhs!)
+
+    _constrained_ode_function(f.lin_op,rhs!,f.bc_rhs,f.constraint_force,
                            f.bc_op;_func_cache=zeros_sol(sys))
 end
 
@@ -106,13 +113,7 @@ function zeros_sol(sys::ILMSystem{true,SCA,0}) where {SCA}
     return solvector(state=zero(f.state))
 end
 
-function zeros_sol(sys::ILMSystem{true})
-    @unpack extra_cache = sys
-    @unpack f = extra_cache
-    return solvector(state=zero(f.state),constraint=zero(f.constraint))
-end
-
-function zeros_sol(sys::ILMSystem{false})
+function zeros_sol(sys::ILMSystem)
     @unpack motions, extra_cache, base_cache = sys
     @unpack bl  = base_cache
     @unpack f = extra_cache
@@ -170,15 +171,16 @@ function init_sol(sys::ILMSystem{false})
 end
 =#
 
-function _initialize_motion!(sol,sys::ILMSystem{false})
+
+function _initialize_motion!(sol,sys::ILMSystem{true,SCA,0}) where {SCA}
+   return sol
+end
+
+function _initialize_motion!(sol,sys::ILMSystem)
   @unpack motions, base_cache = sys
   @unpack bl  = base_cache
   aux_state(sol) .= init_motion_state(bl,motions)
   return sol
-end
-
-function _initialize_motion!(sol,sys::ILMSystem{true})
-   return sol
 end
 
 
@@ -188,7 +190,7 @@ function RigidBodyTools.motion_rhs!(dx::Vector{T},sol,sys::ILMSystem,t::Real) wh
   @unpack bl = base_cache
   x = aux_state(sol)
   length(dx) == length(x) || error("wrong length for vector")
-  exogenous_function!(a_edof_buffer,u,ls,t)
+  exogenous_function!(a_edof_buffer,sol,motions,t)
   motion_rhs!(dx,x,t,a_edof_buffer,a_udof_buffer,motions,bl)
   return dx
 end
