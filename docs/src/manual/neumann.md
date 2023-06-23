@@ -250,10 +250,10 @@ We don't actually have to transform these shapes, but it is
 illustrative to show how we would move them.
 
 ````@example neumann
-t1 = RigidTransform((0.0,0.0),0.0)
-t2 = RigidTransform((0.0,0.0),0.0)
-tl = RigidTransformList([t1,t2])
-tl(bl)
+t1 = MotionTransform([0.0,0.0],0.0)
+t2 = MotionTransform([0.0,0.0],0.0)
+tl = MotionTransformList([t1,t2])
+update_body!(bl,tl)
 nothing #hide
 ````
 
