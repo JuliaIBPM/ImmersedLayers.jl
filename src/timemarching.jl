@@ -217,7 +217,7 @@ state_norm(u,t) = sqrt(_norm_sq(u))
 
 Return the timestep of the system `sys`
 """
-timestep(sys::ILMSystem) = _get_function_name(sys.timestep_func)(sys)
+timestep(u,sys::ILMSystem) = _get_function_name(sys.timestep_func)(u,sys)
 
 """
     ConstrainedSystems.init(u0,tspan,sys::ILMSystem,[alg=ConstrainedSystems.LiskaIFHERK()])
@@ -229,6 +229,6 @@ function init(u0,tspan,sys::ILMSystem;alg=ConstrainedSystems.LiskaIFHERK(),kwarg
     fode = ConstrainedODEFunction(sys)
 
     prob = ODEProblem(fode,u0,tspan,sys)
-    dt_calc = timestep(sys)
+    dt_calc = timestep(u0,sys)
     return init(prob, alg;dt=dt_calc,internalnorm=state_norm,kwargs...)
 end

@@ -178,7 +178,7 @@ time step directly, e.g., by supplying it in `phys_params`. But it
 is better to use a stability condition (a Fourier condition) to determine
 it based on the other data.
 =#
-function timestep_fourier(sys)
+function timestep_fourier(u,sys)
     @unpack phys_params = sys
     g = get_grid(sys)
     κ = phys_params["diffusivity"]
