@@ -91,7 +91,7 @@ function heatconduction_ode_rhs!(dT,T,x,sys::ILMSystem,t)
     κ = phys_params["diffusivity"]
 
     ## Calculate the double-layer term
-    prescribed_surface_jump!(dTb,t,sys)
+    prescribed_surface_jump!(dTb,x,t,sys)
     surface_divergence!(dT,-κ*dTb,sys)
 
     return dT
@@ -104,7 +104,7 @@ and exterior prescribed values. The first argument `dTb` holds the result.
 Again, `x` isn't used here.
 =#
 function heatconduction_bc_rhs!(dTb,x,sys::ILMSystem,t)
-    prescribed_surface_average!(dTb,t,sys)
+    prescribed_surface_average!(dTb,x,t,sys)
     return dTb
 end
 
@@ -247,8 +247,8 @@ must have a slightly more complex signature than in time-invariant
 problems: for generality, they must accept the time argument and
 another argument accepting possible motions of the surfaces.
 =#
-get_Tbplus(t,base_cache,phys_params,motions) = zeros_surface(base_cache)
-get_Tbminus(t,base_cache,phys_params,motions) = ones_surface(base_cache)
+get_Tbplus(t,x,base_cache,phys_params,motions) = zeros_surface(base_cache)
+get_Tbminus(t,x,base_cache,phys_params,motions) = ones_surface(base_cache)
 bcdict = Dict("exterior" => get_Tbplus,"interior" => get_Tbminus)
 
 #=
