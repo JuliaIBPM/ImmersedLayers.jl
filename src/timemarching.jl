@@ -129,8 +129,8 @@ Return the initial solution vector, with the state component
 set to zero.
 """
 function init_sol(sys::ILMSystem)
-    sol = zeros_sol(sys)
-    _initialize_motion!(sol,sys)
+    u = zeros_sol(sys)
+    _initialize_motion!(u,sys)
 end
 
 """
@@ -142,10 +142,10 @@ set to the field established by `s`.
 function init_sol(s::AbstractSpatialField,sys::ILMSystem)
     @unpack base_cache = sys
     @unpack g = base_cache
-    sol = zeros_sol(sys)
-    _initialize_motion!(sol,sys)
-    evaluate_field!(state(sol),s,sys)
-    return sol
+    u = zeros_sol(sys)
+    _initialize_motion!(u,sys)
+    evaluate_field!(state(u),s,sys)
+    return u
 end
 
 #=
@@ -172,25 +172,25 @@ end
 =#
 
 
-function _initialize_motion!(sol,sys::ILMSystem{true,SCA,0}) where {SCA}
-   return sol
+function _initialize_motion!(u,sys::ILMSystem{true,SCA,0}) where {SCA}
+   return u
 end
 
-function _initialize_motion!(sol,sys::ILMSystem)
+function _initialize_motion!(u,sys::ILMSystem)
   @unpack motions, base_cache = sys
   @unpack bl  = base_cache
-  aux_state(sol) .= init_motion_state(bl,motions)
-  return sol
+  aux_state(u) .= init_motion_state(bl,motions)
+  return u
 end
 
 
-function RigidBodyTools.motion_rhs!(dx::Vector{T},sol,sys::ILMSystem,t::Real) where {T<:Real}
+function RigidBodyTools.motion_rhs!(dx::Vector{T},u,sys::ILMSystem,t::Real) where {T<:Real}
   @unpack motions, base_cache = sys
   @unpack exogenous_function!, a_edof_buffer, a_udof_buffer = motions
   @unpack bl = base_cache
-  x = aux_state(sol)
+  x = aux_state(u)
   length(dx) == length(x) || error("wrong length for vector")
-  exogenous_function!(a_edof_buffer,sol,motions,t)
+  exogenous_function!(a_edof_buffer,u,motions,t)
   motion_rhs!(dx,x,t,a_edof_buffer,a_udof_buffer,motions,bl)
   return dx
 end
@@ -206,7 +206,7 @@ function RigidBodyTools.update_exogenous!(integrator::ConstrainedSystems.Ordinar
 end
 
 
-RigidBodyTools.maxvelocity(sol,sys::ILMSystem) = maxvelocity(sys.base_cache.bl,aux_state(sol),sys.motions)
+RigidBodyTools.maxvelocity(u,sys::ILMSystem) = maxvelocity(sys.base_cache.bl,aux_state(u),sys.motions)
 
 _norm_sq(u) = dot(u,u)
 _norm_sq(u::ConstrainedSystems.ArrayPartition) = sum(_norm_sq,u.x)

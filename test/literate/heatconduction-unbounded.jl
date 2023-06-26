@@ -223,7 +223,7 @@ end
 #=
 As in the last example, we also define the temperature output function for output
 =#
-temperature(T,σ,sys::ILMSystem,t) = T
+temperature(T,σ,x,sys::ILMSystem,t) = T
 @snapshotoutput temperature
 
 #=

@@ -323,7 +323,7 @@ automatically extends this function with some convenient interfaces. For example
 if we simply pass in the integrator to `temperature`, it will pick off the `u`
 field for us.
 =#
-temperature(T,σ,sys::ILMSystem,t) = T
+temperature(T,σ,x,sys::ILMSystem,t) = T
 @snapshotoutput temperature
 
 #=
