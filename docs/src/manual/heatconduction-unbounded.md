@@ -157,7 +157,7 @@ For the RHS of the heat conduction equation, we calculate the convective
 derivative and the external heating.
 
 ````@example heatconduction-unbounded
-function heatconduction_rhs!(dT,T,sys::ILMSystem,t)
+function heatconduction_rhs!(dT,T,x,sys::ILMSystem,t)
     @unpack forcing, phys_params, extra_cache, base_cache = sys
     @unpack cdcache, fcache, v, dT_tmp = extra_cache
 
@@ -222,7 +222,7 @@ The last definition we need is for a timestep function. This time,
 we take into account both the Fourier and the CFL conditions:
 
 ````@example heatconduction-unbounded
-function timestep_fourier_cfl(sys)
+function timestep_fourier_cfl(u,sys)
     @unpack phys_params = sys
     g = get_grid(sys)
     κ = phys_params["diffusivity"]
@@ -238,7 +238,7 @@ end
 As in the last example, we also define the temperature output function for output
 
 ````@example heatconduction-unbounded
-temperature(T,σ,sys::ILMSystem,t) = T
+temperature(T,σ,x,sys::ILMSystem,t) = T
 @snapshotoutput temperature
 ````
 
