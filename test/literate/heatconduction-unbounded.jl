@@ -145,7 +145,7 @@ forcing_dict = Dict("heating models" => [lfm,afm],
 For the RHS of the heat conduction equation, we calculate the convective
 derivative and the external heating.
 =#
-function heatconduction_rhs!(dT,T,sys::ILMSystem,t)
+function heatconduction_rhs!(dT,T,x,sys::ILMSystem,t)
     @unpack forcing, phys_params, extra_cache, base_cache = sys
     @unpack cdcache, fcache, v, dT_tmp = extra_cache
 
