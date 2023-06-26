@@ -195,6 +195,17 @@ function RigidBodyTools.motion_rhs!(dx::Vector{T},sol,sys::ILMSystem,t::Real) wh
   return dx
 end
 
+function RigidBodyTools.update_exogenous!(sys::ILMSystem,a_edof::AbstractVector)
+  @unpack motions = sys
+  update_exogenous!(motions,a_edof)
+end
+
+function RigidBodyTools.update_exogenous!(integrator::ConstrainedSystems.OrdinaryDiffEq.ODEIntegrator,a_edof::AbstractVector)
+  @unpack p = integrator
+  update_exogenous!(p,a_edof)
+end
+
+
 RigidBodyTools.maxvelocity(sol,sys::ILMSystem) = maxvelocity(sys.base_cache.bl,aux_state(sol),sys.motions)
 
 _norm_sq(u) = dot(u,u)

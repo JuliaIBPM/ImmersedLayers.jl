@@ -58,15 +58,15 @@ Depending on the type of problem, this sets up a base cache of scalar or
 vector type, as well as an optional extra cache
 """
 function __init(prob::AbstractILMProblem{DT,ST,DTP}) where {DT,ST,DTP}
-    @unpack g, bodies, phys_params, bc, forcing, timestep_func, motions = prob
+    @unpack g, axes, bodies, phys_params, bc, forcing, timestep_func, motions = prob
 
     base_cache = _construct_base_cache(bodies,g,DT,ST,DTP,prob,Val(length(bodies)))
 
     extra_cache = prob_cache(prob,base_cache)
 
-    return ILMSystem{_static_surfaces(motions),typeof(prob),length(base_cache),typeof(phys_params),typeof(bc),typeof(forcing),
+    return ILMSystem{_static_surfaces(motions,Val(axes)),typeof(prob),length(base_cache),typeof(phys_params),typeof(bc),typeof(forcing),
                     typeof(timestep_func),typeof(motions),typeof(base_cache),typeof(extra_cache)}(
-              phys_params,bc,forcing,timestep_func,motions,base_cache,extra_cache)
+              phys_params,axes,bc,forcing,timestep_func,motions,base_cache,extra_cache)
 
 end
 
@@ -82,8 +82,12 @@ end
 @inline _construct_base_cache(bodies,g,DT,ST,DTP,::PT,::Val{N}) where {PT <: AbstractVectorILMProblem,N} =
               SurfaceVectorCache(bodies,g,ddftype=DT,scaling=ST,dtype=DTP)
 
-_static_surfaces(::Nothing) = true
-_static_surfaces(m::RigidBodyMotion) = !ismoving(m)
+# Should be possible to be more sophisticated here, e.g, multiple bodies
+# moving relative to inertial system but not with respect to each other
+_static_surfaces(::Nothing,::AT) where {AT} = true
+_static_surfaces(m::RigidBodyMotion,::Val{:inertial}) = !ismoving(m)
+_static_surfaces(m::RigidBodyMotion,::Val{:body}) = !ismoving(m) || (m.nls == 1 && !is_system_in_relative_motion(1,m))
+
 
 # Extend surface_velocity! and allow for null motions
 RigidBodyTools.surface_velocity!(vec::VectorData,bl::Union{Body,BodyList},x::AbstractVector,motions::RigidBodyTools.AbstractMotion,t;kwargs...) =

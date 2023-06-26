@@ -88,6 +88,7 @@ by [`construct_system`](@ref)
 mutable struct ILMSystem{static,PT,N,PHT,BCF,FF,DTF,MTF,BCT,ECT}
 
   phys_params :: PHT
+  axes :: Symbol
   bc :: BCF
   forcing :: FF
   timestep_func :: DTF

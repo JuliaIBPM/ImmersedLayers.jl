@@ -67,6 +67,7 @@ macro ilmproblem(name,vector_or_scalar)
           """
           struct $typename{DT,ST,DTP,BLT,PHT,BCF,FF,DTF,MTF} <: $abtype{DT,ST,DTP}
              g :: PhysicalGrid
+             axes :: Symbol
              bodies :: BLT
              phys_params :: PHT
              bc :: BCF
@@ -76,6 +77,7 @@ macro ilmproblem(name,vector_or_scalar)
              $typename(g::PT,bodies::BodyList;ddftype=ImmersedLayers.DEFAULT_DDF,
                                               scaling=ImmersedLayers.DEFAULT_SCALING,
                                               dtype=ImmersedLayers.DEFAULT_DATA_TYPE,
+                                              axes=:inertial,
                                               phys_params=nothing,
                                               bc=nothing,
                                               forcing=nothing,
@@ -83,7 +85,7 @@ macro ilmproblem(name,vector_or_scalar)
                                               motions=nothing) where {PT <: PhysicalGrid} =
                     new{ddftype,scaling,dtype,typeof(bodies),typeof(phys_params),typeof(bc),typeof(forcing),typeof(timestep_func),
                                         typeof(ImmersedLayers._list(motions))}(
-                                              g,bodies,phys_params,bc,forcing,timestep_func,ImmersedLayers._list(motions))
+                                              g,axes,bodies,phys_params,bc,forcing,timestep_func,ImmersedLayers._list(motions))
           end
 
           $typename(g::PhysicalGrid,body::Body;kwargs...) = $typename(g,BodyList([body]); kwargs...)
@@ -94,6 +96,7 @@ macro ilmproblem(name,vector_or_scalar)
                                                 ddftype=ImmersedLayers._ddf_type(P),
                                                 scaling=ImmersedLayers._scaling_type(P),
                                                 dtype=ImmersedLayers._element_type(P),
+                                                axes=sys.axes,
                                                 phys_params=sys.phys_params,
                                                 bc=sys.bc,
                                                 forcing=sys.forcing,
