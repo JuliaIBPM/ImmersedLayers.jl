@@ -24,12 +24,12 @@ _construct_motion(::Any,::Int,::BodyList) = ILMMotion(0,nothing,PluckerMotionLis
 
 
 """
-    evaluate_motion!(motion::ILMMotion,bl::BodyList,x::AbstractVector,t::Real)
+    evaluate_motion!(motion::ILMMotion,x::AbstractVector,t::Real)
 
 Given the current joint state vector `x` and time `t`, update the
 body transforms and velocities in `motion`.
 """
-function evaluate_motion!(motion::ILMMotion,bl::BodyList,x::AbstractVector,t::Real)
+function evaluate_motion!(motion::ILMMotion,x::AbstractVector,t::Real)
     @unpack m = motion
 
     vl, Xl = _evaluate_motion(x,m,t)
@@ -39,16 +39,14 @@ function evaluate_motion!(motion::ILMMotion,bl::BodyList,x::AbstractVector,t::Re
 end
 
 """
-    evaluate_motion!(sys::ILMSystem,u::ArrayPartition,t::Real)
+    evaluate_motion!(sys::ILMSystem,x::AbstractVector,t::Real)
 
-Given the current system solution vector `u` and time `t`, update the
+Given the current joint state vector `x` and time `t`, update the
 body transforms and velocities in `sys.motions`.
 """
-function evaluate_motion!(sys::ILMSystem,u::ConstrainedSystems.ArrayPartition,t::Real)
-    @unpack motions, base_cache = sys
-    @unpack bl = base_cache
-    x = aux_state(u)
-    evaluate_motion!(motions,bl,x,t)
+function evaluate_motion!(sys::ILMSystem,x::AbstractVector,t::Real)
+    @unpack motions = sys
+    evaluate_motion!(motions,x,t)
 end
 
 
