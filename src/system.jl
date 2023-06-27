@@ -37,7 +37,7 @@ information will be used to replace the body information and
 subsequent operators in `sysold`.
 """
 function update_system!(sys::ILMSystem,u,sysold::ILMSystem,t)
-    @unpack base_cache, motions = sysold
+    @unpack base_cache = sysold
     @unpack bl = base_cache
     bodies = surfaces(u,sysold,t)
     #x = aux_state(u)
@@ -58,15 +58,16 @@ Depending on the type of problem, this sets up a base cache of scalar or
 vector type, as well as an optional extra cache
 """
 function __init(prob::AbstractILMProblem{DT,ST,DTP}) where {DT,ST,DTP}
-    @unpack g, axes, bodies, phys_params, bc, forcing, timestep_func, motions = prob
+    @unpack g, bodies, phys_params, bc, forcing, timestep_func, motions = prob
+    @unpack m, reference_body = motions
 
     base_cache = _construct_base_cache(bodies,g,DT,ST,DTP,prob,Val(length(bodies)))
 
     extra_cache = prob_cache(prob,base_cache)
 
-    return ILMSystem{_static_surfaces(motions,Val(axes)),typeof(prob),length(base_cache),typeof(phys_params),typeof(bc),typeof(forcing),
+    return ILMSystem{_static_surfaces(m,Val(reference_body)),typeof(prob),length(base_cache),typeof(phys_params),typeof(bc),typeof(forcing),
                     typeof(timestep_func),typeof(motions),typeof(base_cache),typeof(extra_cache)}(
-              phys_params,axes,bc,forcing,timestep_func,motions,base_cache,extra_cache)
+              phys_params,bc,forcing,timestep_func,motions,base_cache,extra_cache)
 
 end
 
@@ -82,11 +83,15 @@ end
 @inline _construct_base_cache(bodies,g,DT,ST,DTP,::PT,::Val{N}) where {PT <: AbstractVectorILMProblem,N} =
               SurfaceVectorCache(bodies,g,ddftype=DT,scaling=ST,dtype=DTP)
 
-# Should be possible to be more sophisticated here, e.g, multiple bodies
-# moving relative to inertial system but not with respect to each other
+isstatic(::ILMSystem{ST}) where {ST} = ST
+
 _static_surfaces(::Nothing,::AT) where {AT} = true
-_static_surfaces(m::RigidBodyMotion,::Val{:inertial}) = !ismoving(m)
-_static_surfaces(m::RigidBodyMotion,::Val{:body}) = !ismoving(m) || (m.nls == 1 && !is_system_in_relative_motion(1,m))
+_static_surfaces(m::RigidBodyMotion,::Val{0}) = !ismoving(m)
+
+# if the problem is solved in a body reference frame, but either nothing is moving
+# or there is only one linked system that is not in relative motion, then
+# surfaces are static
+_static_surfaces(m::RigidBodyMotion,::Val{N}) where N = !ismoving(m) || (m.nls == 1 && !is_system_in_relative_motion(1,m))
 
 
 # Extend surface_velocity! and allow for null motions
@@ -95,11 +100,11 @@ RigidBodyTools.surface_velocity!(vec::VectorData,bl::Union{Body,BodyList},x::Abs
 
 RigidBodyTools.surface_velocity!(vec::VectorData,bl::Union{Body,BodyList},x::AbstractVector,motions,t) = fill!(vec,0.0)
 
-RigidBodyTools.surface_velocity!(vec::VectorData,base_cache::BasicILMCache,x::AbstractVector,motions,t;kwargs...) =
+RigidBodyTools.surface_velocity!(vec::VectorData,x::AbstractVector,base_cache::BasicILMCache,motions,t;kwargs...) =
     surface_velocity!(vec,base_cache.bl,x,motions,t;kwargs...)
 
 RigidBodyTools.surface_velocity!(vec::VectorData,x::AbstractVector,sys::ILMSystem,t;kwargs...) =
-    surface_velocity!(vec,sys.base_cache,x,sys.motions,t;kwargs...)
+    surface_velocity!(vec,x,sys.base_cache,sys.motions.m,t;kwargs...)
 
 
 # Create the basic solve function, to be extended
@@ -116,9 +121,10 @@ time argument.
 function surfaces(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{false},t)
     @unpack base_cache, motions = sys
     @unpack bl = base_cache
+    @unpack m = motions
     x = aux_state(u)
     current_bl = deepcopy(bl)
-    update_body!(current_bl,x,motions)
+    update_body!(current_bl,x,m)
     return current_bl
 end
 
@@ -135,7 +141,7 @@ end
 Return the list of surfaces (as a `BodyList`) in the system `sys`.
 """
 function surfaces(sys::ILMSystem)
-  @unpack base_cache, motions = sys
+  @unpack base_cache = sys
   @unpack bl = base_cache
   return bl
 end

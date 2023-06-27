@@ -117,9 +117,10 @@ function zeros_sol(sys::ILMSystem)
     @unpack motions, extra_cache, base_cache = sys
     @unpack bl  = base_cache
     @unpack f = extra_cache
+    @unpack m = motions
     return solvector(state=zero(f.state),
                      constraint=zero(f.constraint),
-                     aux_state=zero_motion_state(bl,motions))
+                     aux_state=zero_motion_state(bl,m))
 end
 
 """
@@ -179,25 +180,28 @@ end
 function _initialize_motion!(u,sys::ILMSystem)
   @unpack motions, base_cache = sys
   @unpack bl  = base_cache
-  aux_state(u) .= init_motion_state(bl,motions)
+  @unpack m = motions
+  aux_state(u) .= init_motion_state(bl,m)
   return u
 end
 
 
 function RigidBodyTools.motion_rhs!(dx::Vector{T},u,sys::ILMSystem,t::Real) where {T<:Real}
   @unpack motions, base_cache = sys
-  @unpack exogenous_function!, a_edof_buffer, a_udof_buffer = motions
+  @unpack m = motions
+  @unpack exogenous_function!, a_edof_buffer, a_udof_buffer = m
   @unpack bl = base_cache
   x = aux_state(u)
   length(dx) == length(x) || error("wrong length for vector")
-  exogenous_function!(a_edof_buffer,u,motions,t)
-  motion_rhs!(dx,x,t,a_edof_buffer,a_udof_buffer,motions,bl)
+  exogenous_function!(a_edof_buffer,u,m,t)
+  motion_rhs!(dx,x,t,a_edof_buffer,a_udof_buffer,m,bl)
   return dx
 end
 
 function RigidBodyTools.update_exogenous!(sys::ILMSystem,a_edof::AbstractVector)
   @unpack motions = sys
-  update_exogenous!(motions,a_edof)
+  @unpack m = motions
+  update_exogenous!(m,a_edof)
 end
 
 function RigidBodyTools.update_exogenous!(integrator::ConstrainedSystems.OrdinaryDiffEq.ODEIntegrator,a_edof::AbstractVector)
@@ -206,7 +210,7 @@ function RigidBodyTools.update_exogenous!(integrator::ConstrainedSystems.Ordinar
 end
 
 
-RigidBodyTools.maxvelocity(u,sys::ILMSystem) = maxvelocity(sys.base_cache.bl,aux_state(u),sys.motions)
+RigidBodyTools.maxvelocity(u,sys::ILMSystem) = maxvelocity(sys.base_cache.bl,aux_state(u),sys.motions.m)
 
 _norm_sq(u) = dot(u,u)
 _norm_sq(u::ConstrainedSystems.ArrayPartition) = sum(_norm_sq,u.x)

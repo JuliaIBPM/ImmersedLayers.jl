@@ -61,7 +61,7 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         ForcingModelAndRegion,apply_forcing!,
         solve, @snapshotoutput,@scalarsurfacemetric,@vectorsurfacemetric,surfaces,
         prescribed_surface_jump!,prescribed_surface_average!,
-        timestep
+        timestep, isstatic, evaluate_motion!
 
 
 abstract type AbstractBasicCache{N,GCT} end
@@ -88,7 +88,6 @@ by [`construct_system`](@ref)
 mutable struct ILMSystem{static,PT,N,PHT,BCF,FF,DTF,MTF,BCT,ECT}
 
   phys_params :: PHT
-  axes :: Symbol
   bc :: BCF
   forcing :: FF
   timestep_func :: DTF
@@ -105,6 +104,7 @@ _get_function_name(f::Symbol) = eval(f)
 include("cartesian_extensions.jl")
 include("tools.jl")
 include("cache.jl")
+include("motions.jl")
 include("problem.jl")
 include("system.jl")
 include("fields.jl")
