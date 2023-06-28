@@ -15,12 +15,13 @@ function _construct_motion(m::RigidBodyMotion,reference_body::Int,bodies::BodyLi
   ILMMotion(reference_body,m,vl,Xl)
 end
 
+_construct_motion(::Nothing,::Int,::BodyList) = ILMMotion(0,nothing,PluckerMotionList(),MotionTransformList())
+_construct_motion(::Any,::Int,::BodyList) = ILMMotion(0,nothing,PluckerMotionList(),MotionTransformList())
+
+
 _check_reference_body(refid::Int,bodies::BodyList) = (0 <= refid <= length(bodies)) ? refid :
                             error("Reference body must be between 0 and number of bodies")
 
-
-_construct_motion(::Nothing,::Int,::BodyList) = ILMMotion(0,nothing,PluckerMotionList(),MotionTransformList())
-_construct_motion(::Any,::Int,::BodyList) = ILMMotion(0,nothing,PluckerMotionList(),MotionTransformList())
 
 
 """
