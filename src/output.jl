@@ -82,9 +82,8 @@ the entire history.
 macro vectorsurfacemetric(name)
     return esc(quote
         function $name(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,bodyid::Int;kwargs...)
-            vx = map((u,t) -> $name(u,sys,t,bodyid;kwargs...)[1],sol.u,sol.t)
-            vy = map((u,t) -> $name(u,sys,t,bodyid;kwargs...)[2],sol.u,sol.t)
-            vx, vy
+            v = map((u,t) -> $name(u,sys,t,bodyid;kwargs...),sol.u,sol.t)
+            return tuple([map(vi -> vi[i],v) for i in eachindex(first(v))]...)
         end
 
         @snapshotoutput $name
