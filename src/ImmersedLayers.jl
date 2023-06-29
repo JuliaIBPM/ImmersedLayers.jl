@@ -61,7 +61,7 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         ForcingModelAndRegion,apply_forcing!,
         solve, @snapshotoutput,@scalarsurfacemetric,@vectorsurfacemetric,surfaces,
         prescribed_surface_jump!,prescribed_surface_average!,
-        timestep, isstatic, evaluate_motion!
+        timestep, isstatic, evaluate_motion!, surface_velocity_in_translating_frame!
 
 
 abstract type AbstractBasicCache{N,GCT} end

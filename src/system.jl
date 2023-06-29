@@ -95,17 +95,52 @@ _static_surfaces(m::RigidBodyMotion,::Val{N}) where N = !ismoving(m) || (m.nls =
 
 
 # Extend surface_velocity! and allow for null motions
-RigidBodyTools.surface_velocity!(vec::VectorData,bl::Union{Body,BodyList},x::AbstractVector,motions::RigidBodyTools.AbstractMotion,t;kwargs...) =
-    surface_velocity!(vec.u,vec.v,bl,x,motions,t;kwargs...)
+RigidBodyTools.surface_velocity!(vec::VectorData,bl::Union{Body,BodyList},x::AbstractVector,motions::ILMMotion,t;kwargs...) =
+    surface_velocity!(vec.u,vec.v,bl,x,motions.m,t;kwargs...)
 
 RigidBodyTools.surface_velocity!(vec::VectorData,bl::Union{Body,BodyList},x::AbstractVector,motions,t) = fill!(vec,0.0)
 
-RigidBodyTools.surface_velocity!(vec::VectorData,x::AbstractVector,base_cache::BasicILMCache,motions,t;kwargs...) =
+RigidBodyTools.surface_velocity!(vec::VectorData,x::AbstractVector,base_cache::BasicILMCache,motions::ILMMotion,t;kwargs...) =
     surface_velocity!(vec,base_cache.bl,x,motions,t;kwargs...)
 
 RigidBodyTools.surface_velocity!(vec::VectorData,x::AbstractVector,sys::ILMSystem,t;kwargs...) =
-    surface_velocity!(vec,x,sys.base_cache,sys.motions.m,t;kwargs...)
+    surface_velocity!(vec,x,sys.base_cache,sys.motions,t;kwargs...)
 
+
+"""
+    surface_velocity_in_translating_frame!(vel,x,base_cache,motions,t)
+
+Evaluates the surface velocity when the problem is set up in a moving
+frame of reference (specified with the `reference_body` keyword).
+It removes the translational velocity of the reference body, since
+this is applied as a free stream velocity (with change of sign).
+"""
+function surface_velocity_in_translating_frame!(vec::VectorData,x::AbstractVector,base_cache::BasicILMCache,motions::ILMMotion,t)
+  @unpack reference_body = motions
+  surface_velocity!(vec,x,base_cache,motions,t;axes=reference_body,frame=reference_body,motion_part=:linear)
+end
+#=
+function surface_velocity_in_translating_frame!(vec::VectorData,x::AbstractVector,base_cache::BasicILMCache,motions,t)
+    @unpack reference_body, m, vl, Xl = motions
+
+    #surface_velocity!(vel,x,base_cache,m,t;axes=:body,motion_part=:angular)
+
+    evaluate_motion!(motions,x,t)
+
+    vref = vl[reference_body]
+    Uref, Vref = vref.linear
+
+    # This is not quite right for problems in which bodies may be in relative
+    # motion with the reference body. The velocity needs to be expressed in
+    # the coordinates of the reference body.
+    surface_velocity!(vel,x,base_cache,m,t;axes=:body)
+
+    vel.u .-= Uref
+    vel.v .-= Vref
+
+    return vel
+end
+=#
 
 # Create the basic solve function, to be extended
 function solve(prob::AbstractILMProblem,sys::ILMSystem) end

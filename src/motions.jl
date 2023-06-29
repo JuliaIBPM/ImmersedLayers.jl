@@ -52,8 +52,7 @@ end
 
 
 function _evaluate_motion(x::AbstractVector,m::RigidBodyMotion,t::Real)
-  q = position_vector(x,m)
-  Xl = body_transforms(q,m)
+  Xl = body_transforms(x,m)
   vl = body_velocities(x,t,m)
   return vl, Xl
 end
