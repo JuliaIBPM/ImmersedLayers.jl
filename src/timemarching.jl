@@ -27,11 +27,11 @@ of the same form.
 
 - `ode_rhs =` specifies the right-hand side of the ODEs, ``r_1``. The in-place form of the function is `r1(dy,y,sys::ILMSystem,t)`, the state vector `y`, IL system `sys`, time `t`, and returning ``dy/dt``. The out-of-place form is `r1(y,sys,t)`.
 
-- `bc_rhs = ` specifies the right-hand side of the boundary conditions, ``r_2``. If there are no constraints, this can be omitted. The in-place form is `r2(dz,sys,t)`, returning `dz`, the part of the boundary constraint not dependent on the state vector. The out-of-place form is `r2(sys,t)`.
+- `bc_rhs = ` specifies the right-hand side of the boundary conditions, ``r_2``. If there are no constraints, this can be omitted. The in-place form is `r2(dz,x,sys,t)`, returning `dz`, the part of the boundary constraint not dependent on the state vector. The out-of-place form is `r2(x,sys,t)`.
 
-- `constraint_force = ` supplies the constraint force term in the ODEs, ``B_1 z``. If there are no constraints, this can be omitted. The in-place form is `B1(dy,z,sys)`, returning the contribution to ``dy/dt`` (with the sign convention shown in the equations above) and the out-of-place form is `B1(z,sys)`.
+- `constraint_force = ` supplies the constraint force term in the ODEs, ``B_1 z``. If there are no constraints, this can be omitted. The in-place form is `B1(dy,z,x,sys)`, returning the contribution to ``dy/dt`` (with the sign convention shown in the equations above) and the out-of-place form is `B1(z,x,sys)`.
 
-- `bc_op = ` supplies the left-hand side of the boundary constraint, ``B_2 y``. If there are no constraints, this can be omitted. The in-place form is `B2(dz,y,sys)`, the out-of-place form is `B2(y,sys)`.
+- `bc_op = ` supplies the left-hand side of the boundary constraint, ``B_2 y``. If there are no constraints, this can be omitted. The in-place form is `B2(dz,y,x,sys)`, the out-of-place form is `B2(y,x,sys)`.
 
 - `lin_op = ` is optional and specifies a linear operator on the state vector ``L``, to be treated with an exponential integral (i.e., integrating factor) in the time marching. (Alternatively, this part can simply be included in `r_1`). It should have an associated `mul!` operation that acts upon the state vector.
 
@@ -62,6 +62,7 @@ function ODEFunctionList(;ode_rhs=nothing,lin_op=nothing,bc_rhs=nothing,constrai
                     typeof(bc_op),typeof(state),typeof(constraint)}(ode_rhs,lin_op,bc_rhs,constraint_force,bc_op,state,constraint)
 end
 
+# For no bodies
 function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{true,SCA,0}) where {SCA}
     @unpack extra_cache = sys
     @unpack f = extra_cache
@@ -69,11 +70,17 @@ function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{true,SCA,0}) where
     _constrained_ode_function(f.lin_op,f.ode_rhs;_func_cache=zeros_sol(sys))
 end
 
+# Both `ILMSystem{true}` and `ILMSystem{false}` update the auxiliary state
+# but only `ILMSystem{false}` updates the system (updating surfaces, operators, etc.)
+
 function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{true})
     @unpack extra_cache = sys
     @unpack f = extra_cache
 
-    _constrained_ode_function(f.lin_op,f.ode_rhs,f.bc_rhs,f.constraint_force,
+    rhs! = ConstrainedSystems.r1vector(state_r1 = f.ode_rhs,
+                                       aux_r1 = motion_rhs!)
+
+    _constrained_ode_function(f.lin_op,rhs!,f.bc_rhs,f.constraint_force,
                            f.bc_op;_func_cache=zeros_sol(sys))
 end
 
@@ -82,7 +89,7 @@ function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{false})
     @unpack f = extra_cache
 
     rhs! = ConstrainedSystems.r1vector(state_r1 = f.ode_rhs,
-                                       aux_r1 = body_rhs!)
+                                       aux_r1 = motion_rhs!)
 
     _constrained_ode_function(f.lin_op,rhs!,f.bc_rhs,f.constraint_force,
                               f.bc_op;_func_cache=zeros_sol(sys),
@@ -106,19 +113,14 @@ function zeros_sol(sys::ILMSystem{true,SCA,0}) where {SCA}
     return solvector(state=zero(f.state))
 end
 
-function zeros_sol(sys::ILMSystem{true})
-    @unpack extra_cache = sys
-    @unpack f = extra_cache
-    return solvector(state=zero(f.state),constraint=zero(f.constraint))
-end
-
-function zeros_sol(sys::ILMSystem{false})
+function zeros_sol(sys::ILMSystem)
     @unpack motions, extra_cache, base_cache = sys
     @unpack bl  = base_cache
     @unpack f = extra_cache
+    @unpack m = motions
     return solvector(state=zero(f.state),
                      constraint=zero(f.constraint),
-                     aux_state=zero(motion_state(bl,motions)))
+                     aux_state=zero_motion_state(bl,m))
 end
 
 """
@@ -128,8 +130,8 @@ Return the initial solution vector, with the state component
 set to zero.
 """
 function init_sol(sys::ILMSystem)
-    sol = zeros_sol(sys)
-    _initialize_motion!(sol,sys)
+    u = zeros_sol(sys)
+    _initialize_motion!(u,sys)
 end
 
 """
@@ -141,10 +143,10 @@ set to the field established by `s`.
 function init_sol(s::AbstractSpatialField,sys::ILMSystem)
     @unpack base_cache = sys
     @unpack g = base_cache
-    sol = zeros_sol(sys)
-    _initialize_motion!(sol,sys)
-    evaluate_field!(state(sol),s,sys)
-    return sol
+    u = zeros_sol(sys)
+    _initialize_motion!(u,sys)
+    evaluate_field!(state(u),s,sys)
+    return u
 end
 
 #=
@@ -170,27 +172,45 @@ function init_sol(sys::ILMSystem{false})
 end
 =#
 
-function _initialize_motion!(sol,sys::ILMSystem{false})
+
+function _initialize_motion!(u,sys::ILMSystem{true,SCA,0}) where {SCA}
+   return u
+end
+
+function _initialize_motion!(u,sys::ILMSystem)
   @unpack motions, base_cache = sys
   @unpack bl  = base_cache
-  aux_state(sol) = motion_state(bl,motions)
-  return sol
-end
-
-function _initialize_motion!(sol,sys::ILMSystem{true})
-   return sol
+  @unpack m = motions
+  aux_state(u) .= init_motion_state(bl,m)
+  return u
 end
 
 
-function body_rhs!(dx::Vector{T},x::Vector{T},sys::ILMSystem,t::Real) where {T<:Real}
+function RigidBodyTools.motion_rhs!(dx::Vector{T},u,sys::ILMSystem,t::Real) where {T<:Real}
   @unpack motions, base_cache = sys
+  @unpack m = motions
+  @unpack exogenous_function!, a_edof_buffer, a_udof_buffer = m
   @unpack bl = base_cache
+  x = aux_state(u)
   length(dx) == length(x) || error("wrong length for vector")
-  dx .= motion_velocity(bl,motions,t)
+  exogenous_function!(a_edof_buffer,u,m,t)
+  motion_rhs!(dx,x,t,a_edof_buffer,a_udof_buffer,m,bl)
   return dx
 end
 
-RigidBodyTools.maxlistvelocity(sys::ILMSystem) = maxlistvelocity(sys.base_cache.bl,sys.motions)
+function RigidBodyTools.update_exogenous!(sys::ILMSystem,a_edof::AbstractVector)
+  @unpack motions = sys
+  @unpack m = motions
+  update_exogenous!(m,a_edof)
+end
+
+function RigidBodyTools.update_exogenous!(integrator::ConstrainedSystems.OrdinaryDiffEq.ODEIntegrator,a_edof::AbstractVector)
+  @unpack p = integrator
+  update_exogenous!(p,a_edof)
+end
+
+
+RigidBodyTools.maxvelocity(u,sys::ILMSystem) = maxvelocity(sys.base_cache.bl,aux_state(u),sys.motions.m)
 
 _norm_sq(u) = dot(u,u)
 _norm_sq(u::ConstrainedSystems.ArrayPartition) = sum(_norm_sq,u.x)
@@ -201,7 +221,7 @@ state_norm(u,t) = sqrt(_norm_sq(u))
 
 Return the timestep of the system `sys`
 """
-timestep(sys::ILMSystem) = _get_function_name(sys.timestep_func)(sys)
+timestep(u,sys::ILMSystem) = _get_function_name(sys.timestep_func)(u,sys)
 
 """
     ConstrainedSystems.init(u0,tspan,sys::ILMSystem,[alg=ConstrainedSystems.LiskaIFHERK()])
@@ -213,6 +233,6 @@ function init(u0,tspan,sys::ILMSystem;alg=ConstrainedSystems.LiskaIFHERK(),kwarg
     fode = ConstrainedODEFunction(sys)
 
     prob = ODEProblem(fode,u0,tspan,sys)
-    dt_calc = timestep(sys)
+    dt_calc = timestep(u0,sys)
     return init(prob, alg;dt=dt_calc,internalnorm=state_norm,kwargs...)
 end

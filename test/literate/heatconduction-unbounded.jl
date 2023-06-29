@@ -92,7 +92,7 @@ using [`LineForcingModel`](@ref).
 =#
 fregion1 = Square(0.5,1.4*Δx)
 T = RigidTransform((0.0,1.0),0.0)
-T(fregion1)
+update_body!(fregion1,T)
 
 function model1!(σ,T,t,fr::LineRegionCache,phys_params)
     σ .= phys_params["lineheater_flux"]
@@ -107,7 +107,7 @@ of the target temperature. These are bundled with [`AreaForcingModel`](@ref).
 
 fregion2 = Circle(0.2,1.4*Δx)
 T = RigidTransform((0.0,-0.5),0.0)
-T(fregion2)
+update_body!(fregion2,T)
 
 function model2!(σ,T,t,fr::AreaRegionCache,phys_params)
     f = phys_params["areaheater_freq"]
@@ -145,7 +145,7 @@ forcing_dict = Dict("heating models" => [lfm,afm],
 For the RHS of the heat conduction equation, we calculate the convective
 derivative and the external heating.
 =#
-function heatconduction_rhs!(dT,T,sys::ILMSystem,t)
+function heatconduction_rhs!(dT,T,x,sys::ILMSystem,t)
     @unpack forcing, phys_params, extra_cache, base_cache = sys
     @unpack cdcache, fcache, v, dT_tmp = extra_cache
 
@@ -208,7 +208,7 @@ end
 The last definition we need is for a timestep function. This time,
 we take into account both the Fourier and the CFL conditions:
 =#
-function timestep_fourier_cfl(sys)
+function timestep_fourier_cfl(u,sys)
     @unpack phys_params = sys
     g = get_grid(sys)
     κ = phys_params["diffusivity"]
@@ -223,7 +223,7 @@ end
 #=
 As in the last example, we also define the temperature output function for output
 =#
-temperature(T,σ,sys::ILMSystem,t) = T
+temperature(T,σ,x,sys::ILMSystem,t) = T
 @snapshotoutput temperature
 
 #=

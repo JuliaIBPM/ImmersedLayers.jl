@@ -61,7 +61,7 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         ForcingModelAndRegion,apply_forcing!,
         solve, @snapshotoutput,@scalarsurfacemetric,@vectorsurfacemetric,surfaces,
         prescribed_surface_jump!,prescribed_surface_average!,
-        timestep
+        timestep, isstatic, evaluate_motion!, surface_velocity_in_translating_frame!
 
 
 abstract type AbstractBasicCache{N,GCT} end
@@ -104,10 +104,10 @@ _get_function_name(f::Symbol) = eval(f)
 include("cartesian_extensions.jl")
 include("tools.jl")
 include("cache.jl")
+include("motions.jl")
 include("problem.jl")
 include("system.jl")
 include("fields.jl")
-include("layers.jl")
 include("grid_operators.jl")
 include("surface_operators.jl")
 include("forcing.jl")

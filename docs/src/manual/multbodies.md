@@ -59,11 +59,11 @@ which we also assemble into a list. (The `!` is for convenience, using Julia
 convention, to remind us that each transform operates in-place on the body.)
 
 ````@example multbodies
-t1! = RigidTransform((1.0,1.0),0.0)
-t2! = RigidTransform((1.0,-1.0),0.0)
-t3! = RigidTransform((-1.0,1.0),0.0)
-t4! = RigidTransform((-1.0,-1.0),0.0)
-tl! = RigidTransformList([t1!,t2!,t3!,t4!])
+t1 = MotionTransform([1.0,1.0],0.0)
+t2 = MotionTransform([1.0,-1.0],0.0)
+t3 = MotionTransform([-1.0,1.0],0.0)
+t4 = MotionTransform([-1.0,-1.0],0.0)
+tl = MotionTransformList([t1,t2,t3,t4])
 nothing #hide
 ````
 
@@ -71,7 +71,7 @@ Finally, we apply the transform. We can apply the transform list directly
 to the body list:
 
 ````@example multbodies
-tl!(bl)
+update_body!(bl,tl)
 ````
 
 Now we can create the cache, and inspect it by plotting

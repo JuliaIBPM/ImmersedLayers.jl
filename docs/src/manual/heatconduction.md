@@ -81,16 +81,18 @@ term. Note how this makes use of the physical parameters in `phys_params`
 and the boundary data via functions in `bc`. The functions for the boundary
 data supply the boundary values. Also, note that the function returns `dT`
 in the first argument. This represents this function's contribution to $dT/dt$.
+The argument `x` isn't used here, but would generally hold information about
+the body state.
 
 ````@example heatconduction
-function heatconduction_ode_rhs!(dT,T,sys::ILMSystem,t)
+function heatconduction_ode_rhs!(dT,T,x,sys::ILMSystem,t)
     @unpack bc, forcing, phys_params, extra_cache, base_cache = sys
     @unpack dTb = extra_cache
 
     κ = phys_params["diffusivity"]
 
     # Calculate the double-layer term
-    prescribed_surface_jump!(dTb,t,sys)
+    prescribed_surface_jump!(dTb,x,t,sys)
     surface_divergence!(dT,-κ*dTb,sys)
 
     return dT
@@ -100,10 +102,11 @@ end
 Now, we create the function that calculates the RHS of the boundary condition.
 For this Dirichlet condition, we simply take the average of the interior
 and exterior prescribed values. The first argument `dTb` holds the result.
+Again, `x` isn't used here.
 
 ````@example heatconduction
-function heatconduction_bc_rhs!(dTb,sys::ILMSystem,t)
-    prescribed_surface_average!(dTb,t,sys)
+function heatconduction_bc_rhs!(dTb,x,sys::ILMSystem,t)
+    prescribed_surface_average!(dTb,x,t,sys)
     return dTb
 end
 ````
@@ -113,7 +116,7 @@ multiplier (the input σ). Here, we simply regularize the negative of this
 to the grid.
 
 ````@example heatconduction
-function heatconduction_constraint_force!(dT,σ,sys::ILMSystem)
+function heatconduction_constraint_force!(dT,σ,x,sys::ILMSystem)
     regularize!(dT,-σ,sys)
     return dT
 end
@@ -124,7 +127,7 @@ interpolates the temperature (state vector) onto the boundary. The first argumen
 holds the result.
 
 ````@example heatconduction
-function heatconduction_bc_op!(dTb,T,sys::ILMSystem)
+function heatconduction_bc_op!(dTb,T,x,sys::ILMSystem)
     interpolate!(dTb,T,sys)
     return dTb
 end
@@ -182,7 +185,7 @@ is better to use a stability condition (a Fourier condition) to determine
 it based on the other data.
 
 ````@example heatconduction
-function timestep_fourier(sys)
+function timestep_fourier(u,sys)
     @unpack phys_params = sys
     g = get_grid(sys)
     κ = phys_params["diffusivity"]
@@ -216,6 +219,27 @@ body = Circle(1.0,Δs);
 nothing #hide
 ````
 
+Though the body is stationary, we still need to provide some minimal information
+about its placement and (lack of) motion. We do this with the help of
+the `RigidBodyMotion` structure. Technically, the placement of a body
+constitutes a basic *joint* with the inertial coordinate system.
+the `MotionTransform` below places the joint at the origin of the
+inertial coordinate system (the first argument), with no relative rotation (the second argument).
+
+````@example heatconduction
+X = MotionTransform([0,0],0)
+joint = Joint(X)
+m = RigidBodyMotion(joint,body)
+````
+
+We don't have to do anything more here because the placement of the body
+is trivial. However, to demonstrate how we might do it in other problems,
+
+````@example heatconduction
+x = zero_motion_state(body,m)
+update_body!(body,x,m)
+````
+
 ### Specify the physical parameters, data, etc.
 These can be changed later without having to regenerate the system.
 
@@ -232,18 +256,20 @@ problems: for generality, they must accept the time argument and
 another argument accepting possible motions of the surfaces.
 
 ````@example heatconduction
-get_Tbplus(t,base_cache,phys_params,motions) = zeros_surface(base_cache)
-get_Tbminus(t,base_cache,phys_params,motions) = ones_surface(base_cache)
+get_Tbplus(t,x,base_cache,phys_params,motions) = zeros_surface(base_cache)
+get_Tbminus(t,x,base_cache,phys_params,motions) = ones_surface(base_cache)
 bcdict = Dict("exterior" => get_Tbplus,"interior" => get_Tbminus)
 ````
 
 Construct the problem, passing in the data and functions we've just
-created.
+created. We pass in the body's motion (however trivial) via the
+`motions` keyword.
 
 ````@example heatconduction
 prob = DirichletHeatConductionProblem(g,body,scaling=GridScaling,
                                              phys_params=phys_params,
                                              bc=bcdict,
+                                             motions=m,
                                              timestep_func=timestep_fourier);
 nothing #hide
 ````
@@ -268,7 +294,7 @@ get the time step size for our own inspection.
 
 ````@example heatconduction
 u0 = init_sol(sys)
-Δt = timestep_fourier(sys)
+Δt = timestep_fourier(u0,sys)
 ````
 
 It is instructive to note that `u0` has two parts: a *state* and a *constraint*,
@@ -317,7 +343,7 @@ if we simply pass in the integrator to `temperature`, it will pick off the `u`
 field for us.
 
 ````@example heatconduction
-temperature(T,σ,sys::ILMSystem,t) = T
+temperature(T,σ,x,sys::ILMSystem,t) = T
 @snapshotoutput temperature
 ````
 
@@ -345,38 +371,63 @@ nothing #hide
 ````
 
 ## Motions
-It is straightforward to make bodies move in time-varying problems.
-For each body that we create, we can provide a corresponding motion,
-via the `motions = ` keyword. (If a `BodyList` is provided, then
-a corresponding `MotionList` must be provided.)
-The only caveat is that the time-stepping becomes considerably slower
+It is straightforward to make bodies move in time-varying problems,
+using the `RigidBodyMotion` function. In the previous example
+we used this in a trivial fashion. Here, we will use it
+in a non-trivial example. The only caveat is that the time-stepping becomes slower
 in such problems, since the system operators must be regenerated at
 every time step.
 
 The `RigidBodyTools.jl` package provides a versatile set of motions,
-both rigid-body and deforming, and associated tools. For example,
-to simply make the body move at constant velocity 1 in the `x` direction.
+both rigid-body and deforming, and associated tools.
+
+### Rigid body motion
+For example, to simply make the body move at constant velocity 1 in the `x` direction.
 
 ````@example heatconduction
-m = RigidBodyMotion((1.0,0.0),0.0)
+Xp_to_jp = MotionTransform([0,0],0)
+Xc_to_jc = MotionTransform([0,0],0)
+dofs = [ConstantVelocityDOF(0),ConstantVelocityDOF(1),ConstantVelocityDOF(0)]
+joint = Joint(FreeJoint2d,0,Xp_to_jp,1,Xc_to_jc,dofs)
+m = RigidBodyMotion(joint,body)
 ````
 
-Here's an example of a deforming motion
+The `MotionTransform` operator `Xp_to_jp` places the parent side of the joint at the origin of the
+inertial coordinate system (body 0) with no rotation, and `Xc_to_jc` places
+the child side of the joint at the origin of the body's system (body 1), also with no rotation.
+We are creating a *free* joint, with all degrees of freedom possibly in motion.
+
+These three degrees of freedom are all assigned a prescribed behavior in the `dofs`
+vector. They are ordered as [rotation, x position, y position].
+The rotational and y degrees of freedom are all set to zero velocity
+and the x degree is set to velocity of 1.
+
+### Surface deformation
+Deformations to the body surface can be superposed on rigid body
+motions. Here's an example of a deforming motion on a stationary body
 
 ````@example heatconduction
 ufcn(x,y,t) = 0.25*x*y*cos(t)
 vfcn(x,y,t) = 0.25*(x^2-y^2)*cos(t)
-m = DeformationMotion(ufcn,vfcn)
+def = DeformationMotion(ufcn,vfcn)
+X = MotionTransform([0,0],0)
+joint = Joint(X)
+m = RigidBodyMotion(joint,body,def)
 ````
 
-Either of these would be provided in the `motions = ` keyword of the problem
+Either of these would be provided in the `motions` keyword of the problem
 construction. Consult the documentation of `RigidBodyTools.jl` to learn more
 about these. However, for time-marching purposes, it is helpful to know that the
 maximum surface velocity is provided by the `maxvelocity` function:
 
 ````@example heatconduction
-maxvelocity(body,m)
+x = zero_motion_state(body,m)
+maxvelocity(body,x,m)
 ````
+
+The first element of the output is the maximum velocity,
+the second is the index on which it occurs, the third is the time
+at which it occurs, and the fourth is the body on which it occurs.
 
 ## Time-varying PDE functions
 

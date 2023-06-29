@@ -2,7 +2,7 @@
     @snapshotoutput(name)
 
 A function that returns some instantaneous output about a time-varying solution should have
-the signature `name(state,constraint,sys::ILMSystem,t[,kwargs...])`, where `state` is a solution vector
+the signature `name(state,constraint,aux_state,sys::ILMSystem,t[,kwargs...])`, where `state` is a solution vector
 (of the same type as returned by `state(zeros_sol(sys))`), `constraint` is
 of the same type as returned by `constraint(zeros_sol(sys))`),
 `sys` is the system struct,
@@ -17,9 +17,9 @@ macro snapshotoutput(name)
 
   return esc(quote
 
-      $name(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{S,P,N},t,args...;kwargs...) where {S,P,N} = $name(state(u),constraint(u),sys,t,args...;kwargs...)
+      $name(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{S,P,N},t,args...;kwargs...) where {S,P,N} = $name(state(u),constraint(u),aux_state(u),sys,t,args...;kwargs...)
 
-      $name(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{S,P,0},t,args...;kwargs...) where {S,P} = $name(state(u),zeros_surface(sys),sys,t,args...;kwargs...)
+      $name(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{S,P,0},t,args...;kwargs...) where {S,P} = $name(state(u),zeros_surface(sys),aux_state(u),sys,t,args...;kwargs...)
 
       $name(integ::ConstrainedSystems.OrdinaryDiffEq.ODEIntegrator,args...;kwargs...) = $name(integ.u,integ.p,integ.t,args...;kwargs...)
 
@@ -82,9 +82,8 @@ the entire history.
 macro vectorsurfacemetric(name)
     return esc(quote
         function $name(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,bodyid::Int;kwargs...)
-            vx = map((u,t) -> $name(u,sys,t,bodyid;kwargs...)[1],sol.u,sol.t)
-            vy = map((u,t) -> $name(u,sys,t,bodyid;kwargs...)[2],sol.u,sol.t)
-            vx, vy
+            v = map((u,t) -> $name(u,sys,t,bodyid;kwargs...),sol.u,sol.t)
+            return tuple([map(vi -> vi[i],v) for i in eachindex(first(v))]...)
         end
 
         @snapshotoutput $name
