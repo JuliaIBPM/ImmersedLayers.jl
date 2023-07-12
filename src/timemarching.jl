@@ -205,8 +205,10 @@ function RigidBodyTools.update_exogenous!(sys::ILMSystem,a_edof::AbstractVector)
 end
 
 function RigidBodyTools.update_exogenous!(integrator::ConstrainedSystems.OrdinaryDiffEq.ODEIntegrator,a_edof::AbstractVector)
-  @unpack p = integrator
+  @unpack p, cache = integrator
+  @unpack ptmp = cache
   update_exogenous!(p,a_edof)
+  update_exogenous!(ptmp,a_edof) # p and ptmp are both used in time marching
 end
 
 
