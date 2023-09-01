@@ -15,7 +15,7 @@ functions must provide the various parts that comprise the constrained ODE syste
 ``
 
 ``
-B_2 y = r_2(t)
+B_2 y + C z = r_2(t)
 ``
 
 The functions can be in in-place or out-of-place form, but they must all be consistently
@@ -33,15 +33,18 @@ of the same form.
 
 - `bc_op = ` supplies the left-hand side of the boundary constraint, ``B_2 y``. If there are no constraints, this can be omitted. The in-place form is `B2(dz,y,x,sys)`, the out-of-place form is `B2(y,x,sys)`.
 
+- `bc_regulator = ` supplies the boundary constraint's regulation operator, ``C z``. If there is none, this can be omitted. The in-place form is `C(dz,z,x,sys)`, the out-of-place form is `C(z,x,sys)`.
+
 - `lin_op = ` is optional and specifies a linear operator on the state vector ``L``, to be treated with an exponential integral (i.e., integrating factor) in the time marching. (Alternatively, this part can simply be included in `r_1`). It should have an associated `mul!` operation that acts upon the state vector.
 
 """
-struct ODEFunctionList{RT,LT,BRT,CFT,BOT,ST,CT}
+struct ODEFunctionList{RT,LT,BRT,CFT,BOT,BRGT,ST,CT}
     ode_rhs :: RT
     lin_op :: LT
     bc_rhs :: BRT
     constraint_force :: CFT
     bc_op :: BOT
+    bc_regulator :: BRGT
     state :: ST
     constraint :: CT
 end
@@ -50,7 +53,7 @@ _has_lin_op(f::ODEFunctionList{RT,LT}) where {RT,LT} = true
 _has_lin_op(f::ODEFunctionList{RT,Nothing}) where {RT} = false
 
 
-function ODEFunctionList(;ode_rhs=nothing,lin_op=nothing,bc_rhs=nothing,constraint_force=nothing,bc_op=nothing,state=nothing,constraint=nothing)
+function ODEFunctionList(;ode_rhs=nothing,lin_op=nothing,bc_rhs=nothing,constraint_force=nothing,bc_op=nothing,bc_regulator=nothing,state=nothing,constraint=nothing)
 
     # Audit the supplied information to make sure it is consistent
     !(state isa Nothing)  || error("need to supply a state vector")
@@ -59,7 +62,7 @@ function ODEFunctionList(;ode_rhs=nothing,lin_op=nothing,bc_rhs=nothing,constrai
     #!any(i -> i isa Nothing,constraint_stuff) || error("incomplete set of functions for constrained system")
 
     ODEFunctionList{typeof(ode_rhs),typeof(lin_op),typeof(bc_rhs),typeof(constraint_force),
-                    typeof(bc_op),typeof(state),typeof(constraint)}(ode_rhs,lin_op,bc_rhs,constraint_force,bc_op,state,constraint)
+                    typeof(bc_op),typeof(bc_regulator),typeof(state),typeof(constraint)}(ode_rhs,lin_op,bc_rhs,constraint_force,bc_op,bc_regulator,state,constraint)
 end
 
 # For no bodies
@@ -67,7 +70,7 @@ function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{true,SCA,0}) where
     @unpack extra_cache = sys
     @unpack f = extra_cache
 
-    _constrained_ode_function(f.lin_op,f.ode_rhs;_func_cache=zeros_sol(sys))
+    _constrained_ode_function_nobodies(f.lin_op,f.ode_rhs;_func_cache=zeros_sol(sys))
 end
 
 # Both `ILMSystem{true}` and `ILMSystem{false}` update the auxiliary state
@@ -80,7 +83,7 @@ function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{true})
     rhs! = ConstrainedSystems.r1vector(state_r1 = f.ode_rhs,
                                        aux_r1 = motion_rhs!)
 
-    _constrained_ode_function(f.lin_op,rhs!,f.bc_rhs,f.constraint_force,
+    _constrained_ode_function(f.lin_op,f.bc_regulator,rhs!,f.bc_rhs,f.constraint_force,
                            f.bc_op;_func_cache=zeros_sol(sys))
 end
 
@@ -91,13 +94,19 @@ function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{false})
     rhs! = ConstrainedSystems.r1vector(state_r1 = f.ode_rhs,
                                        aux_r1 = motion_rhs!)
 
-    _constrained_ode_function(f.lin_op,rhs!,f.bc_rhs,f.constraint_force,
+    _constrained_ode_function(f.lin_op,f.bc_regulator,rhs!,f.bc_rhs,f.constraint_force,
                               f.bc_op;_func_cache=zeros_sol(sys),
                                       param_update_func=update_system!)
 end
 
-@inline _constrained_ode_function(lin_op,args...;kwargs...) =
+@inline _constrained_ode_function_nobodies(lin_op,ode_rhs;kwargs...) =
+    ConstrainedODEFunction(ode_rhs,lin_op;kwargs...)
+
+@inline _constrained_ode_function(lin_op,::Nothing,args...;kwargs...) =
     ConstrainedODEFunction(args...,lin_op;kwargs...)
+
+@inline _constrained_ode_function(lin_op,bc_regulator,args...;kwargs...) =
+    ConstrainedODEFunction(args...,lin_op,bc_regulator;kwargs...)
 
 @inline _constrained_ode_function(::Nothing,args...;kwargs...) =
     ConstrainedODEFunction(args...;kwargs...)
