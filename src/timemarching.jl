@@ -25,7 +25,7 @@ of the same form.
 
 - `constraint = ` specifies a prototype of the constraint force vector ``z``. If there are no constraints, this can be omitted.
 
-- `ode_rhs =` specifies the right-hand side of the ODEs, ``r_1``. The in-place form of the function is `r1(dy,y,sys::ILMSystem,t)`, the state vector `y`, IL system `sys`, time `t`, and returning ``dy/dt``. The out-of-place form is `r1(y,sys,t)`.
+- `ode_rhs =` specifies the right-hand side of the ODEs, ``r_1``. The in-place form of the function is `r1(dy,y,x,sys::ILMSystem,t)`, the state vector `y`, IL system `sys`, time `t`, and returning ``dy/dt``. The out-of-place form is `r1(y,x,sys,t)`.
 
 - `bc_rhs = ` specifies the right-hand side of the boundary conditions, ``r_2``. If there are no constraints, this can be omitted. The in-place form is `r2(dz,x,sys,t)`, returning `dz`, the part of the boundary constraint not dependent on the state vector. The out-of-place form is `r2(x,sys,t)`.
 
@@ -35,16 +35,19 @@ of the same form.
 
 - `bc_regulator = ` supplies the boundary constraint's regulation operator, ``C z``. If there is none, this can be omitted. The in-place form is `C(dz,z,x,sys)`, the out-of-place form is `C(z,x,sys)`.
 
+- `ode_implicit_rhs =` specifies an optional part of the RHS to be treated implicitly. If there is none, this can be omitted. The in-place form is `r1imp(dy,x,sys,t)`, the out-of-place form is `r1imp(x,sys,t)`.
+
 - `lin_op = ` is optional and specifies a linear operator on the state vector ``L``, to be treated with an exponential integral (i.e., integrating factor) in the time marching. (Alternatively, this part can simply be included in `r_1`). It should have an associated `mul!` operation that acts upon the state vector.
 
 """
-struct ODEFunctionList{RT,LT,BRT,CFT,BOT,BRGT,ST,CT}
+struct ODEFunctionList{RT,LT,BRT,CFT,BOT,BRGT,IRT,ST,CT}
     ode_rhs :: RT
     lin_op :: LT
     bc_rhs :: BRT
     constraint_force :: CFT
     bc_op :: BOT
     bc_regulator :: BRGT
+    ode_implicit_rhs :: IRT
     state :: ST
     constraint :: CT
 end
@@ -53,7 +56,7 @@ _has_lin_op(f::ODEFunctionList{RT,LT}) where {RT,LT} = true
 _has_lin_op(f::ODEFunctionList{RT,Nothing}) where {RT} = false
 
 
-function ODEFunctionList(;ode_rhs=nothing,lin_op=nothing,bc_rhs=nothing,constraint_force=nothing,bc_op=nothing,bc_regulator=nothing,state=nothing,constraint=nothing)
+function ODEFunctionList(;ode_rhs=nothing,lin_op=nothing,bc_rhs=nothing,constraint_force=nothing,bc_op=nothing,bc_regulator=nothing,ode_implicit_rhs=nothing,state=nothing,constraint=nothing)
 
     # Audit the supplied information to make sure it is consistent
     !(state isa Nothing)  || error("need to supply a state vector")
@@ -62,7 +65,7 @@ function ODEFunctionList(;ode_rhs=nothing,lin_op=nothing,bc_rhs=nothing,constrai
     #!any(i -> i isa Nothing,constraint_stuff) || error("incomplete set of functions for constrained system")
 
     ODEFunctionList{typeof(ode_rhs),typeof(lin_op),typeof(bc_rhs),typeof(constraint_force),
-                    typeof(bc_op),typeof(bc_regulator),typeof(state),typeof(constraint)}(ode_rhs,lin_op,bc_rhs,constraint_force,bc_op,bc_regulator,state,constraint)
+                    typeof(bc_op),typeof(bc_regulator),typeof(ode_implicit_rhs),typeof(state),typeof(constraint)}(ode_rhs,lin_op,bc_rhs,constraint_force,bc_op,bc_regulator,ode_implicit_rhs,state,constraint)
 end
 
 # For no bodies
@@ -70,7 +73,7 @@ function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{true,SCA,0}) where
     @unpack extra_cache = sys
     @unpack f = extra_cache
 
-    _constrained_ode_function_nobodies(f.lin_op,f.ode_rhs;_func_cache=zeros_sol(sys))
+    _constrained_ode_function_nobodies(f.lin_op,f.ode_rhs,f.ode_implicit_rhs;_func_cache=zeros_sol(sys))
 end
 
 # Both `ILMSystem{true}` and `ILMSystem{false}` update the auxiliary state
@@ -84,7 +87,7 @@ function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{true})
                                        aux_r1 = motion_rhs!)
 
     _constrained_ode_function(f.lin_op,f.bc_regulator,rhs!,f.bc_rhs,f.constraint_force,
-                           f.bc_op;_func_cache=zeros_sol(sys))
+                           f.bc_op,f.ode_implicit_rhs;_func_cache=zeros_sol(sys))
 end
 
 function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{false})
@@ -95,21 +98,21 @@ function ImmersedLayers.ConstrainedODEFunction(sys::ILMSystem{false})
                                        aux_r1 = motion_rhs!)
 
     _constrained_ode_function(f.lin_op,f.bc_regulator,rhs!,f.bc_rhs,f.constraint_force,
-                              f.bc_op;_func_cache=zeros_sol(sys),
+                              f.bc_op,f.ode_implicit_rhs;_func_cache=zeros_sol(sys),
                                       param_update_func=update_system!)
 end
 
-@inline _constrained_ode_function_nobodies(lin_op,ode_rhs;kwargs...) =
-    ConstrainedODEFunction(ode_rhs,lin_op;kwargs...)
+@inline _constrained_ode_function_nobodies(lin_op,ode_rhs,ode_implicit_rhs;kwargs...) =
+    ConstrainedODEFunction(ode_rhs,lin_op;r1imp=ode_implicit_rhs,kwargs...)
 
-@inline _constrained_ode_function(lin_op,::Nothing,args...;kwargs...) =
-    ConstrainedODEFunction(args...,lin_op;kwargs...)
+@inline _constrained_ode_function(lin_op,::Nothing,ode_rhs,bc_rhs,constraint_force,bc_op,ode_implicit_rhs;kwargs...) =
+    ConstrainedODEFunction(ode_rhs,bc_rhs,constraint_force,bc_op,lin_op;r1imp=ode_implicit_rhs,kwargs...)
 
-@inline _constrained_ode_function(lin_op,bc_regulator,args...;kwargs...) =
-    ConstrainedODEFunction(args...,lin_op,bc_regulator;kwargs...)
+@inline _constrained_ode_function(lin_op,bc_regulator,ode_rhs,bc_rhs,constraint_force,bc_op,ode_implicit_rhs;kwargs...) =
+    ConstrainedODEFunction(ode_rhs,bc_rhs,constraint_force,bc_op,lin_op,bc_regulator;r1imp=ode_implicit_rhs,kwargs...)
 
-@inline _constrained_ode_function(::Nothing,args...;kwargs...) =
-    ConstrainedODEFunction(args...;kwargs...)
+@inline _constrained_ode_function(::Nothing,::Nothing,ode_rhs,bc_rhs,constraint_force,bc_op,ode_implicit_rhs;kwargs...) =
+    ConstrainedODEFunction(ode_rhs,bc_rhs,constraint_force,bc_op;r1imp=ode_implicit_rhs,kwargs...)
 
 """
     zeros_sol(sys::ILMSystem)
