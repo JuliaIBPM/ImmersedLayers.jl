@@ -1,5 +1,5 @@
 ```@meta
-EditURL = "<unknown>/literate/stokes.jl"
+EditURL = "../../../test/literate/stokes.jl"
 ```
 
 # Stokes flow

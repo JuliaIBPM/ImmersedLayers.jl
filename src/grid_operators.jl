@@ -1,4 +1,7 @@
-import CartesianGrids: convective_derivative!, divergence!, grad!, curl!
+import CartesianGrids: convective_derivative!, divergence!, grad!, curl!, interpolatable_field
+
+interpolatable_field(a,base_cache::BasicILMCache) = interpolatable_field(a,base_cache.g)
+interpolatable_field(a,sys::ILMSystem) = interpolatable_field(a,sys.base_cache)
 
 for f in [:divergence!, :grad!, :curl!]
   @eval $f(a,b,sys::ILMSystem) = $f(a,b,sys.base_cache)

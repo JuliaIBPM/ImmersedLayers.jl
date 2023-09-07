@@ -22,7 +22,8 @@ makedocs(
                                 "manual/neumann.md",
                                 "manual/stokes.md",
                                 "manual/heatconduction.md",
-                                "manual/heatconduction-unbounded.md"
+                                "manual/heatconduction-unbounded.md",
+                                "manual/heatconduction-neumann.md"
                                 ],
         #"Internals" => [ "internals/properties.md"]
     ],

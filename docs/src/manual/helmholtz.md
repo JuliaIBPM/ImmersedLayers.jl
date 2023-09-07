@@ -1,5 +1,5 @@
 ```@meta
-EditURL = "<unknown>/literate/helmholtz.jl"
+EditURL = "../../../test/literate/helmholtz.jl"
 ```
 
 # Helmholtz decomposition

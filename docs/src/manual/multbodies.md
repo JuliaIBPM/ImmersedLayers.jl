@@ -1,5 +1,5 @@
 ```@meta
-EditURL = "<unknown>/literate/multbodies.jl"
+EditURL = "../../../test/literate/multbodies.jl"
 ```
 
 # Multiple bodies

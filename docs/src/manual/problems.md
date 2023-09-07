@@ -1,5 +1,5 @@
 ```@meta
-EditURL = "<unknown>/literate/problems.jl"
+EditURL = "../../../test/literate/problems.jl"
 ```
 
 # Problems and the system

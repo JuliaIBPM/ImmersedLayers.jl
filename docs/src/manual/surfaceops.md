@@ -1,5 +1,5 @@
 ```@meta
-EditURL = "<unknown>/literate/surfaceops.jl"
+EditURL = "../../../test/literate/surfaceops.jl"
 ```
 
 # Surface-grid operations

@@ -58,7 +58,7 @@ export DoubleLayer, SingleLayer, MaskType, Mask, ComplementaryMask,
         create_CLinvCT,create_CL2invCT,create_GLinvD,create_nRTRn,create_RTLinvR,
         create_GLinvD_cross,create_CLinvCT_scalar,create_surface_filter,
         AreaRegionCache,LineRegionCache,PointRegionCache,arccoord,
-        ForcingModelAndRegion,apply_forcing!,
+        ForcingModelAndRegion,apply_forcing!,AbstractForcingModel,
         solve, @snapshotoutput,@scalarsurfacemetric,@vectorsurfacemetric,surfaces,
         prescribed_surface_jump!,prescribed_surface_average!,
         timestep, isstatic, evaluate_motion!, surface_velocity_in_translating_frame!

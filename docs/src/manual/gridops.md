@@ -1,5 +1,5 @@
 ```@meta
-EditURL = "<unknown>/literate/gridops.jl"
+EditURL = "../../../test/literate/gridops.jl"
 ```
 
 # Grid operations

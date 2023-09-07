@@ -1,5 +1,5 @@
 ```@meta
-EditURL = "<unknown>/literate/dirichlet.jl"
+EditURL = "../../../test/literate/dirichlet.jl"
 ```
 
 # A Dirichlet Poisson problem

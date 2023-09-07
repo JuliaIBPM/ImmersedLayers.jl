@@ -1,5 +1,5 @@
 ```@meta
-EditURL = "<unknown>/literate/matrices.jl"
+EditURL = "../../../test/literate/matrices.jl"
 ```
 
 # Matrix operators
