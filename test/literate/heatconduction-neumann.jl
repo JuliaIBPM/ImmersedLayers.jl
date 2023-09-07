@@ -6,12 +6,12 @@
 
 #=
 The immersed-layer heat equation is
-$$\frac{\partial \overline{T}}{\partial t} = \kappa \nabla^2 \overline{T} - \kappa \nabla\cdot \delta(\chi) \mathbf{n} [T] + \delta(\chi) [q] + q''$$
 
+$$\dfrac{\partial \overline{T}}{\partial t} = \kappa \nabla^2 \overline{T} - \kappa \nabla\cdot \delta(\chi) \mathbf{n} [T] + \delta(\chi) [q] + q''$$
 
 where $[q] = q^+_b - q^-_b = -\kappa (\partial T^+/\partial n - \partial T^-/\partial n)$ and $[T] = T_b^+ - T_b^-$. It is important to note that, collectively,
 
-$$ \kappa \nabla^2 \overline{T} - \kappa \nabla\cdot \delta(\chi) \mathbf{n} [T] + \delta(\chi) [q]$$
+$$\kappa \nabla^2 \overline{T} - \kappa \nabla\cdot \delta(\chi) \mathbf{n} [T] + \delta(\chi) [q]$$
 
 represents a modified version of the Laplacian operator: the second and third term "fix" the differencing of the first term across the discontinuity, replacing the values of $\overline{T}$ across this discontinuity with the correct boundary values and boundary derivatives.
 
@@ -29,6 +29,7 @@ $$\frac{\mathrm{d} \overline{T}}{\mathrm{d} t} -\kappa L \overline{T} + \kappa D
 $$-\kappa R_n^T G \overline{T} + \kappa R_n^TR_n [T] = \overline{q}$$
 
 The matrix form is
+
 $$\begin{bmatrix}
 \mathcal{L}_C^\kappa & \kappa D_s \\ -\kappa G_s & \kappa R_n^TR_n
 \end{bmatrix}\begin{pmatrix}
