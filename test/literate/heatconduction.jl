@@ -295,11 +295,15 @@ constraint(u0)
 
 #=
 Now, create the integrator, with a time interval of 0 to 1. We have not
-specified the algorithm here explicitly; it defaults to the `LiskaIFHERK`
+specified the algorithm here explicitly; it defaults to the `HETrapezoidalAB2`
 time-marching algorithm, which is a second-order algorithm for constrained
-ODE systems that utilizes the matrix exponential (i.e., integrating factor)
-for the linear part of the problem. Another choice is the first-order
-Euler method, `IFHEEuler`, which one can specify by adding `alg=ConstrainedSystems.IFHEEuler()`
+ODE systems that utilizes the trapezoidal method for the linear part of the
+problem and 2nd-order Adams-Bashforth for the explicit part. The classic version
+of the method is modified for incorporating the constraints.
+
+Other choices are `LiskaIFHERK`, which uses a matrix exponential (i.e., integrating factor)
+for the linear part of the problem, which one can specify by adding `alg=ConstrainedSystems.LiskaIFHERK()`.
+Another choice is the first-order Euler method, `IFHEEuler()`,
 =#
 tspan = (0.0,1.0)
 integrator = init(u0,tspan,sys)

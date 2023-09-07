@@ -238,12 +238,12 @@ Return the timestep of the system `sys`
 timestep(u,sys::ILMSystem) = _get_function_name(sys.timestep_func)(u,sys)
 
 """
-    ConstrainedSystems.init(u0,tspan,sys::ILMSystem,[alg=ConstrainedSystems.LiskaIFHERK()])
+    ConstrainedSystems.init(u0,tspan,sys::ILMSystem,[alg=ConstrainedSystems.HETrapezoidalAB2()])
 
 Initialize the integrator for a time-varying immersed-layer system of PDEs,
 described in `sys`.
 """
-function init(u0,tspan,sys::ILMSystem;alg=ConstrainedSystems.LiskaIFHERK(),kwargs...)
+function init(u0,tspan,sys::ILMSystem;alg=ConstrainedSystems.HETrapezoidalAB2(),kwargs...)
     fode = ConstrainedODEFunction(sys)
 
     prob = ODEProblem(fode,u0,tspan,sys)
