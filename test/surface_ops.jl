@@ -460,6 +460,6 @@ end
     fcache = ForcingModelAndRegion(afm,scache)
     apply_forcing!(dT,T,t,fcache,phys_params)
 
-    @test dT == fcache.region_cache.generated_field()
+    @test dT == fcache[1].region_cache.generated_field()
 
 end

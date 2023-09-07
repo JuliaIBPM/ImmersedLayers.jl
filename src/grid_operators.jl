@@ -178,6 +178,10 @@ _unscaled_inverse_laplacian!(w::GridData,L::CartesianGrids.Laplacian) = w .= L\w
 
 _unscaled_inverse_laplacian!(sol::GridData,L::CartesianGrids.Laplacian,rhs::GridData) = ldiv!(sol,L,rhs)
 
+# Extend the implicit_operator to allow inverse of I - a*L
+function ConstrainedSystems.implicit_operator(L::CartesianGrids.Laplacian{NX,NY},a::Real) where {NX,NY}
+    return plan_implicit_diffusion(a*L.factor,(NX,NY))
+end
 
 
 ###  Convective derivative of velocity-like data by itself ###

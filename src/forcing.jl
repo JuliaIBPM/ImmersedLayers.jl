@@ -25,6 +25,7 @@ for ftype in [:Area,:Line,:Point]
           fcn :: MDT
           $fmname(shape,fcn;kwargs...) = new{typeof(shape),typeof(kwargs),typeof(fcn)}(shape,kwargs,fcn)
       end
+
     end)
 end
 
@@ -132,24 +133,6 @@ and a `model_function` (a function that returns the strength of the forcing) for
 Region caches
 =#
 
-struct AreaRegionCache{MT,ST,SGT,CT<:BasicILMCache} <: AbstractRegionCache
-    mask :: MT
-    str :: ST
-    generated_field :: SGT
-    cache :: CT
-end
-
-struct LineRegionCache{ACT,ST,CT<:BasicILMCache} <: AbstractRegionCache
-    s :: ACT
-    str :: ST
-    cache :: CT
-end
-
-struct PointRegionCache{ST,CT<:PointCollectionCache} <: AbstractRegionCache
-    str :: ST
-    cache :: CT
-end
-
 """
     AreaRegionCache(shape::Body/BodyList,cache::BasicILMCache)
 
@@ -179,6 +162,26 @@ Create a regularized point collection based on points `pts`, using the data
 in `cache` to provide the details of the regularization. The `kwargs` can be used to override
 the regularization choices, such as ddf.
 """ PointRegionCache(::VectorData,::BasicILMCache)
+
+
+struct AreaRegionCache{MT,ST,SGT,CT<:BasicILMCache} <: AbstractRegionCache
+    mask :: MT
+    str :: ST
+    generated_field :: SGT
+    cache :: CT
+end
+
+struct LineRegionCache{ACT,ST,CT<:BasicILMCache} <: AbstractRegionCache
+    s :: ACT
+    str :: ST
+    cache :: CT
+end
+
+struct PointRegionCache{ST,CT<:PointCollectionCache} <: AbstractRegionCache
+    str :: ST
+    cache :: CT
+end
+
 
 
 # Some constructors of the region caches that distinguish scalar and vector data
@@ -294,19 +297,23 @@ struct ForcingModelAndRegion{RT<:AbstractRegionCache,ST,MT,KT}
     kwargs :: KT
 end
 
+function _forcingmodelandregion(::AbstractForcingModel,::BasicILMCache) end
+
 for f in [:Area,:Line,:Point]
   modtype = Symbol(string(f)*"ForcingModel")
   regcache = Symbol(string(f)*"RegionCache")
-  @eval function ForcingModelAndRegion(model::$modtype,cache::BasicILMCache)
+  @eval function _forcingmodelandregion(model::$modtype,cache::BasicILMCache)
       region_cache = $regcache(model.shape,cache;model.kwargs...)
       ForcingModelAndRegion(region_cache,model.shape,model.fcn,model.kwargs)
   end
 end
 
-function ForcingModelAndRegion(flist::Vector{<:AbstractForcingModel},cache::BasicILMCache)
+ForcingModelAndRegion(f::AbstractForcingModel,cache::BasicILMCache) = ForcingModelAndRegion(AbstractForcingModel[f],cache)
+
+function ForcingModelAndRegion(flist::Vector{T},cache::BasicILMCache) where {T<: AbstractForcingModel}
    fmlist = ForcingModelAndRegion[]
    for f in flist
-     push!(fmlist,ForcingModelAndRegion(f,cache))
+     push!(fmlist,_forcingmodelandregion(f,cache))
    end
    return fmlist
 end
