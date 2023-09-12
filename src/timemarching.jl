@@ -1,5 +1,8 @@
 import ConstrainedSystems: init
 
+const DEFAULT_ALGORITHM_WITH_C = ConstrainedSystems.HETrapezoidalAB2()
+const DEFAULT_ALGORITHM_WITHOUT_C = ConstrainedSystems.LiskaIFHERK()
+
 """
     ODEFunctionList
 
@@ -243,10 +246,29 @@ timestep(u,sys::ILMSystem) = _get_function_name(sys.timestep_func)(u,sys)
 Initialize the integrator for a time-varying immersed-layer system of PDEs,
 described in `sys`.
 """
-function init(u0,tspan,sys::ILMSystem;alg=ConstrainedSystems.HETrapezoidalAB2(),kwargs...)
+function init(u0,tspan,sys::ILMSystem;alg=_default_algorithm(u0,sys),kwargs...)
     fode = ConstrainedODEFunction(sys)
 
     prob = ODEProblem(fode,u0,tspan,sys)
     dt_calc = timestep(u0,sys)
     return init(prob, alg;dt=dt_calc,internalnorm=state_norm,kwargs...)
 end
+
+_default_algorithm(u0,sys::ILMSystem) = _bc_regulator_is_invertible(u0,sys) ?
+                                        DEFAULT_ALGORITHM_WITH_C :
+                                        DEFAULT_ALGORITHM_WITHOUT_C
+
+
+function _bc_regulator_is_invertible(u0,sys::ILMSystem{T,S,N}) where {T,S,N}
+    @unpack extra_cache = sys
+    @unpack f = extra_cache
+    isnothing(f.bc_regulator) && return false
+    outp = deepcopy(constraint(u0))
+    x = deepcopy(aux_state(u0))
+    inp = deepcopy(outp)
+    inp .= rand(Float64,size(inp))
+    f.bc_regulator(outp,inp,x,sys)
+    return !iszero(outp)
+end
+
+_bc_regulator_is_invertible(u0,sys::ILMSystem{T,S,0}) where {T,S} = false

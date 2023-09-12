@@ -343,8 +343,9 @@ get the time step size for our own inspection.
 u0 = init_sol(sys)
 
 #=
-Now, create the integrator, with a time interval of 0 to 1. This uses the `HETrapezoidalAB2`
-method, by default.
+Now, create the integrator, with a time interval of 0 to 1. This uses the `HETrapezoidalAB2()`
+method, by default, since it has a constraint that depends on the
+Lagrange multipliers.
 =#
 tspan = (0.0,1.0)
 integrator = init(u0,tspan,sys)
