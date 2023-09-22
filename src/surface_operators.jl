@@ -751,6 +751,31 @@ Create grid data that consist of 0s inside of a surface (i.e., on a side opposit
 
 
 """
+    mask(w::GridData,surface::Body,grid::PhysicalGrid)
+
+Create grid data that consist of 1s inside of surface `surface` (i.e., on a side opposite
+the normal vectors) and 0s outside. The grid data are the same type as
+`w`.
+"""
+function mask(w::T,surface::Body,grid::PhysicalGrid)  where {T<:GridData}
+    mcache = _mask_cache(w,surface,grid)
+    return mask(mcache)
+end
+
+"""
+    complementary_mask(w::GridData,surface::Body,grid::PhysicalGrid)
+
+Create grid data that consist of 0s inside of surface `surface` (i.e., on a side opposite
+the normal vectors) and 1s outside. The grid data are the same type as
+`w`.
+"""
+function complementary_mask(w::T,surface::Body,grid::PhysicalGrid)  where {T<:GridData}
+    mcache = _mask_cache(w,surface,grid)
+    return complementary_mask(mcache)
+end
+
+
+"""
     mask!(w::GridData,cache::BasicILMCache)
     mask!(w::GridData,sys::ILMSystem)
 
@@ -777,6 +802,45 @@ function complementary_mask!(w::T,cache::BasicILMCache{N,GridScaling}) where {T 
   _complementary_mask!(gdata_cache,cache)
   product!(w,gdata_cache,w)
 end
+
+
+"""
+    mask!(w::GridData,surface::Body,grid::PhysicalGrid)
+
+Mask the data `w` in place by multiplying it by 1s inside of surface `surface` (i.e., on a side opposite
+the normal vectors) and 0s outside.
+"""
+function mask!(w::T,surface::Body,grid::PhysicalGrid)  where {T<:GridData}
+    mcache = _mask_cache(w,surface,grid)
+    return mask!(w,mcache)
+end
+
+"""
+    mask!(w::GridData,surface::Body,grid::PhysicalGrid)
+
+Mask the data `w` in place by multiplying it by 1s inside of surface `surface` (i.e., on a side opposite
+the normal vectors) and 0s outside.
+"""
+function mask!(w::T,surface::Body,grid::PhysicalGrid)  where {T<:GridData}
+    mcache = _mask_cache(w,surface,grid)
+    return mask!(w,mcache)
+end
+
+"""
+    complementary_mask!(w::GridData,surface::Body,grid::PhysicalGrid)
+
+Mask the data `w` in place by multiplying it by 0s inside of surface `surface` (i.e., on a side opposite
+the normal vectors) and 1s outside.
+"""
+function complementary_mask!(w::T,surface::Body,grid::PhysicalGrid)  where {T<:GridData}
+    mcache = _mask_cache(w,surface,grid)
+    return complementary_mask!(w,mcache)
+end
+
+_mask_cache(::ScalarGridData,surface,grid) = SurfaceScalarCache(surface,grid)
+_mask_cache(::VectorGridData,surface,grid) = SurfaceVectorCache(surface,grid)
+
+
 
 function _mask!(msk,cache::BasicILMCache{N}) where {N}
   @unpack sdata_cache, gdata_cache, L = cache
