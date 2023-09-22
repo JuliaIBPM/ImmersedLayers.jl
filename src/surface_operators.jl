@@ -816,17 +816,6 @@ function mask!(w::T,surface::Body,grid::PhysicalGrid)  where {T<:GridData}
 end
 
 """
-    mask!(w::GridData,surface::Body,grid::PhysicalGrid)
-
-Mask the data `w` in place by multiplying it by 1s inside of surface `surface` (i.e., on a side opposite
-the normal vectors) and 0s outside.
-"""
-function mask!(w::T,surface::Body,grid::PhysicalGrid)  where {T<:GridData}
-    mcache = _mask_cache(w,surface,grid)
-    return mask!(w,mcache)
-end
-
-"""
     complementary_mask!(w::GridData,surface::Body,grid::PhysicalGrid)
 
 Mask the data `w` in place by multiplying it by 0s inside of surface `surface` (i.e., on a side opposite
