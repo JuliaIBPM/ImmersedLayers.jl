@@ -310,15 +310,20 @@ constraint(u0)
 ````
 
 Now, create the integrator, with a time interval of 0 to 1. We have not
-specified the algorithm here explicitly; it defaults to the `HETrapezoidalAB2`
+specified the algorithm here explicitly; it defaults to the `LiskaIFHERK()`
 time-marching algorithm, which is a second-order algorithm for constrained
-ODE systems that utilizes the trapezoidal method for the linear part of the
-problem and 2nd-order Adams-Bashforth for the explicit part. The classic version
-of the method is modified for incorporating the constraints.
+ODE systems that utilizes a matrix exponential (i.e., integrating factor)
+for the linear part of the problem (the Laplacian), and a half-explicit Runge-Kutta method
+for the constrained part. This method is most suitable for problems
+in which there is no dependence on the Lagrange multipliers in the
+constraint. (Such a problem is an index-2 differential-algebraic equation.)
+Another possible choice for this problem is the first-order Euler method, `IFHEEuler()`,
+which can be specified with the keyword `alg=IFHEEuler()`.
 
-Other choices are `LiskaIFHERK`, which uses a matrix exponential (i.e., integrating factor)
-for the linear part of the problem, which one can specify by adding `alg=ConstrainedSystems.LiskaIFHERK()`.
-Another choice is the first-order Euler method, `IFHEEuler()`,
+For problems that *do* have a constraint that depends on the Lagrange multipliers
+such as the Neumann problem (in an upcoming example), then the default method
+switches to `HETrapezoidalAB2()`, which uses a half-explicit trapezoidal method
+for the constrained and linear parts, and 2nd-order Adams-Bashforth for the explicit part.
 
 ````@example heatconduction
 tspan = (0.0,1.0)

@@ -16,7 +16,6 @@ We will start by generating the cache, just as we did in [Immersed layer caches]
 
 ````@example gridops
 using ImmersedLayers
-using CartesianGrids
 using Plots
 ````
 
