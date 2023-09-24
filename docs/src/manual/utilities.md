@@ -12,7 +12,7 @@ normals(::Union{Body,BodyList})
 points(::Union{Body,BodyList})
 arcs(::Union{Body,BodyList})
 ones(::PointData{N}) where {N}
-ones(::Union{TensorData,VectorData},::Int)
+ones(::Union{TensorData,VectorData},::Integer)
 dot(::ScalarData{N},::ScalarData{N},::ScalarData{N}) where {N}
 dot(::ScalarData{N},::ScalarData{N},::ScalarData{N},::BodyList,::Int) where {N}
 norm(::PointData{N},::ScalarData{N}) where {N}
@@ -29,7 +29,7 @@ view(::VectorData,::BodyList,::Int)
 
 ```@docs
 ones(::GridData)
-ones(::Union{TensorGridData,VectorGridData},::Int)
+ones(::Union{TensorGridData,VectorGridData},::Integer)
 integrate(::ScalarGridData,::PhysicalGrid)
 dot(::GridData{NX,NY},::GridData{NX,NY},::PhysicalGrid) where {NX,NY}
 norm(::GridData,::PhysicalGrid)

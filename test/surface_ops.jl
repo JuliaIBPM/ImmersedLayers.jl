@@ -242,6 +242,8 @@ end
   mask!(dvmask,mask_shape,g)
   @test all(abs.(integrate(dvmask,g) .- 0.5) .< 1e-3)
 
+  complementary_mask!(dvmask,mask_shape,g)
+
 end
 
 @testset "Grid operations" begin
