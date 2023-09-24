@@ -129,9 +129,9 @@ _element_type(::Type{P}) where P <: AbstractILMProblem{DT,ST,DTP} where {DT,ST,D
 """
     prob_cache(prob,base_cache::BasicILMCache)
 
-This function is called by [`__init`](@ref) to generate a problem-specific extra
+This function is called automatically by [`construct_system`](@ref) to generate a problem-specific extra
 cache. Extend this function in order to generate an extra cache for a
-user-defined problem type. The user must define the cache type itself.
+user-defined problem type. The user must also define the cache type itself.
 """ prob_cache
 
 

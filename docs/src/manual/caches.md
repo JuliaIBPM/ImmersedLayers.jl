@@ -216,17 +216,21 @@ arcs(::BasicILMCache)
 dot(::GridData,::GridData,::BasicILMCache)
 dot(::PointData,::PointData,::BasicILMCache)
 norm(::GridData,::BasicILMCache)
+integrate(::GridData,::BasicILMCache)
 norm(::PointData,::BasicILMCache)
-integrate(::ScalarData{N},::BasicILMCache{N}) where {N}
+integrate(::PointData{N},::BasicILMCache{N}) where {N}
 dot(::PointData,::PointData,::BasicILMCache,::Int)
 norm(::PointData,::BasicILMCache,::Int)
-integrate(::ScalarData{N},::BasicILMCache{N},::Int) where {N}
+integrate(::PointData{N},::BasicILMCache{N},::Int) where {N}
 ```
 
 ## Other cache utilities
 
 ```@docs
 view(::PointData,::BasicILMCache,::Int)
+copyto!(::PointData,::PointData,::BasicILMCache,::Int)
+copyto!(::ScalarData,::AbstractVector,::BasicILMCache,::Int)
+Laplacian(::BasicILMCache,::Any)
 RegularizationMatrix(::BasicILMCache,::PointData,::GridData)
 InterpolationMatrix(::BasicILMCache,::GridData,::PointData)
 ```

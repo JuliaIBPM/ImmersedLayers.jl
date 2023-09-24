@@ -830,10 +830,8 @@ _mask_cache(::ScalarGridData,surface,grid) = SurfaceScalarCache(surface,grid)
 _mask_cache(::VectorGridData,surface,grid) = SurfaceVectorCache(surface,grid)
 
 
-
 function _mask!(msk,cache::BasicILMCache{N}) where {N}
   @unpack sdata_cache, gdata_cache, L = cache
-  typeof(msk) == typeof(gdata_cache) || error("Wrong data type")
   fill!(sdata_cache,1.0)
   surface_divergence!(msk,sdata_cache,cache)
   inverse_laplacian!(msk,cache)
@@ -842,7 +840,6 @@ end
 
 function _mask!(msk,cache::BasicILMCache{0})
   @unpack gdata_cache = cache
-  typeof(msk) == typeof(gdata_cache) || error("Wrong data type")
   fill!(msk,1.0)
 end
 

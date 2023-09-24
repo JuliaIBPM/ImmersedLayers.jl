@@ -407,6 +407,11 @@ function w_cross_v!(uw::Edges{Primal},w::Nodes{Dual},u::Edges{Primal},base_cache
     end
 end
 
+"""
+    w_cross_v(w::Nodes{Dual},v::Edges{Primal},base_cache::BasicILMCache)
+
+Compute the term `w \\times v`, with vorticity `w` and velocity `v`.
+"""
 function w_cross_v(w::Nodes{Dual},u::Edges{Primal},base_cache::BasicILMCache)
     extra_cache = RotConvectiveDerivativeCache(similar_gridcurl(base_cache))
     uw = similar(u)

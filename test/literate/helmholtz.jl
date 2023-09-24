@@ -61,6 +61,7 @@ this assembly.
 #md # ```@docs
 #md # ScalarPotentialCache
 #md # VectorPotentialCache
+#md # VectorFieldCache
 #md # vectorpotential_from_masked_curlv!
 #md # scalarpotential_from_masked_divv!
 #md # vectorpotential_from_curlv!
