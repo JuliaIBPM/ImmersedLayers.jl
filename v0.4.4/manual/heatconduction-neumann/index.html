@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>A time-varying PDE with Neumann conditions · ImmersedLayers.jl</title><meta name="title" content="A time-varying PDE with Neumann conditions · ImmersedLayers.jl"/><meta property="og:title" content="A time-varying PDE with Neumann conditions · ImmersedLayers.jl"/><meta property="twitter:title" content="A time-varying PDE with Neumann conditions · ImmersedLayers.jl"/><meta name="description" content="Documentation for ImmersedLayers.jl."/><meta property="og:description" content="Documentation for ImmersedLayers.jl."/><meta property="twitter:description" content="Documentation for ImmersedLayers.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">ImmersedLayers.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Basics</span><ul><li><a class="tocitem" href="../caches/">Immersed layer caches</a></li><li><a class="tocitem" href="../surfaceops/">Surface-grid operations</a></li><li><a class="tocitem" href="../multbodies/">Multiple bodies</a></li><li><a class="tocitem" href="../gridops/">Grid operations</a></li><li><a class="tocitem" href="../helmholtz/">Helmholtz decomposition</a></li><li><a class="tocitem" href="../matrices/">Matrix operators</a></li><li><a class="tocitem" href="../dirichlet/">A Dirichlet Poisson problem</a></li><li><a class="tocitem" href="../utilities/">Utilities</a></li></ul></li><li><span class="tocitem">Setting up PDEs</span><ul><li><a class="tocitem" href="../problems/">Problems and the system</a></li><li><a class="tocitem" href="../neumann/">Poisson with Neumann conditions</a></li><li><a class="tocitem" href="../stokes/">Stokes flow</a></li><li><a class="tocitem" href="../heatconduction/">Setting up a time-varying PDE</a></li><li><a class="tocitem" href="../heatconduction-unbounded/">A time-varying PDE with forcing</a></li><li class="is-active"><a class="tocitem" href>A time-varying PDE with Neumann conditions</a><ul class="internal"><li><a class="tocitem" href="#Set-up-the-constrained-ODE-system-operators"><span>Set up the constrained ODE system operators</span></a></li><li><a class="tocitem" href="#Set-up-the-extra-cache-and-extend-prob_cache"><span>Set up the extra cache and extend <code>prob_cache</code></span></a></li><li><a class="tocitem" href="#Solve-the-problem"><span>Solve the problem</span></a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Setting up PDEs</a></li><li class="is-active"><a href>A time-varying PDE with Neumann conditions</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>A time-varying PDE with Neumann conditions</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaIBPM/ImmersedLayers.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/JuliaIBPM/ImmersedLayers.jl/blob/main/test/literate/heatconduction-neumann.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="A-time-varying-PDE-with-Neumann-conditions"><a class="docs-heading-anchor" href="#A-time-varying-PDE-with-Neumann-conditions">A time-varying PDE with Neumann conditions</a><a id="A-time-varying-PDE-with-Neumann-conditions-1"></a><a class="docs-heading-anchor-permalink" href="#A-time-varying-PDE-with-Neumann-conditions" title="Permalink"></a></h1><p>The immersed-layer heat equation is</p><p class="math-container">\[\dfrac{\partial \overline{T}}{\partial t} = \kappa \nabla^2 \overline{T} - \kappa \nabla\cdot \delta(\chi) \mathbf{n} [T] + \delta(\chi) [q] + q&#39;&#39;\]</p><p>where <span>$[q] = q^+_b - q^-_b = -\kappa (\partial T^+/\partial n - \partial T^-/\partial n)$</span> and <span>$[T] = T_b^+ - T_b^-$</span>. It is important to note that, collectively,</p><p class="math-container">\[\kappa \nabla^2 \overline{T} - \kappa \nabla\cdot \delta(\chi) \mathbf{n} [T] + \delta(\chi) [q]\]</p><p>represents a modified version of the Laplacian operator: the second and third term &quot;fix&quot; the differencing of the first term across the discontinuity, replacing the values of <span>$\overline{T}$</span> across this discontinuity with the correct boundary values and boundary derivatives.</p><p>The Neumann boundary condition is</p><p class="math-container">\[-\kappa \mathbf{n} \delta^{T}(\chi)\cdot \nabla \overline{T} + \kappa \mathbf{n} \delta^T(\chi)\cdot\delta(\chi) \mathbf{n} [T] = \frac{1}{2} (q_b^+ + q_b^-)\]</p><p>where <span>$q_b^\pm$</span> are the heat fluxes through the immersed surface, e.g. <span>$q_b^+ = -\kappa \partial T^+/\partial n$</span>. The second term on the left side corrects the gradient of the masked temperature field <span>$\overline{T}$</span>, replacing the temperatures in this field across the discontinuity with the correct boundary values.</p><p>When we discretize spatially, we introduce <span>$L$</span> for the Laplacian, <span>$D$</span> and <span>$G$</span> for divergence and gradient, respectively. Also, for shorthand let us denote <span>$R$</span> for <span>$\delta(\chi)$</span>, and denote <span>$R_n$</span> for the discrete version of <span>$\delta(\chi)\mathbf{n}$</span>, acting on surface scalars and regularizing them (multiplied by normal vectors) to a vector field on the grid. The transpose of this is <span>$R_n^T$</span>, the discrete version of <span>$\mathbf{n} \delta^{T}(\chi)\cdot$</span>.</p><p>So we can write the discrete equations for <span>$\overline{T}$</span> and <span>$[T]$</span> as</p><p class="math-container">\[\frac{\mathrm{d} \overline{T}}{\mathrm{d} t} -\kappa L \overline{T} + \kappa DR_n [T] = q + R[q]\]</p><p class="math-container">\[-\kappa R_n^T G \overline{T} + \kappa R_n^TR_n [T] = \overline{q}\]</p><p>The matrix form is</p><p class="math-container">\[\begin{bmatrix}
+\mathcal{L}_C^\kappa &amp; \kappa D_s \\ -\kappa G_s &amp; \kappa R_n^TR_n
+\end{bmatrix}\begin{pmatrix}
+T \\ [T]
+\end{pmatrix} =
+\begin{pmatrix}
+q + R [q] \\ (q^+_b + q^-_b)/2
+\end{pmatrix}\]</p><p>It is crucial that the time marching for solving this problem has a consistent time level among all terms in the &quot;modified&quot; Laplacian. In other words, if the Laplacian term is treated implicitly, then the other two terms must be, as well.</p><pre><code class="language-julia hljs">using ImmersedLayers
+using Plots
+using UnPack</code></pre><h2 id="Set-up-the-constrained-ODE-system-operators"><a class="docs-heading-anchor" href="#Set-up-the-constrained-ODE-system-operators">Set up the constrained ODE system operators</a><a id="Set-up-the-constrained-ODE-system-operators-1"></a><a class="docs-heading-anchor-permalink" href="#Set-up-the-constrained-ODE-system-operators" title="Permalink"></a></h2><p>The problem type is generated with the usual macro call. In this example, we will make use of more of the capabilities of the resulting problem constructor for &quot;packing&quot; it with information about the problem.</p><pre><code class="language-julia hljs">@ilmproblem NeumannHeatConduction scalar</code></pre><p>The function below implements the term <span>$R[q]$</span>. As we mentioned before, this term must be treated at the same time level as the Laplacian term. Thus, we designate this as part of the &quot;implicit&quot; part of the RHS.</p><p>Since <span>$[q]$</span> is a known term, this function only depends on time. It could also depend on an auxiliary state, <code>x</code>, but that isn&#39;t used here.</p><pre><code class="language-julia hljs">function heatconduction_ode_implicit_rhs!(dT,x,sys::ILMSystem,t)
+    @unpack bc, forcing, phys_params, extra_cache, base_cache = sys
+    @unpack dqbtmp = extra_cache
+
+    fill!(dT,0.0)
+    fill!(dqbtmp,0.0)
+    # Calculate the single-layer term on the RHS
+    prescribed_surface_jump!(dqbtmp,x,t,sys)
+    regularize!(dT,dqbtmp,sys)
+
+    return dT
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">heatconduction_ode_implicit_rhs! (generic function with 1 method)</code></pre><p>We also have an explicit part of the RHS, one that potentially depends on the field itself. Here, it does not, but simply implements the volumetric heating function, <span>$q&#39;&#39;$</span>.</p><pre><code class="language-julia hljs">function heatconduction_ode_explicit_rhs!(dT,T,x,sys::ILMSystem,t)
+    @unpack extra_cache, base_cache = sys
+    @unpack fcache, Ttmp = extra_cache
+
+    fill!(dT,0.0)
+    # Compute the contribution from the forcing models to the right-hand side
+    apply_forcing!(dT,T,t,fcache,phys_params)
+
+    return dT
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">heatconduction_ode_explicit_rhs! (generic function with 1 method)</code></pre><p>Now, we create the function that calculates the RHS of the boundary condition. For this Neumann condition, we simply take the average of the interior and exterior prescribed heat flux values. The first argument <code>dqb</code> holds the result. Again, <code>x</code> isn&#39;t used here.</p><pre><code class="language-julia hljs">function heatconduction_bc_rhs!(dqb,x,sys::ILMSystem,t)
+    fill!(dqb,0.0)
+    prescribed_surface_average!(dqb,x,t,sys)
+    return dqb
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">heatconduction_bc_rhs! (generic function with 1 method)</code></pre><p>This function calculates the (negative of the) contribution to <span>$dT/dt$</span> from the Lagrange multiplier (the input <code>Tjump</code>, which represents <span>$[T]$</span>). This term is <span>$\kappa D_s [T]$</span>.</p><pre><code class="language-julia hljs">function heatconduction_constraint_force!(dT,Tjump,x,sys::ILMSystem)
+    @unpack phys_params = sys
+    κ = phys_params[&quot;diffusivity&quot;]
+    fill!(dT,0.0)
+    surface_divergence!(dT,κ*Tjump,sys)
+    return dT
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">heatconduction_constraint_force! (generic function with 1 method)</code></pre><p>Now, we provide the transpose term of the previous function for the left hand side of the constraint equation: a function that computes the surface gradient operation,  <span>$-\kappa G_s \overline{T}$</span>. The first argument <code>dqb</code> holds the result.</p><pre><code class="language-julia hljs">function heatconduction_bc_op!(dqb,T,x,sys::ILMSystem)
+    @unpack phys_params = sys
+    κ = phys_params[&quot;diffusivity&quot;]
+    fill!(dqb,0.0)
+    surface_grad!(dqb,T,sys)
+    dqb .*= -κ
+    return dqb
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">heatconduction_bc_op! (generic function with 1 method)</code></pre><p>This last operator computes the final left-hand-side operation of the constraint equations, taking the Lagrange multiplier (the jump in surface temperature), and computing <span>$\kappa R_n^T R_n [T]$</span>.</p><pre><code class="language-julia hljs">function heatconduction_bc_reg!(dqb,Tjump,x,sys::ILMSystem)
+    @unpack extra_cache, phys_params = sys
+    @unpack Ttmp, vtmp = extra_cache
+    κ = phys_params[&quot;diffusivity&quot;]
+
+    fill!(vtmp,0.0)
+    fill!(dqb,0.0)
+    regularize_normal!(vtmp,κ*Tjump,sys)
+    normal_interpolate!(dqb,vtmp,sys)
+
+    return dqb
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">heatconduction_bc_reg! (generic function with 1 method)</code></pre><h2 id="Set-up-the-extra-cache-and-extend-prob_cache"><a class="docs-heading-anchor" href="#Set-up-the-extra-cache-and-extend-prob_cache">Set up the extra cache and extend <code>prob_cache</code></a><a id="Set-up-the-extra-cache-and-extend-prob_cache-1"></a><a class="docs-heading-anchor-permalink" href="#Set-up-the-extra-cache-and-extend-prob_cache" title="Permalink"></a></h2><p>Here, we construct an extra cache that holds a few extra intermediate variables, used in the routines above. But this cache also, crucially, holds the functions and operators of the constrained ODE function. We call the function <code>ODEFunctionList</code> to assemble these together.</p><pre><code class="language-julia hljs">struct NeumannHeatConductionCache{GT,GVT,DTT,FRT,FT} &lt;: AbstractExtraILMCache
+   Ttmp :: GT
+   vtmp :: GVT
+   dqbtmp :: DTT
+   fcache :: FRT
+   f :: FT
+end
+
+function ImmersedLayers.prob_cache(prob::NeumannHeatConductionProblem,
+                                   base_cache::BasicILMCache{N,scaling}) where {N,scaling}
+    @unpack phys_params, forcing = prob
+    @unpack gdata_cache, g = base_cache
+
+    Ttmp = zeros_grid(base_cache)
+    vtmp = zeros_gridgrad(base_cache)
+    dqbtmp = zeros_surface(base_cache)
+
+    # Construct a Lapacian outfitted with the diffusivity
+    κ = phys_params[&quot;diffusivity&quot;]
+    heat_L = Laplacian(base_cache,κ)
+
+    # Create cache for the forcing regions
+    fcache = ForcingModelAndRegion(forcing[&quot;heating models&quot;],base_cache)
+
+
+    # State (grid temperature data) and constraint (surface Lagrange multipliers)
+    f = ODEFunctionList(state = zeros_grid(base_cache),
+                        constraint = zeros_surface(base_cache),
+                        ode_rhs=heatconduction_ode_explicit_rhs!,
+                        lin_op=heat_L,
+                        bc_rhs=heatconduction_bc_rhs!,
+                        constraint_force = heatconduction_constraint_force!,
+                        bc_op = heatconduction_bc_op!,
+                        bc_regulator = heatconduction_bc_reg!,
+                        ode_implicit_rhs=heatconduction_ode_implicit_rhs!)
+
+    NeumannHeatConductionCache(Ttmp,vtmp,dqbtmp,fcache,f)
+end</code></pre><p>We define the same timestep function as in the Dirichlet problem</p><pre><code class="language-julia hljs">function timestep_fourier(u,sys)
+    @unpack phys_params = sys
+    g = get_grid(sys)
+    κ = phys_params[&quot;diffusivity&quot;]
+    Fo = phys_params[&quot;Fourier&quot;]
+    Δt = Fo*cellsize(g)^2/κ
+    return Δt
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">timestep_fourier (generic function with 1 method)</code></pre><h2 id="Solve-the-problem"><a class="docs-heading-anchor" href="#Solve-the-problem">Solve the problem</a><a id="Solve-the-problem-1"></a><a class="docs-heading-anchor-permalink" href="#Solve-the-problem" title="Permalink"></a></h2><p>We will solve heat conduction inside a square region with thermal diffusivity equal to 1. We will apply heating through the boundary and also introduce two different types of area heating regions in the interior.</p><h3 id="Set-up-the-grid"><a class="docs-heading-anchor" href="#Set-up-the-grid">Set up the grid</a><a id="Set-up-the-grid-1"></a><a class="docs-heading-anchor-permalink" href="#Set-up-the-grid" title="Permalink"></a></h3><pre><code class="language-julia hljs">Δx = 0.01
+Lx = 4.0
+xlim = (-Lx/2,Lx/2)
+ylim = (-Lx/2,Lx/2)
+g = PhysicalGrid(xlim,ylim,Δx);</code></pre><h3 id="Set-up-the-body-shape."><a class="docs-heading-anchor" href="#Set-up-the-body-shape.">Set up the body shape.</a><a id="Set-up-the-body-shape.-1"></a><a class="docs-heading-anchor-permalink" href="#Set-up-the-body-shape." title="Permalink"></a></h3><p>Here, we will demonstrate the solution on a circular shape of radius 1.</p><pre><code class="language-julia hljs">Δs = 1.4*cellsize(g)
+body = Square(1.0,Δs);</code></pre><p>Stationary body</p><pre><code class="language-julia hljs">X = MotionTransform([0,0],0)
+joint = Joint(X)
+m = RigidBodyMotion(joint,body)
+x = zero_motion_state(body,m)
+update_body!(body,x,m)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Closed polygon with 4 vertices and 572 points
+   Current position: (0.0,0.0)
+   Current angle (rad): 0.0
+</code></pre><h3 id="Specify-the-physical-parameters,-data,-etc."><a class="docs-heading-anchor" href="#Specify-the-physical-parameters,-data,-etc.">Specify the physical parameters, data, etc.</a><a id="Specify-the-physical-parameters,-data,-etc.-1"></a><a class="docs-heading-anchor-permalink" href="#Specify-the-physical-parameters,-data,-etc." title="Permalink"></a></h3><p>These can be changed later without having to regenerate the system.</p><p>Here, we create a dict with physical parameters to be passed in.</p><pre><code class="language-julia hljs">phys_params = Dict(&quot;diffusivity&quot; =&gt; 1.0,
+                    &quot;Fourier&quot; =&gt; 1.0,
+                    &quot;areaheater_flux&quot; =&gt; 10.0,
+                    &quot;areaheater_freq&quot; =&gt; 1.0,
+                     &quot;areaheater_temp&quot; =&gt; 1.0,
+                     &quot;areaheater_coeff&quot; =&gt; 10.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dict{String, Float64} with 6 entries:
+  &quot;areaheater_coeff&quot; =&gt; 10.0
+  &quot;Fourier&quot;          =&gt; 1.0
+  &quot;areaheater_temp&quot;  =&gt; 1.0
+  &quot;diffusivity&quot;      =&gt; 1.0
+  &quot;areaheater_freq&quot;  =&gt; 1.0
+  &quot;areaheater_flux&quot;  =&gt; 10.0</code></pre><p>Define the heating region functions. We will create one heating region with prescribed heat flux and another with a target temperature</p><pre><code class="language-julia hljs">fregion1 = Circle(0.2,1.4*Δx)
+tr1 = MotionTransform((0.0,-0.7),0.0)
+update_body!(fregion1,tr1)
+
+function model1!(σ,T,t,fr::AreaRegionCache,phys_params)
+    σ .= phys_params[&quot;areaheater_flux&quot;]
+end
+afm1 = AreaForcingModel(fregion1,model1!)
+
+fregion2 = Circle(0.2,1.4*Δx)
+tr2 = RigidTransform((-0.7,0.7),0.0)
+update_body!(fregion2,tr2)
+
+function model2!(σ,T,t,fr::AreaRegionCache,phys_params)
+    f = phys_params[&quot;areaheater_freq&quot;]
+    T0 = phys_params[&quot;areaheater_temp&quot;]
+    h = phys_params[&quot;areaheater_coeff&quot;]
+    σ .= h*(T0 - T)
+end
+afm2 = AreaForcingModel(fregion2,model2!);</code></pre><p>Plot the heating regions</p><pre><code class="language-julia hljs">plot(body,fill=false)
+plot!(fregion1)
+plot!(fregion2)</code></pre><img src="1e146b09.svg" alt="Example block output"/><p>Pack them together</p><pre><code class="language-julia hljs">forcing_dict = Dict(&quot;heating models&quot; =&gt; AbstractForcingModel[afm1,afm2])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dict{String, Vector{AbstractForcingModel}} with 1 entry:
+  &quot;heating models&quot; =&gt; [AreaForcingModel{Ellipse{88}, Pairs{Symbol, Union{}, Tup…</code></pre><p>The heat flux boundary functions on the exterior and interior are defined here and assembled into a dict. Note that we are using the <span>$x$</span> component of the normal for the interior boundary heat flux. This sets non-zero heat fluxes through the vertical boundaries (inward on the left, outward on the right), and adiabatic conditions on the top and bottom.</p><pre><code class="language-julia hljs">function get_qbplus(t,x,base_cache,phys_params,motions)
+    nrm = normals(base_cache)
+    qbplus = zeros_surface(base_cache)
+    return qbplus
+end
+
+function get_qbminus(t,x,base_cache,phys_params,motions)
+    nrm = normals(base_cache)
+    qbminus = zeros_surface(base_cache)
+    qbminus .= nrm.u
+    return qbminus
+end
+
+bcdict = Dict(&quot;exterior&quot; =&gt; get_qbplus,&quot;interior&quot; =&gt; get_qbminus)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dict{String, Function} with 2 entries:
+  &quot;interior&quot; =&gt; get_qbminus
+  &quot;exterior&quot; =&gt; get_qbplus</code></pre><p>Construct the problem, passing in the data and functions we&#39;ve just created. We pass in the body&#39;s motion (however trivial) via the <code>motions</code> keyword.</p><pre><code class="language-julia hljs">prob = NeumannHeatConductionProblem(g,body,scaling=GridScaling,
+                                             phys_params=phys_params,
+                                             bc=bcdict,
+                                             motions=m,
+                                             forcing=forcing_dict,
+                                             timestep_func=timestep_fourier);</code></pre><p>Construct the system</p><pre><code class="language-julia hljs">sys = construct_system(prob);</code></pre><h3 id="Solving-the-problem"><a class="docs-heading-anchor" href="#Solving-the-problem">Solving the problem</a><a id="Solving-the-problem-1"></a><a class="docs-heading-anchor-permalink" href="#Solving-the-problem" title="Permalink"></a></h3><p>Set an initial condition. Here, we just get an initial (zeroed) copy of the solution prototype that we have stored in the extra cache. We also get the time step size for our own inspection.</p><pre><code class="language-julia hljs">u0 = init_sol(sys)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(Primal nodes in a (nx = 408, ny = 408) cell grid of type Float64 data
+  Number of Primal nodes: (nx = 407, ny = 407), [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0  …  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0])</code></pre><p>Now, create the integrator, with a time interval of 0 to 1. This uses the <code>HETrapezoidalAB2()</code> method, by default, since it has a constraint that depends on the Lagrange multipliers.</p><pre><code class="language-julia hljs">tspan = (0.0,1.0)
+integrator = init(u0,tspan,sys)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">t: 0.0
+u: (Primal nodes in a (nx = 408, ny = 408) cell grid of type Float64 data
+  Number of Primal nodes: (nx = 407, ny = 407), [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0  …  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0])</code></pre><p>Now advance the solution by 0.01 convective time units, by using the <code>step!</code> function, which steps through the solution.</p><pre><code class="language-julia hljs">step!(integrator,0.01)</code></pre><h3 id="Plot-the-solution"><a class="docs-heading-anchor" href="#Plot-the-solution">Plot the solution</a><a id="Plot-the-solution-1"></a><a class="docs-heading-anchor-permalink" href="#Plot-the-solution" title="Permalink"></a></h3><p>First, create the temperature function that allows us to easily plot.</p><pre><code class="language-julia hljs">temperature(T,σ,x,sys::ILMSystem,t) = T
+@snapshotoutput temperature</code></pre><p>Now plot</p><pre><code class="language-julia hljs">plot(temperature(integrator),sys)</code></pre><img src="919b3813.svg" alt="Example block output"/><p>and the Lagrange multiplier (the constraint)</p><pre><code class="language-julia hljs">plot(constraint(integrator.u))</code></pre><img src="c19880ce.svg" alt="Example block output"/><p>Plot a slice across the domain. To do so, we make use of the <code>interpolatable_field</code> function, which creates a functional version of the temperature field that we can access like a spatial field, e.g. <span>$T(x,y)$</span>.</p><pre><code class="language-julia hljs">Tfcn = interpolatable_field(temperature(integrator),sys);</code></pre><p>First, a vertical slice along <span>$x=0$</span>, to verify that the adiabatic conditions are met there.</p><pre><code class="language-julia hljs">y = -2:0.01:2
+plot(Tfcn(0,y),y,xlabel=&quot;T(0,y)&quot;,ylabel=&quot;y&quot;,legend=false)</code></pre><img src="53414359.svg" alt="Example block output"/><p>Now, a horizontal slice along <span>$y=0$</span>, to verify that the adiabatic conditions are met there.</p><pre><code class="language-julia hljs">x = -2:0.01:2
+plot(x,Tfcn(x,0),xlabel=&quot;x&quot;,ylabel=&quot;T(x,0)&quot;,legend=false)</code></pre><img src="b9c4c01c.svg" alt="Example block output"/><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../heatconduction-unbounded/">« A time-varying PDE with forcing</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.0.1 on <span class="colophon-date" title="Sunday 24 September 2023 22:50">Sunday 24 September 2023</span>. Using Julia version 1.7.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
