@@ -60,6 +60,7 @@ create_CLinvCT_scalar
 create_CL2invCT
 create_GLinvD
 create_GLinvD_cross
+create_GLinvD_symm
 create_nRTRn
 create_surface_filter
 ```

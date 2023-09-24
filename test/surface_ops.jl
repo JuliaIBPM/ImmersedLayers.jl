@@ -180,7 +180,69 @@ end
 
   outer = complementary_mask(scache)
 
+  pmask = ones_grid(scache)
+  vmask = ones_gridgrad(scache)
+  wmask = ones_gridcurl(scache)
 
+  mask!(pmask,scache)
+  @test abs(integrate(pmask,scache) - π) < 1e-3
+
+  mask!(wmask,scache)
+  @test abs(integrate(wmask,scache) - π) < 1e-3
+
+  mask!(vmask.u,scache)
+  @test abs(integrate(vmask.u,scache) - π) < 1e-3
+
+  mask!(vmask.v,scache)
+  @test abs(integrate(vmask.v,scache) - π) < 1e-3
+
+  vmask = ones_gridgrad(scache)
+  mask!(vmask,scache)
+  @test all(abs.(integrate(vmask,scache) .- π) .< 1e-3)
+
+  complementary_mask!(vmask,scache)
+
+  vcache = SurfaceVectorCache(body,g,scaling=GridScaling)
+
+  vmask = ones_grid(vcache)
+  pmask = ones_griddiv(vcache)
+  wmask = ones_gridcurl(vcache)
+  dvmask = ones_gridgrad(vcache)
+
+  mask!(pmask,vcache)
+  @test abs(integrate(pmask,vcache) - π) < 1e-3
+
+  mask!(wmask,vcache)
+  @test abs(integrate(wmask,vcache) - π) < 1e-3
+
+  mask!(vmask,vcache)
+  @test all(abs.(integrate(vmask,vcache) .- π) .< 1e-3)
+
+  mask!(dvmask,vcache)
+  @test all(abs.(integrate(dvmask,vcache) .- π) .< 1e-3)
+
+  complementary_mask!(dvmask,vcache)
+
+
+  mask_shape = Rectangle(0.5,0.25,Δs)
+  vmask = ones_grid(vcache)
+  pmask = ones_griddiv(vcache)
+  wmask = ones_gridcurl(vcache)
+  dvmask = ones_gridgrad(vcache)
+
+  mask!(pmask,mask_shape,g)
+  @test abs(integrate(pmask,g) - 0.5) < 1e-3
+
+  mask!(wmask,mask_shape,g)
+  @test abs(integrate(wmask,g) - 0.5) < 1e-3
+
+  mask!(vmask,mask_shape,g)
+  @test all(abs.(integrate(vmask,g) .- 0.5) .< 1e-3)
+
+  mask!(dvmask,mask_shape,g)
+  @test all(abs.(integrate(dvmask,g) .- 0.5) .< 1e-3)
+
+  complementary_mask!(dvmask,mask_shape,g)
 
 end
 

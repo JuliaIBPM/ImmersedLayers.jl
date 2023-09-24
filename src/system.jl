@@ -50,13 +50,11 @@ function update_system!(sys::ILMSystem,u,sysold::ILMSystem,t)
 end
 
 
-"""
-    __init(prob::AbstractILMProblem)
-
+#=
 Initialize `ILMSystem` with the given problem `prob` specification.
 Depending on the type of problem, this sets up a base cache of scalar or
 vector type, as well as an optional extra cache
-"""
+=#
 function __init(prob::AbstractILMProblem{DT,ST,DTP}) where {DT,ST,DTP}
     @unpack g, bodies, phys_params, bc, forcing, timestep_func, motions = prob
     @unpack m, reference_body = motions

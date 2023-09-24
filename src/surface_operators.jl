@@ -734,7 +734,7 @@ Create grid data that consist of 1s inside of a surface (i.e., on a side opposit
   output data type of `sys`.  Only allows `sys` to have `GridScaling`.
   If the cache has no immersed surface, then it reverts to 1s everywhere.
 """
-@inline mask(cache::BasicILMCache{N,GridScaling}) where {N} = _mask!(zeros_grid(cache),cache)
+@inline mask(cache::BasicILMCache{N,GridScaling}) where {N} = _get_mask!(zeros_grid(cache),cache)
 
 
 """
@@ -747,7 +747,32 @@ Create grid data that consist of 0s inside of a surface (i.e., on a side opposit
   If the cache has no immersed surface, then it reverts to 0s everywhere.
 """
 @inline complementary_mask(cache::BasicILMCache{N,GridScaling}) where {N} =
-          _complementary_mask!(zeros_grid(cache),cache)
+          _get_complementary_mask!(zeros_grid(cache),cache)
+
+
+"""
+    mask(w::GridData,surface::Body,grid::PhysicalGrid)
+
+Create grid data that consist of 1s inside of surface `surface` (i.e., on a side opposite
+the normal vectors) and 0s outside. The grid data are the same type as
+`w`.
+"""
+function mask(w::T,surface::Body,grid::PhysicalGrid)  where {T<:GridData}
+    mcache = _mask_cache(w,surface,grid)
+    return mask(mcache)
+end
+
+"""
+    complementary_mask(w::GridData,surface::Body,grid::PhysicalGrid)
+
+Create grid data that consist of 0s inside of surface `surface` (i.e., on a side opposite
+the normal vectors) and 1s outside. The grid data are the same type as
+`w`.
+"""
+function complementary_mask(w::T,surface::Body,grid::PhysicalGrid)  where {T<:GridData}
+    mcache = _mask_cache(w,surface,grid)
+    return complementary_mask(mcache)
+end
 
 
 """
@@ -758,11 +783,20 @@ Mask the data `w` in place by multiplying it by 1s inside of a surface (i.e., on
   the normal vectors) and 0s outside. The grid data `w` must be of the same type as the
   output data type of `cache`. Only allows `cache` to have `GridScaling`.
 """
-function mask!(w::T,cache::BasicILMCache{N,GridScaling}) where {T <: GridData,N}
+mask!(w::T,cache::BasicILMCache) where {T<:GridData} = _mask!(w,cache)
+
+
+function _mask!(w,cache::BasicILMCache{N,GridScaling,GT}) where {N,GT<:ScalarGridData}
   @unpack gdata_cache = cache
-  _mask!(gdata_cache,cache)
-  product!(w,gdata_cache,w)
+  _get_mask!(gdata_cache,cache)
+  _scalar_mask_product!(w,cache)
 end
+function _mask!(w,cache::BasicILMCache{N,GridScaling,GT}) where {N,GT<:VectorGridData}
+  @unpack gdata_cache = cache
+  _get_mask!(gdata_cache,cache)
+  _vector_mask_product!(w,cache)
+end
+
 
 """
     complementary_mask!(w::GridData,cache::BasicILMCache)
@@ -772,33 +806,116 @@ Mask the data `w` in place by multiplying it by 0s inside of a surface (i.e., on
   the normal vectors) and 1s outside. The grid data `w` must be of the same type as the
   output data type of `cache`. Only allows `cache` to have `GridScaling`.
 """
-function complementary_mask!(w::T,cache::BasicILMCache{N,GridScaling}) where {T <: GridData,N}
+complementary_mask!(w::T,cache::BasicILMCache) where {T<:GridData} = _complementary_mask!(w,cache)
+
+
+function _complementary_mask!(w,cache::BasicILMCache{N,GridScaling,GT}) where {N,GT<:ScalarGridData}
   @unpack gdata_cache = cache
-  _complementary_mask!(gdata_cache,cache)
-  product!(w,gdata_cache,w)
+  _get_complementary_mask!(gdata_cache,cache)
+  _scalar_mask_product!(w,cache)
+end
+function _complementary_mask!(w,cache::BasicILMCache{N,GridScaling,GT}) where {N,GT<:VectorGridData}
+  @unpack gdata_cache = cache
+  _get_complementary_mask!(gdata_cache,cache)
+  _vector_mask_product!(w,cache)
 end
 
-function _mask!(msk,cache::BasicILMCache{N}) where {N}
+
+"""
+    mask!(w::GridData,surface::Body,grid::PhysicalGrid)
+
+Mask the data `w` in place by multiplying it by 1s inside of surface `surface` (i.e., on a side opposite
+the normal vectors) and 0s outside.
+"""
+function mask!(w::T,surface::Body,grid::PhysicalGrid)  where {T<:GridData}
+    mcache = _mask_cache(w,surface,grid)
+    return mask!(w,mcache)
+end
+
+
+
+
+"""
+    complementary_mask!(w::GridData,surface::Body,grid::PhysicalGrid)
+
+Mask the data `w` in place by multiplying it by 0s inside of surface `surface` (i.e., on a side opposite
+the normal vectors) and 1s outside.
+"""
+function complementary_mask!(w::T,surface::Body,grid::PhysicalGrid)  where {T<:GridData}
+    mcache = _mask_cache(w,surface,grid)
+    return complementary_mask!(w,mcache)
+end
+
+_mask_cache(::ScalarGridData,surface,grid) = SurfaceScalarCache(surface,grid)
+_mask_cache(::VectorGridData,surface,grid) = SurfaceVectorCache(surface,grid)
+_mask_cache(::TensorGridData,surface,grid) = SurfaceVectorCache(surface,grid)
+
+
+function _get_complementary_mask!(msk,cache::BasicILMCache{N}) where {N}
+    _get_mask!(msk,cache)
+    msk .= 1.0 - msk
+end
+
+function _get_complementary_mask!(msk,cache::BasicILMCache{0})
+    fill!(msk,0.0)
+end
+
+function _get_mask!(msk,cache::BasicILMCache{N}) where {N}
   @unpack sdata_cache, gdata_cache, L = cache
-  typeof(msk) == typeof(gdata_cache) || error("Wrong data type")
   fill!(sdata_cache,1.0)
   surface_divergence!(msk,sdata_cache,cache)
   inverse_laplacian!(msk,cache)
   msk .*= -1.0
 end
 
-function _mask!(msk,cache::BasicILMCache{0})
+function _get_mask!(msk,cache::BasicILMCache{0})
   @unpack gdata_cache = cache
-  typeof(msk) == typeof(gdata_cache) || error("Wrong data type")
   fill!(msk,1.0)
 end
 
 
-function _complementary_mask!(msk,cache::BasicILMCache{N}) where {N}
-    _mask!(msk,cache)
-    msk .= 1.0 - msk
+
+function _scalar_mask_product!(w::Nodes{Primal},cache)
+    @unpack gdata_cache = cache
+    product!(w,gdata_cache,w)
+end
+function _scalar_mask_product!(w::Nodes{Dual},cache)
+    @unpack gdata_cache, gcurl_cache = cache
+    grid_interpolate!(gcurl_cache,gdata_cache)
+    product!(w,gcurl_cache,w)
+end
+function _scalar_mask_product!(w::XEdges{Primal},cache)
+    @unpack gdata_cache, gsnorm_cache  = cache
+    grid_interpolate!(gsnorm_cache.u,gdata_cache)
+    product!(w,gsnorm_cache.u,w)
+end
+function _scalar_mask_product!(w::YEdges{Primal},cache)
+    @unpack gdata_cache, gsnorm_cache  = cache
+    grid_interpolate!(gsnorm_cache.v,gdata_cache)
+    product!(w,gsnorm_cache.v,w)
+end
+function _scalar_mask_product!(w::Edges{Primal},cache)
+    _scalar_mask_product!(w.u,cache)
+    _scalar_mask_product!(w.v,cache)
 end
 
-function _complementary_mask!(msk,cache::BasicILMCache{0})
-    fill!(msk,0.0)
+function _vector_mask_product!(w::Edges{Primal},cache)
+    @unpack gdata_cache = cache
+    product!(w,gdata_cache,w)
+end
+function _vector_mask_product!(w::Nodes{Dual},cache)
+    @unpack gdata_cache, gcurl_cache = cache
+    grid_interpolate!(gcurl_cache,gdata_cache.u)
+    product!(w,gcurl_cache,w)
+end
+function _vector_mask_product!(w::Nodes{Primal},cache)
+    @unpack gdata_cache, gdiv_cache = cache
+    grid_interpolate!(gdiv_cache,gdata_cache.u)
+    product!(w,gdiv_cache,w)
+end
+function _vector_mask_product!(w::EdgeGradient{Primal},cache)
+    _vector_mask_product!(w.dudx,cache)
+    _vector_mask_product!(w.dudy,cache)
+    _vector_mask_product!(w.dvdx,cache)
+    _vector_mask_product!(w.dvdy,cache)
 end

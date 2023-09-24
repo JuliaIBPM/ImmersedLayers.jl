@@ -221,7 +221,9 @@ mask!(xmask,cache)
 #md # surface_divergence!
 #md # surface_grad!
 #md # surface_curl!
+#md # surface_divergence_symm!
 #md # surface_divergence_cross!
+#md # surface_grad_symm!
 #md # surface_grad_cross!
 #md # surface_curl_cross!
 #md # mask!

@@ -13,7 +13,6 @@ We will start by generating the cache, just as we did in [Immersed layer caches]
 =#
 
 using ImmersedLayers
-using CartesianGrids
 #!jl using Plots
 
 #=

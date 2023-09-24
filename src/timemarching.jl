@@ -234,9 +234,9 @@ _norm_sq(u::ConstrainedSystems.ArrayPartition) = sum(_norm_sq,u.x)
 state_norm(u,t) = sqrt(_norm_sq(u))
 
 """
-    timestep(sys::ILMSystem) -> Float64
+    timestep(u,sys::ILMSystem) -> Float64
 
-Return the timestep of the system `sys`
+Return the timestep of the system `sys` with state vector `u`.
 """
 timestep(u,sys::ILMSystem) = _get_function_name(sys.timestep_func)(u,sys)
 
