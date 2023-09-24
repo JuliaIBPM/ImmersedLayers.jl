@@ -144,7 +144,9 @@ Calculate the discrete integral of grid data `u`, using the
 """
 integrate(u::ScalarGridData,g::PhysicalGrid) = dot(u,ones(u),g)
 
-integrate(u::VectorGridData,g::PhysicalGrid) = [dot(u,ones(u,1),g),dot(u,ones(u,2),g)]
+integrate(u::VectorGridData,g::PhysicalGrid) = [dot(u,ones(u,i),g) for i in 1:2]
+
+integrate(u::TensorGridData,g::PhysicalGrid) = [dot(u,ones(u,i),g) for i in 1:4]
 
 
 

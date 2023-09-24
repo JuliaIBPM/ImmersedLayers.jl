@@ -512,6 +512,15 @@ in dimension `dim`.
 
 
 """
+    ones_gridgrad(::BasicILMCache)
+
+Get an instance of the gradient of the grid data in the cache,
+with values set to unity.
+"""
+@inline ones_gridgrad(cache::BasicILMCache;kwargs...) = ones(cache.gsnorm_cache;kwargs...)
+
+
+"""
     ones_gridgrad(::BasicILMCache,dim)
 
 Get an instance of the gradient of the grid data in the cache, in direction `dim`,
