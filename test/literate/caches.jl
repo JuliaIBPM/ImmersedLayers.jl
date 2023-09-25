@@ -135,14 +135,34 @@ y_grid(cache)
 
 
 #=
-## Using norms and inner products
-It is useful to compute norms and inner products on grid and surface data.
-These tools are easily accessible, e.g., `dot(u,v,cache)` and `norm(u,cache)`,
+## Using norms, inner products, and integrals
+It is useful to compute norms and inner products on grid or surface data.
+These tools are easily accessible and intuitive, e.g., `dot(u,v,cache)` and `norm(u,cache)`,
 and they respect the scaling associated with the cache. For example,
 the following gives an approximation of the circumference of the circle:
 =#
 os = ones_surface(cache)
 dot(os,os,cache)
+
+#=
+We can also numerically integrate on surfaces or grids. For example,
+the previous example could have been written
+=#
+integrate(os,cache)
+
+#=
+Or, to compute an area integral over the whole domain,
+=#
+og = ones_grid(cache)
+integrate(og,cache)
+
+#=
+If the underlying data are of vector or tensor form, then
+the `integrate` function operates on every component
+=#
+ovg = ones_gridgrad(cache)
+integrate(ovg,cache)
+
 
 #md # ## Cache types and constructors
 
