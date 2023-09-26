@@ -759,7 +759,8 @@ the normal vectors) and 0s outside. The grid data are the same type as
 """
 function mask(w::T,surface::Body,grid::PhysicalGrid)  where {T<:GridData}
     mcache = _mask_cache(w,surface,grid)
-    return mask(mcache)
+    msk = ones(w)
+    return mask!(msk,mcache)
 end
 
 """
@@ -771,7 +772,8 @@ the normal vectors) and 1s outside. The grid data are the same type as
 """
 function complementary_mask(w::T,surface::Body,grid::PhysicalGrid)  where {T<:GridData}
     mcache = _mask_cache(w,surface,grid)
-    return complementary_mask(mcache)
+    msk = ones(w)
+    return complementary_mask!(msk,mcache)
 end
 
 
