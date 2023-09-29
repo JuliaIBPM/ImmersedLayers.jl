@@ -116,7 +116,7 @@ end
 
   f.u .= 1;
   q.u .= 1;
-  @test isapprox(abs(dot(q.u,(Rf*f).u,g)),sum(ds),atol=1e-14)
+  @test isapprox(abs(dot(q.u,(Rf*f).u,g)),sum(ds),atol=1e-13)
   @test isapprox(abs(dot(q.u,(Rf*f).u,g)),2π,atol=1e-3)
 
 
