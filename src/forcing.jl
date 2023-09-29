@@ -259,7 +259,7 @@ for f in [:AreaRegionCache,:LineRegionCache]
 end
 
 for f in [:AreaRegionCache,:LineRegionCache]
-    @eval $f(shape::Union{Body,BodyList},cache::BasicILMCache{N,SCA},is_moving::Bool;scaling=SCA,kwargs...) where {N,SCA} = $f(cache.g,shape,base_cache,similar_grid(cache);scaling=scaling,kwargs...)
+    @eval $f(shape::Union{Body,BodyList},cache::BasicILMCache{N,SCA},is_moving::Bool;scaling=SCA,kwargs...) where {N,SCA} = $f(cache.g,shape,cache,similar_grid(cache);scaling=scaling,kwargs...)
     @eval $f(g::PhysicalGrid,shape::Body,base_cache::BasicILMCache,a...;kwargs...) = $f(g,BodyList([shape]),base_cache,a...;kwargs...)
 end
 
@@ -338,7 +338,7 @@ for f in [:Area,:Line,:Point]
   end
 end
 
-for f in [:Area,:Line,:Point]
+for f in [:Area,:Line]
     modtype = Symbol(string(f)*"ForcingModel")
     regcache = Symbol(string(f)*"RegionCache")
     @eval function _forcingmodelandregion(model::$modtype,cache::BasicILMCache,is_moving::Bool)
