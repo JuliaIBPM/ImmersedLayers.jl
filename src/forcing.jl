@@ -345,7 +345,7 @@ for f in [:Area,:Line]
         region_cache = $regcache(model.shape,cache,is_moving;model.kwargs...)
         ForcingModelAndRegion(region_cache,model.shape,model.fcn,model.kwargs)
     end
-  end
+end
 
 ForcingModelAndRegion(f::AbstractForcingModel,cache::BasicILMCache;is_moving=false) = ForcingModelAndRegion(AbstractForcingModel[f],cache;is_moving)
 
