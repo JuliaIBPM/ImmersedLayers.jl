@@ -180,8 +180,7 @@ function SurfaceScalarCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::
 
 end
 
-function SurfaceScalarCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid;
-    L::Laplacian,
+function SurfaceScalarCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid,L::Laplacian;
     ddftype = DEFAULT_DDF,
     scaling = DEFAULT_SCALING,
     dtype = DEFAULT_DATA_TYPE) where {N}
@@ -219,8 +218,7 @@ function SurfaceVectorCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::
 
 end
 
-function SurfaceVectorCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid;
-    L::Laplacian,
+function SurfaceVectorCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid, L::Laplacian;
     ddftype = DEFAULT_DDF,
     scaling = DEFAULT_SCALING,
     dtype = DEFAULT_DATA_TYPE) where {N}
@@ -243,20 +241,20 @@ for f in [:SurfaceScalarCache, :SurfaceVectorCache]
   @eval $f(body::Body,g::PhysicalGrid; kwargs...) =
         $f(BodyList([body]),areas(body),normals(body),g; kwargs...)
     
-  @eval $f(body::Body,g::PhysicalGrid; L::Laplacian,kwargs...) =
-        $f(BodyList([body]),areas(body),normals(body),g; L,kwargs...)
+  @eval $f(body::Body,g::PhysicalGrid,L::Laplacian; kwargs...) =
+        $f(BodyList([body]),areas(body),normals(body),g,L; kwargs...)
 
   @eval $f(bl::BodyList,g::PhysicalGrid; kwargs...) =
         $f(bl,areas(bl),normals(bl),g; kwargs...)
 
-  @eval $f(bl::BodyList,g::PhysicalGrid; L::Laplacian,kwargs...) =
-        $f(bl,areas(bl),normals(bl),g; L,kwargs...)
+  @eval $f(bl::BodyList,g::PhysicalGrid,L::Laplacian; kwargs...) =
+        $f(bl,areas(bl),normals(bl),g,L; kwargs...)
 
   @eval $f(g::PhysicalGrid;kwargs...) =
         $f(BodyList(),ScalarData(0),VectorData(0),g; kwargs...)
 
-  @eval $f(g::PhysicalGrid;L::Laplacian,kwargs...) =
-        $f(BodyList(),ScalarData(0),VectorData(0),g; L,kwargs...)
+  @eval $f(g::PhysicalGrid,L::Laplacian; kwargs...) =
+        $f(BodyList(),ScalarData(0),VectorData(0),g,L; kwargs...)
 
   @eval function $f(X::VectorData,g::PhysicalGrid; kwargs...)
           x = Vector{Float64}(undef,length(X.u))
@@ -271,7 +269,7 @@ for f in [:SurfaceScalarCache, :SurfaceVectorCache]
     y = Vector{Float64}(undef,length(X.v))
     x .= X.u
     y .= X.v
-    $f(BasicBody(x,y),g; L,kwargs...)
+    $f(BasicBody(x,y),g,L;kwargs...)
 end
 
 end
