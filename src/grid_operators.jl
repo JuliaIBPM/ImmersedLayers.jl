@@ -427,6 +427,7 @@ function _unscaled_w_cross_v!(uw::Edges{Primal},w::Nodes{Dual},u::Edges{Primal},
     vt1_cache .*= -1
     product!(vt2_cache,vt1_cache,w)
     grid_interpolate!(uw.u, vt2_cache)
+    
     fill!(vt1_cache,0.0)
     grid_interpolate!(vt1_cache,  u.u)
     product!(vt2_cache,vt1_cache,w)
