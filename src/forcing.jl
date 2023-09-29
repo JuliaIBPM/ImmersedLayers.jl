@@ -198,7 +198,7 @@ for f in [:Scalar,:Vector]
     end
 
     @eval function AreaRegionCache(g::PhysicalGrid,shape::BodyList,base_cache::BasicILMCache,data_prototype::$gdtype;spatialfield=nothing,kwargs...)
-        cache = $cname(shape,g;base_cache.L,kwargs...)
+        cache = $cname(shape,g,base_cache.L;kwargs...)
         m = mask(cache)
         str = similar_grid(cache)
         gf = _generatedfield(str,spatialfield,g)
@@ -214,7 +214,7 @@ for f in [:Scalar,:Vector]
     end
 
     @eval function AreaRegionCache(g::PhysicalGrid,base_cache::BasicILMCache,data_prototype::$gdtype;spatialfield=nothing,kwargs...)
-        cache = $cname(g;base_cache.L,kwargs...)
+        cache = $cname(g,base_cache.L;kwargs...)
         m = mask(cache)
         str = similar_grid(cache)
         gf = _generatedfield(str,spatialfield,g)
@@ -230,7 +230,7 @@ for f in [:Scalar,:Vector]
     end
 
     @eval function LineRegionCache(g::PhysicalGrid,shape::BodyList,base_cache::BasicILMCache,data_prototype::$gdtype;kwargs...)
-        cache = $cname(shape,g;base_cache.L,kwargs...)
+        cache = $cname(shape,g,base_cache.L;kwargs...)
         pts = points(shape)
         s = arcs(shape)
         str = similar_surface(cache)
