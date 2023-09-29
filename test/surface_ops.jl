@@ -37,7 +37,7 @@ end
   evaluate_field!(w,field,scache1)
   xc, yc = coordinates(w,g)
 
-  @test w[104,24] ≈ myfun(xc[24],yc[104])
+  @test w[101,24] ≈ myfun(xc[24],yc[101])
 
 end
 
