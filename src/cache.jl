@@ -604,7 +604,7 @@ of the same type. If the grid
 data is vector, then the output is of type `Edges{Primal}`,
 and the coordinates of each component are in `u`, `v` fields.
 """
-x_grid(cache::BasicILMCache)  = _x_grid(cache.gdata_cache,cache.g)
+x_grid(cache::BasicILMCache)  = cache.xg
 
 #=
 function x_grid(cache::BasicILMCache{N,SCA,GT}) where {N,SCA,GT<:Edges{Primal}}
@@ -699,7 +699,7 @@ of the same type. If the grid
 data is vector, then the output is of type `Edges{Primal}`,
 and the coordinates of each component are in `u`, `v` fields.
 """
-y_grid(cache::BasicILMCache) = _y_grid(cache.gdata_cache,cache.g)
+y_grid(cache::BasicILMCache) = cache.yg
 
 function _y_grid(gdata::GT,g::PhysicalGrid) where {GT<:Nodes{Primal}}
     _, yc  = coordinates(gdata,g)
@@ -781,7 +781,7 @@ end
 
 Return the coordinates (as `VectorData`) of the surface points associated with `cache`
 """
-points(cache::BasicILMCache) = points(cache.bl)
+points(cache::BasicILMCache) = cache.pts
 
 """
     points(cache::PointCollectionCache)
