@@ -257,13 +257,13 @@ for f in [:SurfaceScalarCache, :SurfaceVectorCache]
           $f(BasicBody(x,y),g; kwargs...)
   end
 
-  @eval function $f(X::VectorData,g::PhysicalGrid; L::Laplacian,kwargs...)
+  @eval function $f(X::VectorData,g::PhysicalGrid,L::Laplacian; kwargs...)
     x = Vector{Float64}(undef,length(X.u))
     y = Vector{Float64}(undef,length(X.v))
     x .= X.u
     y .= X.v
     $f(BasicBody(x,y),g,L;kwargs...)
-end
+    end
 
 end
 
