@@ -18,7 +18,7 @@ f = ScalarData(X)
 
 coeff_factor = 1.0
 with_inverse = true
-L = _get_laplacian(coeff_factor,g,with_inverse,scaling=GridScaling)
+L = _get_laplacian(coeff_factor,g,with_inverse,GridScaling;dtype=Float64)
 
 angs(n) = range(0,2π,length=n+1)[1:n]
 
