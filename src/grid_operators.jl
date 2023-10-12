@@ -382,6 +382,7 @@ the convective derivative in rotational form, using `w` to define the cache data
 """
 struct RotConvectiveDerivativeCache{VTT} <: AbstractExtraILMCache
    vt1_cache :: VTT
+   vt2_cache :: VTT
 end
 
 """
@@ -390,7 +391,7 @@ end
 Create a cache for computing the rotational convective derivative, based on
 the basic ILM cache `cache`.
 """
-RotConvectiveDerivativeCache(cache::BasicILMCache) = RotConvectiveDerivativeCache(similar_gridcurl(cache))
+RotConvectiveDerivativeCache(cache::BasicILMCache) = RotConvectiveDerivativeCache(similar_gridcurl(cache),similar_gridcurl(cache))
 
 
 """
@@ -413,18 +414,24 @@ end
 Compute the term `w \\times v`, with vorticity `w` and velocity `v`.
 """
 function w_cross_v(w::Nodes{Dual},u::Edges{Primal},base_cache::BasicILMCache)
-    extra_cache = RotConvectiveDerivativeCache(similar_gridcurl(base_cache))
+    extra_cache = RotConvectiveDerivativeCache(similar_gridcurl(base_cache),similar_gridcurl(base_cache))
     uw = similar(u)
     w_cross_v!(uw,w,u,base_cache,extra_cache)
 end
 
 function _unscaled_w_cross_v!(uw::Edges{Primal},w::Nodes{Dual},u::Edges{Primal},extra_cache::RotConvectiveDerivativeCache)
-    @unpack vt1_cache = extra_cache
+    @unpack vt1_cache, vt2_cache = extra_cache
 
     fill!(vt1_cache,0.0)
-    grid_interpolate!(uw.u,grid_interpolate!(vt1_cache, -u.v) ∘ w)
+    grid_interpolate!(vt1_cache, u.v)
+    vt1_cache .*= -1
+    product!(vt2_cache,vt1_cache,w)
+    grid_interpolate!(uw.u, vt2_cache)
+    
     fill!(vt1_cache,0.0)
-    grid_interpolate!(uw.v,grid_interpolate!(vt1_cache,  u.u) ∘ w)
+    grid_interpolate!(vt1_cache,  u.u)
+    product!(vt2_cache,vt1_cache,w)
+    grid_interpolate!(uw.v, vt2_cache)
     return uw
 
 end

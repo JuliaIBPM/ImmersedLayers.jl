@@ -26,6 +26,9 @@ struct BasicILMCache{N,SCA<:AbstractScalingType,GCT,ND,BLT<:BodyList,NT<:VectorD
     # Bodies
     bl :: BLT
 
+    # Points
+    pts :: NT
+
     # Normals
     nrm :: NT
 
@@ -67,6 +70,10 @@ struct BasicILMCache{N,SCA<:AbstractScalingType,GCT,ND,BLT<:BodyList,NT<:VectorD
 
     # For holding the basic data type (e.g., scalar -> Nodes{Primal}, vector -> Edges{Primal})
     gdata_cache :: GCT
+
+    # For holding grid coordinates
+    xg :: GCT
+    yg :: GCT
 
     # For holding the surface data comprised of tensor product of basic data
     # and normals (e.g, scalar -> VectorData, vector -> TensorData)
@@ -294,12 +301,16 @@ function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},d
   with_inverse = true
   L = _get_laplacian(coeff_factor,g,with_inverse,scaling;dtype=dtype)
 
+  xg = _x_grid(gdata_cache,g)
+  yg = _y_grid(gdata_cache,g)
+
   return BasicILMCache{N,scaling,typeof(gdata_cache),ND,typeof(bl),typeof(nrm),typeof(a),typeof(regop),
                        typeof(Rsn),typeof(Esn),typeof(R),typeof(E),typeof(Rcurl),typeof(Ecurl),typeof(Rdiv),typeof(Ediv),typeof(L),
                        typeof(gsnorm_cache),typeof(gcurl_cache),typeof(gdiv_cache),typeof(snorm_cache),typeof(sdata_cache),typeof(sscalar_cache)}(
-                       g,bl,nrm,a,regop,Rsn,Esn,R,E,Rcurl,Ecurl,Rdiv,Ediv,L,
+                       g,bl,X,nrm,a,regop,Rsn,Esn,R,E,Rcurl,Ecurl,Rdiv,Ediv,L,
                        _similar(gsnorm_cache),_similar(gsnorm_cache),
                        _similar(gcurl_cache),_similar(gdiv_cache),_similar(gdata_cache),
+                       xg,yg,
                        _similar(snorm_cache),_similar(snorm_cache),_similar(sdata_cache),_similar(sscalar_cache))
 
 end
@@ -530,7 +541,7 @@ Get an instance of the basic grid data in the cache, with values set to zero.
 """
     zeros_gridgrad(::BasicILMCache)
 
-Get an instance of the gradient of the grid data in the cache`, with values set to zero.
+Get an instance of the gradient of the grid data in the cache, with values set to zero.
 """
 @inline zeros_gridgrad(cache::BasicILMCache,kwargs...) = _zero(cache.gsnorm_cache,kwargs...)
 
@@ -675,13 +686,9 @@ of the same type. If the grid
 data is vector, then the output is of type `Edges{Primal}`,
 and the coordinates of each component are in `u`, `v` fields.
 """
-function x_grid(cache::BasicILMCache{N,SCA,GT}) where {N,SCA,GT<:Nodes{Primal}}
-    xc, _ = coordinates(cache.gdata_cache,cache.g)
-    p = zeros_grid(cache)
-    p .= xc
-    return p
-end
+x_grid(cache::BasicILMCache)  = cache.xg
 
+#=
 function x_grid(cache::BasicILMCache{N,SCA,GT}) where {N,SCA,GT<:Edges{Primal}}
     p = zeros_grid(cache)
     xu, _ = coordinates(p.u,cache.g)
@@ -690,6 +697,24 @@ function x_grid(cache::BasicILMCache{N,SCA,GT}) where {N,SCA,GT<:Edges{Primal}}
     p.v .= xv
     return p
 end
+=#
+
+function _x_grid(gdata::GT,g::PhysicalGrid) where {GT<:Nodes{Primal}}
+    xc, _ = coordinates(gdata,g)
+    p = _zero(gdata)
+    p .= xc
+    return p
+end
+
+function _x_grid(gdata::GT,g::PhysicalGrid) where {GT<:Edges{Primal}}
+    xu, _ = coordinates(gdata.u,g)
+    xv, _ = coordinates(gdata.v,g)
+    p = _zero(gdata)
+    p.u .= xu
+    p.v .= xv
+    return p
+end
+
 
 """
     x_gridcurl(::BasicILMCache)
@@ -756,17 +781,20 @@ of the same type. If the grid
 data is vector, then the output is of type `Edges{Primal}`,
 and the coordinates of each component are in `u`, `v` fields.
 """
-function y_grid(cache::BasicILMCache{N,SCA,GT}) where {N,SCA,GT<:Nodes{Primal}}
-    _, yc  = coordinates(cache.gdata_cache,cache.g)
-    p = zeros_grid(cache)
+y_grid(cache::BasicILMCache) = cache.yg
+
+function _y_grid(gdata::GT,g::PhysicalGrid) where {GT<:Nodes{Primal}}
+    _, yc  = coordinates(gdata,g)
+    p = _zero(gdata)
     p .= yc'
     return p
 end
 
-function y_grid(cache::BasicILMCache{N,SCA,GT}) where {N,SCA,GT<:Edges{Primal}}
-    p = zeros_grid(cache)
-    _, yu  = coordinates(p.u,cache.g)
-    _, yv  = coordinates(p.v,cache.g)
+function _y_grid(gdata::GT,g::PhysicalGrid) where {GT<:Edges{Primal}}
+    _, yu  = coordinates(gdata.u,g)
+    _, yv  = coordinates(gdata.v,g)
+    p = _zero(gdata)
+
     p.u .= yu'
     p.v .= yv'
     return p
@@ -835,7 +863,7 @@ end
 
 Return the coordinates (as `VectorData`) of the surface points associated with `cache`
 """
-points(cache::BasicILMCache) = points(cache.bl)
+points(cache::BasicILMCache) = cache.pts
 
 """
     points(cache::PointCollectionCache)
