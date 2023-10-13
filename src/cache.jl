@@ -180,7 +180,7 @@ function SurfaceScalarCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::
 
 end
 
-function SurfaceScalarCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid,L::CartesianGrids.Laplacian;
+function SurfaceScalarCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid,L::Laplacian;
     ddftype = DEFAULT_DDF,
     scaling = DEFAULT_SCALING,
     dtype = DEFAULT_DATA_TYPE) where {N}
@@ -241,13 +241,13 @@ for f in [:SurfaceScalarCache, :SurfaceVectorCache]
   @eval $f(body::Body,g::PhysicalGrid; kwargs...) =
         $f(BodyList([body]),areas(body),normals(body),g; kwargs...)
     
-  @eval $f(body::Body,g::PhysicalGrid,L::CartesianGrids.Laplacian; kwargs...) =
+  @eval $f(body::Body,g::PhysicalGrid,L::Laplacian; kwargs...) =
         $f(BodyList([body]),areas(body),normals(body),g,L; kwargs...)
 
   @eval $f(bl::BodyList,g::PhysicalGrid; kwargs...) =
         $f(bl,areas(bl),normals(bl),g; kwargs...)
 
-  @eval $f(bl::BodyList,g::PhysicalGrid,L::CartesianGrids.Laplacian; kwargs...) =
+  @eval $f(bl::BodyList,g::PhysicalGrid,L::Laplacian; kwargs...) =
         $f(bl,areas(bl),normals(bl),g,L; kwargs...)
 
   @eval $f(g::PhysicalGrid;kwargs...) =
@@ -338,6 +338,7 @@ function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},d
         g,bl,nrm,a,regop,Rsn,Esn,R,E,Rcurl,Ecurl,Rdiv,Ediv,L,
         _similar(gsnorm_cache),_similar(gsnorm_cache),
         _similar(gcurl_cache),_similar(gdiv_cache),_similar(gdata_cache),
+        xg,yg,
         _similar(snorm_cache),_similar(snorm_cache),_similar(sdata_cache),_similar(sscalar_cache))
 
 end
