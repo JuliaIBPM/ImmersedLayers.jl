@@ -322,25 +322,28 @@ function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},d
     regop = _get_regularization(X,a,g,ddftype,scaling)
     Rsn = _regularization_matrix(regop,snorm_cache,gsnorm_cache)
     Esn = _interpolation_matrix(regop, gsnorm_cache, snorm_cache)
-
+  
     R = _regularization_matrix(regop,sdata_cache,gdata_cache )
     E = _interpolation_matrix(regop, gdata_cache,sdata_cache)
-
+  
     Rcurl = _regularization_matrix(regop,sscalar_cache,gcurl_cache )
     Ecurl = _interpolation_matrix(regop, gcurl_cache,sscalar_cache)
-
+  
     Rdiv = _regularization_matrix(regop,sscalar_cache,gdiv_cache )
     Ediv = _interpolation_matrix(regop, gdiv_cache,sscalar_cache)
-
+  
+    xg = _x_grid(gdata_cache,g)
+    yg = _y_grid(gdata_cache,g)
+  
     return BasicILMCache{N,scaling,typeof(gdata_cache),ND,typeof(bl),typeof(nrm),typeof(a),typeof(regop),
-        typeof(Rsn),typeof(Esn),typeof(R),typeof(E),typeof(Rcurl),typeof(Ecurl),typeof(Rdiv),typeof(Ediv),typeof(L),
-        typeof(gsnorm_cache),typeof(gcurl_cache),typeof(gdiv_cache),typeof(snorm_cache),typeof(sdata_cache),typeof(sscalar_cache)}(
-        g,bl,nrm,a,regop,Rsn,Esn,R,E,Rcurl,Ecurl,Rdiv,Ediv,L,
-        _similar(gsnorm_cache),_similar(gsnorm_cache),
-        _similar(gcurl_cache),_similar(gdiv_cache),_similar(gdata_cache),
-        xg,yg,
-        _similar(snorm_cache),_similar(snorm_cache),_similar(sdata_cache),_similar(sscalar_cache))
-
+                         typeof(Rsn),typeof(Esn),typeof(R),typeof(E),typeof(Rcurl),typeof(Ecurl),typeof(Rdiv),typeof(Ediv),typeof(L),
+                         typeof(gsnorm_cache),typeof(gcurl_cache),typeof(gdiv_cache),typeof(snorm_cache),typeof(sdata_cache),typeof(sscalar_cache)}(
+                         g,bl,X,nrm,a,regop,Rsn,Esn,R,E,Rcurl,Ecurl,Rdiv,Ediv,L,
+                         _similar(gsnorm_cache),_similar(gsnorm_cache),
+                         _similar(gcurl_cache),_similar(gdiv_cache),_similar(gdata_cache),
+                         xg,yg,
+                         _similar(snorm_cache),_similar(snorm_cache),_similar(sdata_cache),_similar(sscalar_cache))
+  
 end
 
 
