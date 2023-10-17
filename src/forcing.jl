@@ -189,62 +189,68 @@ for f in [:Scalar,:Vector]
     cname = Symbol("Surface"*string(f)*"Cache")
     pcname = Symbol(string(f)*"PointCollectionCache")
     gdtype = Symbol(string(f)*"GridData")
-    @eval function AreaRegionCache(g::PhysicalGrid,shape::BodyList,data_prototype::$gdtype;spatialfield=nothing,kwargs...)
-        cache = $cname(shape,g;kwargs...)
+    @eval function _AreaRegionCache(g::PhysicalGrid,shape::BodyList,data_prototype::$gdtype,L::Laplacian;spatialfield=nothing,kwargs...)
+        cache = $cname(shape,g;L=L,kwargs...)
         m = mask(cache)
         str = similar_grid(cache)
         gf = _generatedfield(str,spatialfield,g)
         return AreaRegionCache{typeof(m),typeof(str),typeof(gf),typeof(cache)}(m,str,gf,cache)
     end
 
+    #=
     @eval function AreaRegionCache(g::PhysicalGrid,shape::BodyList,base_cache::BasicILMCache,data_prototype::$gdtype;spatialfield=nothing,kwargs...)
-        cache = $cname(shape,g,base_cache.L;kwargs...)
+        cache = $cname(shape,g;L=base_cache.L,kwargs...)
         m = mask(cache)
         str = similar_grid(cache)
         gf = _generatedfield(str,spatialfield,g)
         return AreaRegionCache{typeof(m),typeof(str),typeof(gf),typeof(cache)}(m,str,gf,cache)
-    end    
+    end
+    =#
 
-    @eval function AreaRegionCache(g::PhysicalGrid,data_prototype::$gdtype;spatialfield=nothing,kwargs...)
-        cache = $cname(g;kwargs...)
+    @eval function _AreaRegionCache(g::PhysicalGrid,data_prototype::$gdtype,L::Laplacian;spatialfield=nothing,kwargs...)
+        cache = $cname(g;L=L,kwargs...)
         m = mask(cache)
         str = similar_grid(cache)
         gf = _generatedfield(str,spatialfield,g)
         return AreaRegionCache{typeof(m),typeof(str),typeof(gf),typeof(cache)}(m,str,gf,cache)
     end
 
+    #=
     @eval function AreaRegionCache(g::PhysicalGrid,base_cache::BasicILMCache,data_prototype::$gdtype;spatialfield=nothing,kwargs...)
-        cache = $cname(g,base_cache.L;kwargs...)
+        cache = $cname(g;L=base_cache.L,kwargs...)
         m = mask(cache)
         str = similar_grid(cache)
         gf = _generatedfield(str,spatialfield,g)
         return AreaRegionCache{typeof(m),typeof(str),typeof(gf),typeof(cache)}(m,str,gf,cache)
     end
+    =#
 
-    @eval function LineRegionCache(g::PhysicalGrid,shape::BodyList,data_prototype::$gdtype;kwargs...)
-        cache = $cname(shape,g;kwargs...)
+    @eval function _LineRegionCache(g::PhysicalGrid,shape::BodyList,data_prototype::$gdtype,L::Laplacian;kwargs...)
+        cache = $cname(shape,g;L=L,kwargs...)
         pts = points(shape)
         s = arcs(shape)
         str = similar_surface(cache)
         return LineRegionCache{typeof(s),typeof(str),typeof(cache)}(s,str,cache)
     end
 
+    #=
     @eval function LineRegionCache(g::PhysicalGrid,shape::BodyList,base_cache::BasicILMCache,data_prototype::$gdtype;kwargs...)
-        cache = $cname(shape,g,base_cache.L;kwargs...)
+        cache = $cname(shape,g;L=base_cache.L,kwargs...)
         pts = points(shape)
         s = arcs(shape)
         str = similar_surface(cache)
         return LineRegionCache{typeof(s),typeof(str),typeof(cache)}(s,str,cache)
     end
+    =#
 
-    @eval function PointRegionCache(g::PhysicalGrid,pts::VectorData,data_prototype::$gdtype;kwargs...)
+    @eval function _PointRegionCache(g::PhysicalGrid,pts::VectorData,data_prototype::$gdtype;kwargs...)
         cache = $pcname(pts,g;kwargs...)
 
         str = similar(cache.sdata_cache)
         return PointRegionCache{typeof(str),typeof(cache)}(str,cache)
     end
 
-    @eval function PointRegionCache(g::PhysicalGrid,pts::Function,data_prototype::$gdtype;kwargs...)
+    @eval function _PointRegionCache(g::PhysicalGrid,pts::Function,data_prototype::$gdtype;kwargs...)
         cache = $pcname(VectorData(0),g;kwargs...)
 
         str = similar(cache.sdata_cache)
@@ -254,24 +260,27 @@ for f in [:Scalar,:Vector]
 end
 
 for f in [:AreaRegionCache,:LineRegionCache]
-    @eval $f(shape::Union{Body,BodyList},cache::BasicILMCache{N,SCA};scaling=SCA,kwargs...) where {N,SCA} = $f(cache.g,shape,similar_grid(cache);scaling=scaling,kwargs...)
-    @eval $f(g::PhysicalGrid,shape::Body,a...;kwargs...) = $f(g,BodyList([shape]),a...;kwargs...)
+    rname = Symbol("_"*string(f))
+    @eval $f(shape::Union{Body,BodyList},cache::BasicILMCache{N,SCA};scaling=SCA,kwargs...) where {N,SCA} = $rname(cache.g,shape,similar_grid(cache),cache.L;scaling=scaling,kwargs...)
+    @eval $rname(g::PhysicalGrid,shape::Body,a...;kwargs...) = $rname(g,BodyList([shape]),a...;kwargs...)
 end
 
+#=
 for f in [:AreaRegionCache,:LineRegionCache]
     @eval $f(shape::Union{Body,BodyList},cache::BasicILMCache{N,SCA},is_moving::Bool;scaling=SCA,kwargs...) where {N,SCA} = $f(cache.g,shape,cache,similar_grid(cache);scaling=scaling,kwargs...)
     @eval $f(g::PhysicalGrid,shape::Body,base_cache::BasicILMCache,a...;kwargs...) = $f(g,BodyList([shape]),base_cache,a...;kwargs...)
 end
+=#
 
 AreaRegionCache(cache::AbstractBasicCache;kwargs...) =
-      AreaRegionCache(cache.g,similar_grid(cache);kwargs...)
+      _AreaRegionCache(cache.g,similar_grid(cache),cache.L;kwargs...)
 
 AreaRegionCache(::Any,cache::AbstractBasicCache;kwargs...) =
       AreaRegionCache(cache;kwargs...)
 
 
 PointRegionCache(pts::Union{VectorData,Function},cache::AbstractBasicCache;kwargs...) =
-      PointRegionCache(cache.g,pts,similar_grid(cache);kwargs...)
+      _PointRegionCache(cache.g,pts,similar_grid(cache);kwargs...)
 
 
 _generatedfield(field_prototype::GridData,s,g::PhysicalGrid) = nothing
@@ -338,6 +347,7 @@ for f in [:Area,:Line,:Point]
   end
 end
 
+#=
 for f in [:Area,:Line]
     modtype = Symbol(string(f)*"ForcingModel")
     regcache = Symbol(string(f)*"RegionCache")
@@ -346,13 +356,18 @@ for f in [:Area,:Line]
         ForcingModelAndRegion(region_cache,model.shape,model.fcn,model.kwargs)
     end
 end
+=#
 
-ForcingModelAndRegion(f::AbstractForcingModel,cache::BasicILMCache;is_moving=false) = ForcingModelAndRegion(AbstractForcingModel[f],cache;is_moving)
 
-function ForcingModelAndRegion(flist::Vector{T},cache::BasicILMCache;is_moving=false) where {T<: AbstractForcingModel}
-    ForcingModelAndRegion(flist,cache,Val(is_moving),is_moving)
+ForcingModelAndRegion(f::AbstractForcingModel,cache::BasicILMCache) = ForcingModelAndRegion(AbstractForcingModel[f],cache)
+
+#=
+function ForcingModelAndRegion(flist::Vector{T},cache::BasicILMCache) where {T<: AbstractForcingModel}
+    ForcingModelAndRegion(flist,cache,Val(is_moving))
 end
+=#
 
+#=
 <<<<<<< HEAD
 ForcingModelAndRegion(flist,cache,::Val{false},is_moving) = ForcingModelAndRegion(flist,cache)
 ForcingModelAndRegion(flist,cache,::Val{true},is_moving) = ForcingModelAndRegion(flist,cache,is_moving)
@@ -361,9 +376,9 @@ ForcingModelAndRegion(flist,cache,::Val{true},is_moving) = ForcingModelAndRegion
 ForcingModelAndRegion(flist,cache,::Val{false},is_moving) = ForcingModelAndRegion_(flist,cache)
 ForcingModelAndRegion(flist,cache,::Val{true},is_moving) = ForcingModelAndRegion_(flist,cache,is_moving)
 >>>>>>> 0de130b86b14df8c28daae933dcb0c430d88a199
+=#
 
-
-function ForcingModelAndRegion_(flist::Vector{T},cache::BasicILMCache) where {T<: AbstractForcingModel}
+function ForcingModelAndRegion(flist::Vector{T},cache::BasicILMCache) where {T<: AbstractForcingModel}
    fmlist = ForcingModelAndRegion[]
    for f in flist
      push!(fmlist,_forcingmodelandregion(f,cache))
@@ -371,6 +386,7 @@ function ForcingModelAndRegion_(flist::Vector{T},cache::BasicILMCache) where {T<
    return fmlist
 end
 
+#=
 <<<<<<< HEAD
 function ForcingModelAndRegion(flist::Vector{T},cache::BasicILMCache,is_moving) where {T<: AbstractForcingModel}
 =======
@@ -382,8 +398,9 @@ function ForcingModelAndRegion_(flist::Vector{T},cache::BasicILMCache,is_moving)
     end
     return fmlist
  end
+ =#
 
-ForcingModelAndRegion(::Any,cache::BasicILMCache;is_moving=false) = ForcingModelAndRegion(AbstractForcingModel[],cache;is_moving)
+ForcingModelAndRegion(::Any,cache::BasicILMCache) = ForcingModelAndRegion(AbstractForcingModel[],cache)
 
 #=
 Application of forcing

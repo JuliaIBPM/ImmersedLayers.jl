@@ -164,7 +164,8 @@ for details.
 function SurfaceScalarCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid;
                               ddftype = DEFAULT_DDF,
                               scaling = DEFAULT_SCALING,
-                              dtype = DEFAULT_DATA_TYPE) where {N}
+                              dtype = DEFAULT_DATA_TYPE,
+                              L = _get_laplacian(1.0,g,true,scaling;dtype=dtype)) where {N}
 
 	X = points(bl)
   sscalar_cache = nothing
@@ -176,33 +177,15 @@ function SurfaceScalarCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::
   gcurl_cache = Nodes(Dual,size(g), dtype = dtype)
   gdiv_cache = nothing #Nodes(Primal,size(g), dtype = dtype)
 
-	_surfacecache(bl,X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,sscalar_cache,gsnorm_cache,gcurl_cache,gdiv_cache,gdata_cache;dtype=dtype)
-
-end
-
-function SurfaceScalarCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid,L::Laplacian;
-    ddftype = DEFAULT_DDF,
-    scaling = DEFAULT_SCALING,
-    dtype = DEFAULT_DATA_TYPE) where {N}
-
-    X = points(bl)
-    sscalar_cache = nothing
-    sdata_cache = ScalarData(X, dtype = dtype)
-    snorm_cache = VectorData(X, dtype = dtype)
-
-    gsnorm_cache = Edges(Primal,size(g), dtype = dtype)
-    gdata_cache = Nodes(Primal,size(g), dtype = dtype)
-    gcurl_cache = Nodes(Dual,size(g), dtype = dtype)
-    gdiv_cache = nothing #Nodes(Primal,size(g), dtype = dtype)
-
-    _surfacecache(bl,X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,sscalar_cache,gsnorm_cache,gcurl_cache,gdiv_cache,gdata_cache,L;dtype=dtype)
+	_surfacecache(bl,X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,sscalar_cache,gsnorm_cache,gcurl_cache,gdiv_cache,gdata_cache,L;dtype=dtype)
 
 end
 
 function SurfaceVectorCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid;
                               ddftype = DEFAULT_DDF,
                               scaling = DEFAULT_SCALING,
-                              dtype = DEFAULT_DATA_TYPE) where {N}
+                              dtype = DEFAULT_DATA_TYPE,
+                              L = _get_laplacian(1.0,g,true,scaling;dtype=dtype)) where {N}
 
 	X = points(bl)
   sscalar_cache = ScalarData(X, dtype = dtype)
@@ -214,47 +197,20 @@ function SurfaceVectorCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::
 	gcurl_cache = Nodes(Dual,size(g), dtype = dtype)
   gdiv_cache = Nodes(Primal,size(g), dtype = dtype)
 
-	_surfacecache(bl,X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,sscalar_cache,gsnorm_cache,gcurl_cache,gdiv_cache,gdata_cache;dtype=dtype)
+	_surfacecache(bl,X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,sscalar_cache,gsnorm_cache,gcurl_cache,gdiv_cache,gdata_cache,L;dtype=dtype)
 
 end
 
-function SurfaceVectorCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::PhysicalGrid, L::Laplacian;
-    ddftype = DEFAULT_DDF,
-    scaling = DEFAULT_SCALING,
-    dtype = DEFAULT_DATA_TYPE) where {N}
-
-    X = points(bl)
-    sscalar_cache = ScalarData(X, dtype = dtype)
-    sdata_cache = VectorData(X, dtype = dtype)
-    snorm_cache = TensorData(X, dtype = dtype)
-
-    gsnorm_cache = EdgeGradient(Primal,size(g), dtype = dtype)
-    gdata_cache = Edges(Primal,size(g), dtype = dtype)
-    gcurl_cache = Nodes(Dual,size(g), dtype = dtype)
-    gdiv_cache = Nodes(Primal,size(g), dtype = dtype)
-
-    _surfacecache(bl,X,a,nrm,g,ddftype,scaling,sdata_cache,snorm_cache,sscalar_cache,gsnorm_cache,gcurl_cache,gdiv_cache,gdata_cache,L;dtype=dtype)
-
-end
 
 for f in [:SurfaceScalarCache, :SurfaceVectorCache]
   @eval $f(body::Body,g::PhysicalGrid; kwargs...) =
         $f(BodyList([body]),areas(body),normals(body),g; kwargs...)
 
-  @eval $f(body::Body,g::PhysicalGrid,L::Laplacian; kwargs...) =
-        $f(BodyList([body]),areas(body),normals(body),g,L; kwargs...)
-
   @eval $f(bl::BodyList,g::PhysicalGrid; kwargs...) =
         $f(bl,areas(bl),normals(bl),g; kwargs...)
 
-  @eval $f(bl::BodyList,g::PhysicalGrid,L::Laplacian; kwargs...) =
-        $f(bl,areas(bl),normals(bl),g,L; kwargs...)
-
   @eval $f(g::PhysicalGrid;kwargs...) =
         $f(BodyList(),ScalarData(0),VectorData(0),g; kwargs...)
-
-  @eval $f(g::PhysicalGrid,L::Laplacian; kwargs...) =
-        $f(BodyList(),ScalarData(0),VectorData(0),g,L; kwargs...)
 
   @eval function $f(X::VectorData,g::PhysicalGrid; kwargs...)
           x = Vector{Float64}(undef,length(X.u))
@@ -264,13 +220,6 @@ for f in [:SurfaceScalarCache, :SurfaceVectorCache]
           $f(BasicBody(x,y),g; kwargs...)
   end
 
-  @eval function $f(X::VectorData,g::PhysicalGrid,L::Laplacian; kwargs...)
-    x = Vector{Float64}(undef,length(X.u))
-    y = Vector{Float64}(undef,length(X.v))
-    x .= X.u
-    y .= X.v
-    $f(BasicBody(x,y),g,L;kwargs...)
-    end
 
 end
 
@@ -281,7 +230,7 @@ function Base.show(io::IO, H::BasicILMCache{N,SCA}) where {N,SCA}
 end
 
 function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},ddftype,scaling,
-                      sdata_cache,snorm_cache,sscalar_cache,gsnorm_cache,gcurl_cache,gdiv_cache,gdata_cache;dtype=Float64) where {N,ND}
+                      sdata_cache,snorm_cache,sscalar_cache,gsnorm_cache,gcurl_cache,gdiv_cache,gdata_cache,L;dtype=Float64) where {N,ND}
 
 
   regop = _get_regularization(X,a,g,ddftype,scaling)
@@ -297,10 +246,6 @@ function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},d
   Rdiv = _regularization_matrix(regop,sscalar_cache,gdiv_cache )
   Ediv = _interpolation_matrix(regop, gdiv_cache,sscalar_cache)
 
-  coeff_factor = 1.0
-  with_inverse = true
-  L = _get_laplacian(coeff_factor,g,with_inverse,scaling;dtype=dtype)
-
   xg = _x_grid(gdata_cache,g)
   yg = _y_grid(gdata_cache,g)
 
@@ -312,37 +257,6 @@ function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},d
                        _similar(gcurl_cache),_similar(gdiv_cache),_similar(gdata_cache),
                        xg,yg,
                        _similar(snorm_cache),_similar(snorm_cache),_similar(sdata_cache),_similar(sscalar_cache))
-
-end
-
-function _surfacecache(bl::BodyList,X::VectorData{N},a,nrm,g::PhysicalGrid{ND},ddftype,scaling,
-    sdata_cache,snorm_cache,sscalar_cache,gsnorm_cache,gcurl_cache,gdiv_cache,gdata_cache,L;dtype=Float64) where {N,ND}
-
-
-    regop = _get_regularization(X,a,g,ddftype,scaling)
-    Rsn = _regularization_matrix(regop,snorm_cache,gsnorm_cache)
-    Esn = _interpolation_matrix(regop, gsnorm_cache, snorm_cache)
-
-    R = _regularization_matrix(regop,sdata_cache,gdata_cache )
-    E = _interpolation_matrix(regop, gdata_cache,sdata_cache)
-
-    Rcurl = _regularization_matrix(regop,sscalar_cache,gcurl_cache )
-    Ecurl = _interpolation_matrix(regop, gcurl_cache,sscalar_cache)
-
-    Rdiv = _regularization_matrix(regop,sscalar_cache,gdiv_cache )
-    Ediv = _interpolation_matrix(regop, gdiv_cache,sscalar_cache)
-
-    xg = _x_grid(gdata_cache,g)
-    yg = _y_grid(gdata_cache,g)
-
-    return BasicILMCache{N,scaling,typeof(gdata_cache),ND,typeof(bl),typeof(nrm),typeof(a),typeof(regop),
-                         typeof(Rsn),typeof(Esn),typeof(R),typeof(E),typeof(Rcurl),typeof(Ecurl),typeof(Rdiv),typeof(Ediv),typeof(L),
-                         typeof(gsnorm_cache),typeof(gcurl_cache),typeof(gdiv_cache),typeof(snorm_cache),typeof(sdata_cache),typeof(sscalar_cache)}(
-                         g,bl,X,nrm,a,regop,Rsn,Esn,R,E,Rcurl,Ecurl,Rdiv,Ediv,L,
-                         _similar(gsnorm_cache),_similar(gsnorm_cache),
-                         _similar(gcurl_cache),_similar(gdiv_cache),_similar(gdata_cache),
-                         xg,yg,
-                         _similar(snorm_cache),_similar(snorm_cache),_similar(sdata_cache),_similar(sscalar_cache))
 
 end
 

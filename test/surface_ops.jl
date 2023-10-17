@@ -28,7 +28,7 @@ _size(::CartesianGrids.Laplacian{NX,NY}) where {NX,NY} = NX, NY
 @testset "Forming a cache" begin
   scache1 = SurfaceScalarCache(body,g,scaling=GridScaling)
   scache2 = SurfaceScalarCache(X,g,scaling=GridScaling)
-  scache3 = SurfaceScalarCache(body,g,L;scaling=GridScaling)
+  scache3 = SurfaceScalarCache(body,g;scaling=GridScaling,L=L)
   @test normals(scache1) ≈ normals(scache2)
   @test normals(scache1) ≈ normals(scache3)
   @test areas(scache1) ≈ areas(scache2)
