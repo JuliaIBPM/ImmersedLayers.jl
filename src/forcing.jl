@@ -353,11 +353,17 @@ function ForcingModelAndRegion(flist::Vector{T},cache::BasicILMCache;is_moving=f
     ForcingModelAndRegion(flist,cache,Val(is_moving),is_moving)
 end
 
+<<<<<<< HEAD
 ForcingModelAndRegion(flist,cache,::Val{false},is_moving) = ForcingModelAndRegion(flist,cache)
 ForcingModelAndRegion(flist,cache,::Val{true},is_moving) = ForcingModelAndRegion(flist,cache,is_moving)
 
+=======
+ForcingModelAndRegion(flist,cache,::Val{false},is_moving) = ForcingModelAndRegion_(flist,cache)
+ForcingModelAndRegion(flist,cache,::Val{true},is_moving) = ForcingModelAndRegion_(flist,cache,is_moving)
+>>>>>>> 0de130b86b14df8c28daae933dcb0c430d88a199
 
-function ForcingModelAndRegion(flist::Vector{T},cache::BasicILMCache) where {T<: AbstractForcingModel}
+
+function ForcingModelAndRegion_(flist::Vector{T},cache::BasicILMCache) where {T<: AbstractForcingModel}
    fmlist = ForcingModelAndRegion[]
    for f in flist
      push!(fmlist,_forcingmodelandregion(f,cache))
@@ -365,7 +371,11 @@ function ForcingModelAndRegion(flist::Vector{T},cache::BasicILMCache) where {T<:
    return fmlist
 end
 
+<<<<<<< HEAD
 function ForcingModelAndRegion(flist::Vector{T},cache::BasicILMCache,is_moving) where {T<: AbstractForcingModel}
+=======
+function ForcingModelAndRegion_(flist::Vector{T},cache::BasicILMCache,is_moving) where {T<: AbstractForcingModel}
+>>>>>>> 0de130b86b14df8c28daae933dcb0c430d88a199
     fmlist = ForcingModelAndRegion[]
     for f in flist
       push!(fmlist,_forcingmodelandregion(f,cache,is_moving))
