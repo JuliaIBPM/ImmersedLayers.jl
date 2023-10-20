@@ -299,7 +299,6 @@ struct ForcingModelAndRegion{RT<:AbstractRegionCache,ST,MT,KT}
 end
 
 function _forcingmodelandregion(::AbstractForcingModel,::BasicILMCache) end
-function _forcingmodelandregion(::AbstractForcingModel,::BasicILMCache,::Bool) end
 
 for f in [:Area,:Line,:Point]
   modtype = Symbol(string(f)*"ForcingModel")
