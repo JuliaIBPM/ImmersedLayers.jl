@@ -189,38 +189,38 @@ for f in [:Scalar,:Vector]
     cname = Symbol("Surface"*string(f)*"Cache")
     pcname = Symbol(string(f)*"PointCollectionCache")
     gdtype = Symbol(string(f)*"GridData")
-    @eval function AreaRegionCache(g::PhysicalGrid,shape::BodyList,data_prototype::$gdtype;spatialfield=nothing,kwargs...)
-        cache = $cname(shape,g;kwargs...)
+    @eval function _arearegioncache(g::PhysicalGrid,shape::BodyList,data_prototype::$gdtype,L::Laplacian;spatialfield=nothing,kwargs...)
+        cache = $cname(shape,g;L=L,kwargs...)
         m = mask(cache)
         str = similar_grid(cache)
         gf = _generatedfield(str,spatialfield,g)
         return AreaRegionCache{typeof(m),typeof(str),typeof(gf),typeof(cache)}(m,str,gf,cache)
     end
 
-    @eval function AreaRegionCache(g::PhysicalGrid,data_prototype::$gdtype;spatialfield=nothing,kwargs...)
-        cache = $cname(g;kwargs...)
+    @eval function _arearegioncache(g::PhysicalGrid,data_prototype::$gdtype,L::Laplacian;spatialfield=nothing,kwargs...)
+        cache = $cname(g;L=L,kwargs...)
         m = mask(cache)
         str = similar_grid(cache)
         gf = _generatedfield(str,spatialfield,g)
         return AreaRegionCache{typeof(m),typeof(str),typeof(gf),typeof(cache)}(m,str,gf,cache)
     end
 
-    @eval function LineRegionCache(g::PhysicalGrid,shape::BodyList,data_prototype::$gdtype;kwargs...)
-        cache = $cname(shape,g;kwargs...)
+    @eval function _lineregioncache(g::PhysicalGrid,shape::BodyList,data_prototype::$gdtype,L::Laplacian;kwargs...)
+        cache = $cname(shape,g;L=L,kwargs...)
         pts = points(shape)
         s = arcs(shape)
         str = similar_surface(cache)
         return LineRegionCache{typeof(s),typeof(str),typeof(cache)}(s,str,cache)
     end
 
-    @eval function PointRegionCache(g::PhysicalGrid,pts::VectorData,data_prototype::$gdtype;kwargs...)
+    @eval function _pointregioncache(g::PhysicalGrid,pts::VectorData,data_prototype::$gdtype;kwargs...)
         cache = $pcname(pts,g;kwargs...)
 
         str = similar(cache.sdata_cache)
         return PointRegionCache{typeof(str),typeof(cache)}(str,cache)
     end
 
-    @eval function PointRegionCache(g::PhysicalGrid,pts::Function,data_prototype::$gdtype;kwargs...)
+    @eval function _pointregioncache(g::PhysicalGrid,pts::Function,data_prototype::$gdtype;kwargs...)
         cache = $pcname(VectorData(0),g;kwargs...)
 
         str = similar(cache.sdata_cache)
@@ -230,19 +230,20 @@ for f in [:Scalar,:Vector]
 end
 
 for f in [:AreaRegionCache,:LineRegionCache]
-    @eval $f(shape::Union{Body,BodyList},cache::BasicILMCache{N,SCA};scaling=SCA,kwargs...) where {N,SCA} = $f(cache.g,shape,similar_grid(cache);scaling=scaling,kwargs...)
-    @eval $f(g::PhysicalGrid,shape::Body,a...;kwargs...) = $f(g,BodyList([shape]),a...;kwargs...)
+    underscore_f = Symbol("_"*lowercase(string(f)))
+    @eval $f(shape::Union{Body,BodyList},cache::BasicILMCache{N,SCA};scaling=SCA,kwargs...) where {N,SCA} = $underscore_f(cache.g,shape,similar_grid(cache),cache.L;scaling=scaling,kwargs...)
+    @eval $underscore_f(g::PhysicalGrid,shape::Body,a...;kwargs...) = $underscore_f(g,BodyList([shape]),a...;kwargs...)
 end
 
 AreaRegionCache(cache::AbstractBasicCache;kwargs...) =
-      AreaRegionCache(cache.g,similar_grid(cache);kwargs...)
+      _arearegioncache(cache.g,similar_grid(cache),cache.L;kwargs...)
 
 AreaRegionCache(::Any,cache::AbstractBasicCache;kwargs...) =
       AreaRegionCache(cache;kwargs...)
 
 
 PointRegionCache(pts::Union{VectorData,Function},cache::AbstractBasicCache;kwargs...) =
-      PointRegionCache(cache.g,pts,similar_grid(cache);kwargs...)
+      _pointregioncache(cache.g,pts,similar_grid(cache);kwargs...)
 
 
 _generatedfield(field_prototype::GridData,s,g::PhysicalGrid) = nothing
@@ -308,7 +309,9 @@ for f in [:Area,:Line,:Point]
   end
 end
 
+
 ForcingModelAndRegion(f::AbstractForcingModel,cache::BasicILMCache) = ForcingModelAndRegion(AbstractForcingModel[f],cache)
+
 
 function ForcingModelAndRegion(flist::Vector{T},cache::BasicILMCache) where {T<: AbstractForcingModel}
    fmlist = ForcingModelAndRegion[]

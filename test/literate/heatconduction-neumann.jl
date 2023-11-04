@@ -85,7 +85,7 @@ depends on the field itself. Here, it does not, but simply implements
 the volumetric heating function, $q''$.
 =#
 function heatconduction_ode_explicit_rhs!(dT,T,x,sys::ILMSystem,t)
-    @unpack extra_cache, base_cache = sys
+    @unpack extra_cache, base_cache, phys_params = sys
     @unpack fcache, Ttmp = extra_cache
 
     fill!(dT,0.0)

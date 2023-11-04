@@ -89,7 +89,7 @@ the volumetric heating function, $q''$.
 
 ````@example heatconduction-neumann
 function heatconduction_ode_explicit_rhs!(dT,T,x,sys::ILMSystem,t)
-    @unpack extra_cache, base_cache = sys
+    @unpack extra_cache, base_cache, phys_params = sys
     @unpack fcache, Ttmp = extra_cache
 
     fill!(dT,0.0)

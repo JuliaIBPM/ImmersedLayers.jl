@@ -1,4 +1,5 @@
 using LinearAlgebra
+using CartesianGrids
 
 Δx = 0.04
 Lx = 4.0
@@ -16,6 +17,10 @@ w = Nodes(Dual,size(g))
 q = Edges(Primal,size(g))
 f = ScalarData(X)
 
+coeff_factor = 1.0
+with_inverse = true
+L = CartesianGrids.plan_laplacian(g,with_inverse=with_inverse,factor=coeff_factor/cellsize(g)^2,dtype=Float64)
+
 angs(n) = range(0,2π,length=n+1)[1:n]
 
 _size(::CartesianGrids.Laplacian{NX,NY}) where {NX,NY} = NX, NY
@@ -23,9 +28,13 @@ _size(::CartesianGrids.Laplacian{NX,NY}) where {NX,NY} = NX, NY
 @testset "Forming a cache" begin
   scache1 = SurfaceScalarCache(body,g,scaling=GridScaling)
   scache2 = SurfaceScalarCache(X,g,scaling=GridScaling)
+  scache3 = SurfaceScalarCache(body,g;scaling=GridScaling,L=L)
   @test normals(scache1) ≈ normals(scache2)
+  @test normals(scache1) ≈ normals(scache3)
   @test areas(scache1) ≈ areas(scache2)
+  @test areas(scache1) ≈ areas(scache3)
   @test points(scache1) ≈ points(scache2)
+  @test points(scache1) ≈ points(scache3)
 
   @test size(g) == _size(scache1.L)
 end
