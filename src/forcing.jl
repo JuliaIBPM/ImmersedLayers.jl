@@ -329,88 +329,88 @@ Application of forcing
 
 
 """
-    apply_forcing!(out,x,t,fv::Vector{ForcingModelAndRegion},phys_params)
+    apply_forcing!(out,y,x,t,fv::Vector{ForcingModelAndRegion},phys_params)
 
 Return the total contribution of forcing in the vector `fv` to `out`,
-based on the current state `x`, time `t`, and physical parameters in `phys_params`.
+based on the current state `y`, auxiliary state 'x', time `t`, and physical parameters in `phys_params`.
 Note that `out` is zeroed before the contributions are added.
 """
-function apply_forcing!(out,x,t,fr::Vector{<:ForcingModelAndRegion},phys_params)
+function apply_forcing!(out,y,x,t,fr::Vector{<:ForcingModelAndRegion},phys_params)
     fill!(out,0.0)
     for f in fr
-        _apply_forcing!(out,x,t,f,phys_params)
+        _apply_forcing!(out,y,x,t,f,phys_params)
     end
     return out
 end
 
 """
-    apply_forcing!(dx,x,t,f::ForcingModelAndRegion,phys_params)
+    apply_forcing!(dy,y,x,t,f::ForcingModelAndRegion,phys_params)
 
-Return the contribution of forcing in `f` to the right-hand side `dx`
-based on the current state `x`, time `t`, and physical parameters in `phys_params`.
+Return the contribution of forcing in `f` to the right-hand side `dy`
+based on the current state `y`, auxiliary state 'x', time `t`, and physical parameters in `phys_params`.
 """
-apply_forcing!(dx,x,t,fr::ForcingModelAndRegion,phys_params) = apply_forcing!(dx,x,t,[fr],phys_params)
+apply_forcing!(dy,y,x,t,fr::ForcingModelAndRegion,phys_params) = apply_forcing!(dy,y,x,t,[fr],phys_params)
 
 #=
 The following define how forcing of each type get applied. Each one
 calls the forcing model to determine the strength.
 =#
 
-function _apply_forcing!(dx,x,t,fcache::ForcingModelAndRegion{<:AreaRegionCache},phys_params)
+function _apply_forcing!(dy,y,x,t,fcache::ForcingModelAndRegion{<:AreaRegionCache},phys_params)
     @unpack region_cache, fcn = fcache
     @unpack str = region_cache
 
     fill!(str,0.0)
-    fcn(str,x,t,region_cache,phys_params)
+    fcn(str,y,t,region_cache,phys_params)
 
-    dx .+= str.*mask(region_cache)
-    return dx
+    dy .+= str.*mask(region_cache)
+    return dy
 end
 
-function _apply_forcing!(dx,x,t,fcache::ForcingModelAndRegion{<:LineRegionCache},phys_params)
+function _apply_forcing!(dy,y,x,t,fcache::ForcingModelAndRegion{<:LineRegionCache},phys_params)
     @unpack region_cache, fcn = fcache
     @unpack str, cache = region_cache
 
     fill!(str,0.0)
-    fcn(str,x,t,region_cache,phys_params)
+    fcn(str,y,t,region_cache,phys_params)
 
     fill!(cache.gdata_cache,0.0)
     regularize!(cache.gdata_cache,str,cache)
-    dx .+= cache.gdata_cache
-    return dx
+    dy .+= cache.gdata_cache
+    return dy
 end
 
-function _apply_forcing!(dx,x,t,fcache::ForcingModelAndRegion{<:PointRegionCache,T},phys_params) where T
+function _apply_forcing!(dy,y,x,t,fcache::ForcingModelAndRegion{<:PointRegionCache,T},phys_params) where T
     @unpack region_cache, fcn = fcache
     @unpack str, cache = region_cache
     @unpack regop = cache
 
     fill!(str,0.0)
-    fcn(str,x,t,region_cache,phys_params)
+    fcn(str,y,t,region_cache,phys_params)
 
     fill!(cache.gdata_cache,0.0)
     regop(cache.gdata_cache,str)
-    dx .+= cache.gdata_cache
-    return dx
+    dy .+= cache.gdata_cache
+    return dy
 end
 
-function _apply_forcing!(dx,x,t,fcache::ForcingModelAndRegion{<:PointRegionCache,<:Function},phys_params)
+function _apply_forcing!(dy,y,x,t,fcache::ForcingModelAndRegion{<:PointRegionCache,<:Function},phys_params)
     @unpack region_cache, shape, fcn, kwargs = fcache
     @unpack cache = region_cache
 
     # `shape` is a function in this case, used to obtain the point coordinates
     # Use is to to generate an instantaneous PointRegionCache
-    _pts = shape(x,t,region_cache,phys_params)
+    _pts = shape(y,t,region_cache,phys_params)
     typeof(_pts) <: Tuple ? pts = VectorData(_pts...) : pts = _pts
     new_region_cache = PointRegionCache(pts,cache;kwargs...)
     @unpack str, cache = new_region_cache
     @unpack regop = cache
 
     fill!(str,0.0)
-    fcn(str,x,t,region_cache,phys_params)
+    fcn(str,y,t,region_cache,phys_params)
 
     fill!(cache.gdata_cache,0.0)
     regop(cache.gdata_cache,str)
-    dx .+= cache.gdata_cache
-    return dx
+    dy .+= cache.gdata_cache
+    return dy
 end

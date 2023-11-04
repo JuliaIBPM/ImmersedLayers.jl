@@ -263,11 +263,14 @@ function ImmersedLayers.solve(prob::DirichletPoissonProblem,sys::ILMSystem)
 
     f = zeros_grid(base_cache)
     s = zeros_surface(base_cache)
+    x = nothing
+    t = 0.0
 
     ## apply_forcing! evaluates the forcing field on the grid and put
-    ## the result in the `gdata_cache`.
+    ## the result in the `gdata_cache`. The arguments `x` and `t`
+    ## are not needed in this example
     fill!(gdata_cache,0.0)
-    apply_forcing!(gdata_cache,f,0.0,forcing_cache,phys_params)
+    apply_forcing!(gdata_cache,f,x,t,forcing_cache,phys_params)
 
     ## Get the prescribed jump in boundary data across the interface using
     ## the functions we supplied via the `Dict`.
