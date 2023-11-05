@@ -90,7 +90,7 @@ function heatconduction_ode_explicit_rhs!(dT,T,x,sys::ILMSystem,t)
 
     fill!(dT,0.0)
     ## Compute the contribution from the forcing models to the right-hand side
-    apply_forcing!(dT,T,x,t,fcache,phys_params)
+    apply_forcing!(dT,T,x,t,fcache,sys)
 
     return dT
 end

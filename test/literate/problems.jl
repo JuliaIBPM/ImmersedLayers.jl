@@ -270,7 +270,7 @@ function ImmersedLayers.solve(prob::DirichletPoissonProblem,sys::ILMSystem)
     ## the result in the `gdata_cache`. The arguments `x` and `t`
     ## are not needed in this example
     fill!(gdata_cache,0.0)
-    apply_forcing!(gdata_cache,f,x,t,forcing_cache,phys_params)
+    apply_forcing!(gdata_cache,f,x,t,forcing_cache,sys)
 
     ## Get the prescribed jump in boundary data across the interface using
     ## the functions we supplied via the `Dict`.

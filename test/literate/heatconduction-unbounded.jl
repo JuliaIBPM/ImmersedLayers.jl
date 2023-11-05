@@ -159,7 +159,7 @@ function heatconduction_rhs!(dT,T,x,sys::ILMSystem,t)
 
     ## Compute the contribution from the forcing models to the right-hand side
     fill!(dT_tmp,0.0)
-    apply_forcing!(dT_tmp,T,x,t,fcache,phys_params)
+    apply_forcing!(dT_tmp,T,x,t,fcache,sys)
     dT .+= dT_tmp
 
     return dT

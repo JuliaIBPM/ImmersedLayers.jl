@@ -19,20 +19,23 @@ for ftype in [:Area,:Line,:Point]
     eval(quote
       export $fmname
 
-      struct $fmname{RT,KT,MDT<:Function} <: AbstractForcingModel
+      struct $fmname{RT,TT,KT,MDT<:Function} <: AbstractForcingModel
           shape :: RT
+          transform :: TT
           kwargs :: KT
           fcn :: MDT
-          $fmname(shape,fcn;kwargs...) = new{typeof(shape),typeof(kwargs),typeof(fcn)}(shape,kwargs,fcn)
+          $fmname(shape,transform,fcn;kwargs...) = 
+                    new{typeof(shape),typeof(transform),typeof(kwargs),typeof(fcn)}(shape,transform,kwargs,fcn)
       end
 
     end)
 end
 
 """
-      AreaForcingModel(shape::Union{Body,BodyList},model_function!)
+      AreaForcingModel(shape::Union{Body,BodyList},transform::MotionTransform,model_function!)
 
-  Bundles a `shape` (i.e., a `Body`, `BodyList`,) and a `model_function!` (a function
+  Bundles a `shape` (i.e., a `Body`, `BodyList`,), a `transform` (to specify where to
+  place the shape), and a `model_function!` (a function
   that returns the strength of the forcing) for area-type forcing.
   `model_function!` must be in-place with a signature of the form
 
@@ -48,7 +51,7 @@ end
   an `AbstractSpatialField` to help in evaluating the strength.
   (The resulting field is available to `model_function!` in the `generated_field` field
     of `fcache`.)
-""" AreaForcingModel(::Union{Body,BodyList},::Function)
+""" AreaForcingModel(::Union{Body,BodyList},::MotionTransform,::Function)
 
 """
     AreaForcingModel(model_function!)
@@ -70,12 +73,13 @@ end
   (The resulting field is available to `model_function!` in the `generated_field` field
     of `fcache`.)
 """
-AreaForcingModel(fcn::Function;kwargs...) = AreaForcingModel(nothing,fcn;kwargs...)
+AreaForcingModel(fcn::Function;kwargs...) = AreaForcingModel(nothing,nothing,fcn;kwargs...)
 
 """
-      LineForcingModel(shape::Union{Body,BodyList},model_function!)
+      LineForcingModel(shape::Union{Body,BodyList},transform::MotionTransform,model_function!)
 
-  Bundles a `shape` (i.e., a `Body`, `BodyList`,) and a `model_function!` (a function
+  Bundles a `shape` (i.e., a `Body`, `BodyList`,), a `transform` (to specify where to
+  place the shape), and a `model_function!` (a function
   that returns the strength of the forcing) for line-type forcing.
   `model_function!` must be in-place with a signature of the form
 
@@ -87,12 +91,13 @@ AreaForcingModel(fcn::Function;kwargs...) = AreaForcingModel(nothing,fcn;kwargs.
   be utilized to compute the strength.
 
   The keyword `ddftype =` can be used to specify the type of DDF.
-""" LineForcingModel(::Union{Body,BodyList},::Function)
+""" LineForcingModel(::Union{Body,BodyList},::MotionTransform,::Function)
 
 """
-      PointForcingModel(pts::VectorData,model_function!)
+      PointForcingModel(pts::VectorData,transform::MotionTransform,model_function!)
 
-  Bundles point coordinates `pts` and a `model_function!` (a function
+  Bundles point coordinates `pts`, a `transform` (to specify where the origin of the points'
+  coordinate system is relative to the inertial system's origin), and a `model_function!` (a function
   that returns the strength of the forcing) for point-type forcing.
   `model_function!` must be in-place with a signature of the form
 
@@ -104,12 +109,14 @@ AreaForcingModel(fcn::Function;kwargs...) = AreaForcingModel(nothing,fcn;kwargs.
   be utilized to compute the strength.
 
   The keyword `ddftype =` can be used to specify the type of DDF.
-""" PointForcingModel(::VectorData,::Function)
+""" PointForcingModel(::VectorData,::MotionTransform,::Function)
 
 """
-    PointForcingModel(point_function::Function,model_function!::Function)
+    PointForcingModel(point_function::Function,transform::MotionTransform,model_function!::Function)
 
-Bundles a `point_function` (a function that returns the positions of forcing points)
+Bundles a `point_function` (a function that returns the positions of forcing points), a `transform`
+(to specify where the origin of the points'
+coordinate system is relative to the inertial system's origin),
 and a `model_function` (a function that returns the strength of the forcing) for point-type forcing.
 
   `point_function` must have an out-of-place signature of the form
@@ -126,7 +133,7 @@ and a `model_function` (a function that returns the strength of the forcing) for
       model_function!(str,state,t,fcache,phys_params)
 
   where `str` is the strength to be returned.
-""" PointForcingModel(::Function,::Function)
+""" PointForcingModel(::Function,::MotionTransform,::Function)
 
 
 #=
@@ -282,18 +289,19 @@ Assembly of the forcing model and forcing region
 A type that holds the forcing model function, region, and cache
 # Constructors
 
-`ForcingModelAndRegion(model::AbstractForcingModel,cache::BasicILMCache)`
+`ForcingModelAndRegion(model::AbstractForcingModel,cache::BasicILMCache;Xref_to_i=)`
 
 `ForcingModelAndRegion(modellist::Vector{AbstractForcingModel},cache::BasicILMCache)`
 
-These forms gets called generally when building the extra cache. They
+These forms generally get called when building the extra cache. They
 also gracefully generate an empty list of models if one passes along `nothing`
 in the first argument.
 """ ForcingModelAndRegion(::AbstractForcingModel,::BasicILMCache)
 
-struct ForcingModelAndRegion{RT<:AbstractRegionCache,ST,MT,KT}
+struct ForcingModelAndRegion{RT<:AbstractRegionCache,ST,TT,MT,KT}
     region_cache :: RT
     shape :: ST
+    transform :: TT
     fcn :: MT
     kwargs :: KT
 end
@@ -303,25 +311,29 @@ function _forcingmodelandregion(::AbstractForcingModel,::BasicILMCache) end
 for f in [:Area,:Line,:Point]
   modtype = Symbol(string(f)*"ForcingModel")
   regcache = Symbol(string(f)*"RegionCache")
-  @eval function _forcingmodelandregion(model::$modtype,cache::BasicILMCache)
-      region_cache = $regcache(model.shape,cache;model.kwargs...)
-      ForcingModelAndRegion(region_cache,model.shape,model.fcn,model.kwargs)
+
+  # This allows it to generate a new forcing cache or regenerate one from an old one
+  @eval function _forcingmodelandregion(model::Union{$modtype,ForcingModelAndRegion{T}},Xi_to_ref::MotionTransform,cache::BasicILMCache) where {T<:$regcache}
+      shape = deepcopy(model.shape)
+      update_body!(shape,model.transform*inv(Xi_to_ref))
+      region_cache = $regcache(shape,cache;model.kwargs...)
+      ForcingModelAndRegion(region_cache,model.shape,model.transform,model.fcn,model.kwargs)
   end
 end
 
 
-ForcingModelAndRegion(f::AbstractForcingModel,cache::BasicILMCache) = ForcingModelAndRegion(AbstractForcingModel[f],cache)
+ForcingModelAndRegion(f::AbstractForcingModel,cache::BasicILMCache;kwargs...) = ForcingModelAndRegion(AbstractForcingModel[f],cache;kwargs...)
 
 
-function ForcingModelAndRegion(flist::Vector{T},cache::BasicILMCache) where {T<: AbstractForcingModel}
+function ForcingModelAndRegion(flist::Vector{T},cache::BasicILMCache;Xi_to_ref=MotionTransform{2}()) where {T<: Union{AbstractForcingModel,ForcingModelAndRegion}}
    fmlist = ForcingModelAndRegion[]
    for f in flist
-     push!(fmlist,_forcingmodelandregion(f,cache))
+     push!(fmlist,_forcingmodelandregion(f,Xi_to_ref,cache))
    end
    return fmlist
 end
 
-ForcingModelAndRegion(::Any,cache::BasicILMCache) = ForcingModelAndRegion(AbstractForcingModel[],cache)
+ForcingModelAndRegion(::Any,cache::BasicILMCache;kwargs...) = ForcingModelAndRegion(AbstractForcingModel[],cache;kwargs...)
 
 #=
 Application of forcing
@@ -329,34 +341,47 @@ Application of forcing
 
 
 """
-    apply_forcing!(out,y,x,t,fv::Vector{ForcingModelAndRegion},phys_params)
+    apply_forcing!(out,y,x,t,fv::Vector{ForcingModelAndRegion},sys::ILMSystem)
 
 Return the total contribution of forcing in the vector `fv` to `out`,
-based on the current state `y`, auxiliary state 'x', time `t`, and physical parameters in `phys_params`.
+based on the current state `y`, auxiliary state 'x', time `t`, and ILM system `sys`.
 Note that `out` is zeroed before the contributions are added.
 """
-function apply_forcing!(out,y,x,t,fr::Vector{<:ForcingModelAndRegion},phys_params)
+apply_forcing!(out,y,x,t,fr::Vector{<:ForcingModelAndRegion},sys::ILMSystem) = 
+            apply_forcing!(out,y,x,t,fr,sys.phys_params,sys.motions,sys.base_cache)
+
+function apply_forcing!(out,y,x,t,fr::Vector{<:ForcingModelAndRegion},phys_params,motions,base_cache::BasicILMCache)
+    @unpack reference_body, m = motions
+    fr_updated = _regenerate_forcing_cache(fr,x,m,base_cache,Val(reference_body))
     fill!(out,0.0)
-    for f in fr
-        _apply_forcing!(out,y,x,t,f,phys_params)
+    for f in fr_updated
+        _apply_forcing!(out,y,t,f,phys_params)
     end
     return out
 end
 
+_regenerate_forcing_cache(fr,x,m,cache,::Val{0}) = fr
+
+function _regenerate_forcing_cache(fr,x,m,cache,::Val{N}) where {N}
+    Xl = body_transforms(x,m)
+    ForcingModelAndRegion(fr,cache;Xi_to_ref=Xl[N])
+end
+
+
 """
-    apply_forcing!(dy,y,x,t,f::ForcingModelAndRegion,phys_params)
+    apply_forcing!(dy,y,x,t,f::ForcingModelAndRegion,sys::ILMSystem)
 
 Return the contribution of forcing in `f` to the right-hand side `dy`
-based on the current state `y`, auxiliary state 'x', time `t`, and physical parameters in `phys_params`.
+based on the current state `y`, auxiliary state 'x', time `t`, and ILM system `sys`.
 """
-apply_forcing!(dy,y,x,t,fr::ForcingModelAndRegion,phys_params) = apply_forcing!(dy,y,x,t,[fr],phys_params)
+apply_forcing!(dy,y,x,t,fr::ForcingModelAndRegion,a...) = apply_forcing!(dy,y,x,t,[fr],a...)
 
 #=
 The following define how forcing of each type get applied. Each one
 calls the forcing model to determine the strength.
 =#
 
-function _apply_forcing!(dy,y,x,t,fcache::ForcingModelAndRegion{<:AreaRegionCache},phys_params)
+function _apply_forcing!(dy,y,t,fcache::ForcingModelAndRegion{<:AreaRegionCache},phys_params)
     @unpack region_cache, fcn = fcache
     @unpack str = region_cache
 
@@ -367,7 +392,7 @@ function _apply_forcing!(dy,y,x,t,fcache::ForcingModelAndRegion{<:AreaRegionCach
     return dy
 end
 
-function _apply_forcing!(dy,y,x,t,fcache::ForcingModelAndRegion{<:LineRegionCache},phys_params)
+function _apply_forcing!(dy,y,t,fcache::ForcingModelAndRegion{<:LineRegionCache},phys_params)
     @unpack region_cache, fcn = fcache
     @unpack str, cache = region_cache
 
@@ -380,7 +405,7 @@ function _apply_forcing!(dy,y,x,t,fcache::ForcingModelAndRegion{<:LineRegionCach
     return dy
 end
 
-function _apply_forcing!(dy,y,x,t,fcache::ForcingModelAndRegion{<:PointRegionCache,T},phys_params) where T
+function _apply_forcing!(dy,y,t,fcache::ForcingModelAndRegion{<:PointRegionCache,T},phys_params) where T
     @unpack region_cache, fcn = fcache
     @unpack str, cache = region_cache
     @unpack regop = cache
@@ -394,7 +419,7 @@ function _apply_forcing!(dy,y,x,t,fcache::ForcingModelAndRegion{<:PointRegionCac
     return dy
 end
 
-function _apply_forcing!(dy,y,x,t,fcache::ForcingModelAndRegion{<:PointRegionCache,<:Function},phys_params)
+function _apply_forcing!(dy,y,t,fcache::ForcingModelAndRegion{<:PointRegionCache,<:Function},phys_params)
     @unpack region_cache, shape, fcn, kwargs = fcache
     @unpack cache = region_cache
 

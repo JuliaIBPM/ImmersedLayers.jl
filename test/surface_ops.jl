@@ -494,9 +494,10 @@ end
    T = zeros_grid(scache)
    dT = similar_grid(scache)
    x = nothing
+   motions = nothing
    t = 0.0
 
-   apply_forcing!(dT,T,x,t,fcache,phys_params)
+   apply_forcing!(dT,T,x,t,fcache,phys_params,motions,scache)
 
 
    function point_function(T,t,fr::PointRegionCache,phys_params)
@@ -510,28 +511,29 @@ end
    T2 = zeros_grid(scache)
    dT2 = similar_grid(scache)
    x = nothing
+   motions = nothing
    t = 0.0
 
-   apply_forcing!(dT,T,x,t,fcache,phys_params)
-   apply_forcing!(dT2,T2,x,t,fcache2,phys_params)
+   apply_forcing!(dT,T,x,t,fcache,phys_params,motions,scache)
+   apply_forcing!(dT2,T2,x,t,fcache2,phys_params,motions,scache)
 
    @test dT == dT2
 
    str = [1.0,-1.0,2.0]
 
-   @test_throws DimensionMismatch apply_forcing!(dT2,T2,x,t,fcache2,phys_params)
+   @test_throws DimensionMismatch apply_forcing!(dT2,T2,x,t,fcache2,phys_params,motions,scache)
 
    # Area forcing with no shape mask
     afm = AreaForcingModel(model1!)
     fcache = ForcingModelAndRegion(afm,scache)
-    apply_forcing!(dT,T,x,t,fcache,phys_params)
+    apply_forcing!(dT,T,x,t,fcache,phys_params,motions,scache)
 
     function model6!(σ,T,t,fr::AreaRegionCache,phys_params)
         σ .= fr.generated_field()
      end
     afm = AreaForcingModel(model6!,spatialfield=SpatialGaussian(0.5,0.1,0,0,10))
     fcache = ForcingModelAndRegion(afm,scache)
-    apply_forcing!(dT,T,x,t,fcache,phys_params)
+    apply_forcing!(dT,T,x,t,fcache,phys_params,motions,scache)
 
     @test dT == fcache[1].region_cache.generated_field()
 
