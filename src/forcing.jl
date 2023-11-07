@@ -295,14 +295,15 @@ A type that holds the forcing model function, region, and cache
 
 `ForcingModelAndRegion(modellist::Vector{AbstractForcingModel},cache::BasicILMCache)`
 
-These forms gets called generally when building the extra cache. They
+These forms generally get called when building the extra cache. They
 also gracefully generate an empty list of models if one passes along `nothing`
 in the first argument.
 """ ForcingModelAndRegion(::AbstractForcingModel,::BasicILMCache)
 
-struct ForcingModelAndRegion{RT<:AbstractRegionCache,ST,MT,KT}
+struct ForcingModelAndRegion{RT<:AbstractRegionCache,ST,TT,MT,KT}
     region_cache :: RT
     shape :: ST
+    transform :: TT
     fcn :: MT
     kwargs :: KT
 end
@@ -314,7 +315,7 @@ for f in [:Area,:Line,:Point]
   regcache = Symbol(string(f)*"RegionCache")
   @eval function _forcingmodelandregion(model::$modtype,cache::BasicILMCache)
       region_cache = $regcache(model.shape,cache;model.kwargs...)
-      ForcingModelAndRegion(region_cache,model.shape,model.fcn,model.kwargs)
+      ForcingModelAndRegion{typeof(region_cache),typeof(model.shape),typeof(model.transform),typeof(model.fcn),typeof(model.kwargs)}(region_cache,model.shape,model.transform,model.fcn,model.kwargs)
   end
 end
 
