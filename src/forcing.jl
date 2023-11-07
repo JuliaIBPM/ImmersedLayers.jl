@@ -19,11 +19,15 @@ for ftype in [:Area,:Line,:Point]
     eval(quote
       export $fmname
 
-      struct $fmname{RT,KT,MDT<:Function} <: AbstractForcingModel
+      struct $fmname{RT,TT,KT,MDT<:Function} <: AbstractForcingModel
           shape :: RT
+          transform :: TT
           kwargs :: KT
           fcn :: MDT
-          $fmname(shape,fcn;kwargs...) = new{typeof(shape),typeof(kwargs),typeof(fcn)}(shape,kwargs,fcn)
+          $fmname(shape,transform,fcn;kwargs...) = 
+                    new{typeof(shape),typeof(transform),typeof(kwargs),typeof(fcn)}(shape,transform,kwargs,fcn)
+          $fmname(shape,fcn;kwargs...) = 
+                    new{typeof(shape),MotionTransform{2},typeof(kwargs),typeof(fcn)}(shape,MotionTransform{2}(),kwargs,fcn)          
       end
 
     end)
@@ -164,9 +168,10 @@ the regularization choices, such as ddf.
 """ PointRegionCache(::VectorData,::BasicILMCache)
 
 
-struct AreaRegionCache{MT,ST,SGT,CT<:BasicILMCache} <: AbstractRegionCache
+struct AreaRegionCache{MT,ST,SFT,SGT,CT<:BasicILMCache} <: AbstractRegionCache
     mask :: MT
     str :: ST
+    spatialfield :: SFT
     generated_field :: SGT
     cache :: CT
 end
@@ -194,7 +199,7 @@ for f in [:Scalar,:Vector]
         m = mask(cache)
         str = similar_grid(cache)
         gf = _generatedfield(str,spatialfield,g)
-        return AreaRegionCache{typeof(m),typeof(str),typeof(gf),typeof(cache)}(m,str,gf,cache)
+        return AreaRegionCache{typeof(m),typeof(str),typeof(spatialfield),typeof(gf),typeof(cache)}(m,str,spatialfield,gf,cache)
     end
 
     @eval function _arearegioncache(g::PhysicalGrid,data_prototype::$gdtype,L::Laplacian;spatialfield=nothing,kwargs...)
@@ -202,7 +207,7 @@ for f in [:Scalar,:Vector]
         m = mask(cache)
         str = similar_grid(cache)
         gf = _generatedfield(str,spatialfield,g)
-        return AreaRegionCache{typeof(m),typeof(str),typeof(gf),typeof(cache)}(m,str,gf,cache)
+        return AreaRegionCache{typeof(m),typeof(str),typeof(spatialfield),typeof(gf),typeof(cache)}(m,str,spatialfield,gf,cache)
     end
 
     @eval function _lineregioncache(g::PhysicalGrid,shape::BodyList,data_prototype::$gdtype,L::Laplacian;kwargs...)
