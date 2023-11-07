@@ -34,9 +34,10 @@ for ftype in [:Area,:Line,:Point]
 end
 
 """
-      AreaForcingModel(shape::Union{Body,BodyList},model_function!)
+      AreaForcingModel(shape::Union{Body,BodyList},transform::MotionTransform,model_function!)
 
-  Bundles a `shape` (i.e., a `Body`, `BodyList`,) and a `model_function!` (a function
+  Bundles a `shape` (i.e., a `Body`, `BodyList`,), a `transform` (to specify where to
+  place the shape), and a `model_function!` (a function
   that returns the strength of the forcing) for area-type forcing.
   `model_function!` must be in-place with a signature of the form
 
@@ -52,7 +53,7 @@ end
   an `AbstractSpatialField` to help in evaluating the strength.
   (The resulting field is available to `model_function!` in the `generated_field` field
     of `fcache`.)
-""" AreaForcingModel(::Union{Body,BodyList},::Function)
+""" AreaForcingModel(::Union{Body,BodyList},::MotionTransform,::Function)
 
 """
     AreaForcingModel(model_function!)
@@ -74,12 +75,13 @@ end
   (The resulting field is available to `model_function!` in the `generated_field` field
     of `fcache`.)
 """
-AreaForcingModel(fcn::Function;kwargs...) = AreaForcingModel(nothing,fcn;kwargs...)
+AreaForcingModel(fcn::Function;kwargs...) = AreaForcingModel(nothing,nothing,fcn;kwargs...)
 
 """
-      LineForcingModel(shape::Union{Body,BodyList},model_function!)
+      LineForcingModel(shape::Union{Body,BodyList},transform::MotionTransform,model_function!)
 
-  Bundles a `shape` (i.e., a `Body`, `BodyList`,) and a `model_function!` (a function
+  Bundles a `shape` (i.e., a `Body`, `BodyList`,), a `transform` (to specify where to
+  place the shape), and a `model_function!` (a function
   that returns the strength of the forcing) for line-type forcing.
   `model_function!` must be in-place with a signature of the form
 
@@ -91,12 +93,13 @@ AreaForcingModel(fcn::Function;kwargs...) = AreaForcingModel(nothing,fcn;kwargs.
   be utilized to compute the strength.
 
   The keyword `ddftype =` can be used to specify the type of DDF.
-""" LineForcingModel(::Union{Body,BodyList},::Function)
+""" LineForcingModel(::Union{Body,BodyList},::MotionTransform,::Function)
 
 """
-      PointForcingModel(pts::VectorData,model_function!)
+      PointForcingModel(pts::VectorData,transform::MotionTransform,model_function!)
 
-  Bundles point coordinates `pts` and a `model_function!` (a function
+  Bundles point coordinates `pts`, a `transform` (to specify where the origin of the points'
+  coordinate system is relative to the inertial system's origin), and a `model_function!` (a function
   that returns the strength of the forcing) for point-type forcing.
   `model_function!` must be in-place with a signature of the form
 
@@ -108,12 +111,13 @@ AreaForcingModel(fcn::Function;kwargs...) = AreaForcingModel(nothing,fcn;kwargs.
   be utilized to compute the strength.
 
   The keyword `ddftype =` can be used to specify the type of DDF.
-""" PointForcingModel(::VectorData,::Function)
+""" PointForcingModel(::VectorData,::MotionTransform,::Function)
 
 """
-    PointForcingModel(point_function::Function,model_function!::Function)
+    PointForcingModel(point_function::Function,transform::MotionTransform,model_function!::Function)
 
-Bundles a `point_function` (a function that returns the positions of forcing points)
+Bundles a `point_function` (a function that returns the positions of forcing points), a `transform`
+(to specify where the origin of the points' coordinate system is relative to the inertial system's origin),
 and a `model_function` (a function that returns the strength of the forcing) for point-type forcing.
 
   `point_function` must have an out-of-place signature of the form
@@ -130,7 +134,7 @@ and a `model_function` (a function that returns the strength of the forcing) for
       model_function!(str,state,t,fcache,phys_params)
 
   where `str` is the strength to be returned.
-""" PointForcingModel(::Function,::Function)
+""" PointForcingModel(::Function,::MotionTransform,::Function)
 
 
 #=
