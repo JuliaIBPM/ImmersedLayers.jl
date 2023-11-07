@@ -308,12 +308,12 @@ struct ForcingModelAndRegion{RT<:AbstractRegionCache,ST,TT,MT,KT}
     kwargs :: KT
 end
 
-function _forcingmodelandregion(::AbstractForcingModel,::BasicILMCache) end
+function _forcingmodelandregion(::AbstractForcingModel,::MotionTransform,::BasicILMCache) end
 
 for f in [:Area,:Line,:Point]
   modtype = Symbol(string(f)*"ForcingModel")
   regcache = Symbol(string(f)*"RegionCache")
-  @eval function _forcingmodelandregion(model::$modtype,cache::BasicILMCache)
+  @eval function _forcingmodelandregion(model::$modtype,Xi_to_ref::MotionTransform,cache::BasicILMCache)
       region_cache = $regcache(model.shape,cache;model.kwargs...)
       ForcingModelAndRegion{typeof(region_cache),typeof(model.shape),typeof(model.transform),typeof(model.fcn),typeof(model.kwargs)}(region_cache,model.shape,model.transform,model.fcn,model.kwargs)
   end
@@ -323,10 +323,10 @@ end
 ForcingModelAndRegion(f::AbstractForcingModel,cache::BasicILMCache) = ForcingModelAndRegion(AbstractForcingModel[f],cache)
 
 
-function ForcingModelAndRegion(flist::Vector{T},cache::BasicILMCache) where {T<: AbstractForcingModel}
+function ForcingModelAndRegion(flist::Vector{T},cache::BasicILMCache;Xi_to_ref = MotionTransform{2}()) where {T<: AbstractForcingModel}
    fmlist = ForcingModelAndRegion[]
    for f in flist
-     push!(fmlist,_forcingmodelandregion(f,cache))
+     push!(fmlist,_forcingmodelandregion(f,Xi_to_ref,cache))
    end
    return fmlist
 end
