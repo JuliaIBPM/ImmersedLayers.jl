@@ -94,7 +94,7 @@ function heatconduction_ode_explicit_rhs!(dT,T,x,sys::ILMSystem,t)
 
     fill!(dT,0.0)
     # Compute the contribution from the forcing models to the right-hand side
-    apply_forcing!(dT,T,t,fcache,phys_params)
+    apply_forcing!(dT,T,x,t,fcache,sys)
 
     return dT
 end
@@ -274,16 +274,14 @@ with prescribed heat flux and another with a target temperature
 ````@example heatconduction-neumann
 fregion1 = Circle(0.2,1.4*Δx)
 tr1 = MotionTransform((0.0,-0.7),0.0)
-update_body!(fregion1,tr1)
 
 function model1!(σ,T,t,fr::AreaRegionCache,phys_params)
     σ .= phys_params["areaheater_flux"]
 end
-afm1 = AreaForcingModel(fregion1,model1!)
+afm1 = AreaForcingModel(fregion1,tr1,model1!)
 
 fregion2 = Circle(0.2,1.4*Δx)
 tr2 = RigidTransform((-0.7,0.7),0.0)
-update_body!(fregion2,tr2)
 
 function model2!(σ,T,t,fr::AreaRegionCache,phys_params)
     f = phys_params["areaheater_freq"]
@@ -291,7 +289,7 @@ function model2!(σ,T,t,fr::AreaRegionCache,phys_params)
     h = phys_params["areaheater_coeff"]
     σ .= h*(T0 - T)
 end
-afm2 = AreaForcingModel(fregion2,model2!);
+afm2 = AreaForcingModel(fregion2,tr2,model2!);
 nothing #hide
 ````
 
@@ -299,6 +297,8 @@ Plot the heating regions
 
 ````@example heatconduction-neumann
 plot(body,fill=false)
+update_body!(fregion1,tr1)
+update_body!(fregion2,tr2)
 plot!(fregion1)
 plot!(fregion2)
 ````
