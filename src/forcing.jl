@@ -255,6 +255,36 @@ PointRegionCache(pts::Union{VectorData,Function},cache::AbstractBasicCache;kwarg
       _pointregioncache(cache.g,pts,similar_grid(cache);kwargs...)
 
 
+ 
+_update_spatialfield(::Nothing,Xi_to_ref) = nothing
+_update_spatialfield(sf::AbstractSpatialField,Xi_to_ref) = sf
+
+function _update_spatialfield(sg::SpatialGaussian{C,D},Xi_to_ref) where {C,D}
+    @unpack Σ, x0, A = sg
+
+    F = eigen(Σ)
+    Xi_to_g = MotionTransform(x0,F.vectors)
+    Xref_to_g = Xi_to_g*inv(Xi_to_ref)
+    R = rotation(Xref_to_g)
+    x0 = translation(Xref_to_g)
+
+    return SpatialGaussian(R*Diagonal(F.values)*R',x0,A;derivdir=D)
+end
+
+function _update_spatialfield(sfv::Vector{<:AbstractSpatialField},Xi_to_ref)
+    R = rotation(Xi_to_ref)
+    sfv_rotated = AbstractSpatialField[EmptySpatialField(), EmptySpatialField()]
+    for (j,sf) in enumerate(sfv)
+        sf_updated = _update_spatialfield(sf,Xi_to_ref)
+        for i in eachindex(sfv_rotated)
+            sfv_rotated[i] += R[i,j]*sf_updated
+        end
+    end
+    return sfv_rotated
+end 
+
+     
+
 _generatedfield(field_prototype::GridData,s,g::PhysicalGrid) = nothing
 _generatedfield(field_prototype::GridData,s::Union{T,Vector{T}},g::PhysicalGrid) where {T<:AbstractSpatialField} =
           GeneratedField(field_prototype,s,g)
@@ -358,13 +388,16 @@ Application of forcing
     apply_forcing!(out,y,x,t,fv::Vector{ForcingModelAndRegion},sys::ILMSystem)
 
 Return the total contribution of forcing in the vector `fv` to `out`,
-based on the current state `x`, time `t`, and ILM system `sys`.
+based on the current state `y`, auxiliary state `x`, time `t`, and ILM system `sys`.
 Note that `out` is zeroed before the contributions are added.
 """
 apply_forcing!(out,y,x,t,fr::Vector{<:ForcingModelAndRegion},sys::ILMSystem) = 
             apply_forcing!(out,y,x,t,fr,sys.phys_params,sys.motions,sys.base_cache)
 
 function apply_forcing!(out,y,x,t,fr::Vector{<:ForcingModelAndRegion},phys_params,motions,base_cache::BasicILMCache)
+
+    # In case there is motion and the motion references axes other than the inertial ones
+    # then regenerate the forcing cache. Otherwise just use the given one.
     fr_updated, Xi_to_ref = _regenerate_forcing_cache(fr,x,motions,base_cache)
     fill!(out,0.0)
     for f in fr
@@ -395,8 +428,8 @@ end
 """
     apply_forcing!(dy,y,x,t,f::ForcingModelAndRegion,sys::ILMSystem)
 
-Return the contribution of forcing in `f` to the right-hand side `dx`
-based on the current state `x`, time `t`, and physical parameters in `phys_params`.
+Return the contribution of forcing in `f` to the right-hand side `dy`
+based on the current state `y`, auxiliary state `x`, time `t`, and ILM system `sys`.
 """
 apply_forcing!(dy,y,x,t,fr::ForcingModelAndRegion,sys) = apply_forcing!(dy,y,x,t,[fr],sys)
 
@@ -444,13 +477,15 @@ function _apply_forcing!(dy,y,t,fcache::ForcingModelAndRegion{<:PointRegionCache
 end
 
 function _apply_forcing!(dy,y,t,fcache::ForcingModelAndRegion{<:PointRegionCache,<:Function},phys_params,Xi_to_ref)
-    @unpack region_cache, shape, fcn, kwargs = fcache
+    @unpack region_cache, transform, shape, fcn, kwargs = fcache
     @unpack cache = region_cache
 
     # `shape` is a function in this case, used to obtain the point coordinates
     # Use is to to generate an instantaneous PointRegionCache
     _pts = shape(y,t,region_cache,phys_params)
     typeof(_pts) <: Tuple ? pts = VectorData(_pts...) : pts = _pts
+    _update_shape!(pts,transform,Xi_to_ref)
+
     new_region_cache = PointRegionCache(pts,cache;kwargs...)
     @unpack str, cache = new_region_cache
     @unpack regop = cache
