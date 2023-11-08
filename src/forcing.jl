@@ -198,7 +198,7 @@ for f in [:Scalar,:Vector]
     cname = Symbol("Surface"*string(f)*"Cache")
     pcname = Symbol(string(f)*"PointCollectionCache")
     gdtype = Symbol(string(f)*"GridData")
-    @eval function _arearegioncache(g::PhysicalGrid,shape::BodyList,data_prototype::$gdtype,L::Laplacian;spatialfield=nothing,kwargs...)
+    @eval function _arearegioncache(g::PhysicalGrid,shape::BodyList,data_prototype::$gdtype,L::Laplacian;spatialfield=nothing,Xi_to_ref=MotionTransform{2}(),kwargs...)
         cache = $cname(shape,g;L=L,kwargs...)
         m = mask(cache)
         str = similar_grid(cache)
@@ -206,7 +206,7 @@ for f in [:Scalar,:Vector]
         return AreaRegionCache{typeof(m),typeof(str),typeof(spatialfield),typeof(gf),typeof(cache)}(m,str,spatialfield,gf,cache)
     end
 
-    @eval function _arearegioncache(g::PhysicalGrid,data_prototype::$gdtype,L::Laplacian;spatialfield=nothing,kwargs...)
+    @eval function _arearegioncache(g::PhysicalGrid,data_prototype::$gdtype,L::Laplacian;spatialfield=nothing,Xi_to_ref=MotionTransform{2}(),kwargs...)
         cache = $cname(g;L=L,kwargs...)
         m = mask(cache)
         str = similar_grid(cache)
@@ -214,7 +214,7 @@ for f in [:Scalar,:Vector]
         return AreaRegionCache{typeof(m),typeof(str),typeof(spatialfield),typeof(gf),typeof(cache)}(m,str,spatialfield,gf,cache)
     end
 
-    @eval function _lineregioncache(g::PhysicalGrid,shape::BodyList,data_prototype::$gdtype,L::Laplacian;kwargs...)
+    @eval function _lineregioncache(g::PhysicalGrid,shape::BodyList,data_prototype::$gdtype,L::Laplacian;Xi_to_ref=MotionTransform{2}(),kwargs...)
         cache = $cname(shape,g;L=L,kwargs...)
         pts = points(shape)
         s = arcs(shape)
@@ -222,14 +222,14 @@ for f in [:Scalar,:Vector]
         return LineRegionCache{typeof(s),typeof(str),typeof(cache)}(s,str,cache)
     end
 
-    @eval function _pointregioncache(g::PhysicalGrid,pts::VectorData,data_prototype::$gdtype;kwargs...)
+    @eval function _pointregioncache(g::PhysicalGrid,pts::VectorData,data_prototype::$gdtype;Xi_to_ref=MotionTransform{2}(),kwargs...)
         cache = $pcname(pts,g;kwargs...)
 
         str = similar(cache.sdata_cache)
         return PointRegionCache{typeof(str),typeof(cache)}(str,cache)
     end
 
-    @eval function _pointregioncache(g::PhysicalGrid,pts::Function,data_prototype::$gdtype;kwargs...)
+    @eval function _pointregioncache(g::PhysicalGrid,pts::Function,data_prototype::$gdtype;Xi_to_ref=MotionTransform{2}(),kwargs...)
         cache = $pcname(VectorData(0),g;kwargs...)
 
         str = similar(cache.sdata_cache)
@@ -314,11 +314,25 @@ for f in [:Area,:Line,:Point]
   modtype = Symbol(string(f)*"ForcingModel")
   regcache = Symbol(string(f)*"RegionCache")
   @eval function _forcingmodelandregion(model::$modtype,Xi_to_ref::MotionTransform,cache::BasicILMCache)
-      region_cache = $regcache(model.shape,cache;model.kwargs...)
-      ForcingModelAndRegion{typeof(region_cache),typeof(model.shape),typeof(model.transform),typeof(model.fcn),typeof(model.kwargs)}(region_cache,model.shape,model.transform,model.fcn,model.kwargs)
+    shape = deepcopy(model.shape)
+    _update_shape!(shape,model.transform,Xi_to_ref)
+
+    region_cache = $regcache(shape,cache;Xi_to_ref=Xi_to_ref,model.kwargs...)
+    ForcingModelAndRegion{typeof(region_cache),typeof(model.shape),typeof(model.transform),typeof(model.fcn),typeof(model.kwargs)}(region_cache,model.shape,model.transform,model.fcn,model.kwargs)
   end
 end
 
+_update_shape!(shape,::Nothing,Xi_to_ref) = nothing
+_update_shape!(shape::Body,transform::MotionTransform,Xi_to_ref::MotionTransform) = update_body!(shape,transform*inv(Xi_to_ref))
+_update_shape!(shape::Function,transform::MotionTransform,Xi_to_ref::MotionTransform) = nothing
+
+function _update_shape!(pts::VectorData,transform::MotionTransform,Xi_to_ref::MotionTransform)
+    full_transform = transform*inv(Xi_to_ref)
+    u, v = full_transform(pts.u,pts.v)
+    pts.u .= u
+    pts.v .= v
+    nothing
+end
 
 ForcingModelAndRegion(f::AbstractForcingModel,cache::BasicILMCache) = ForcingModelAndRegion(AbstractForcingModel[f],cache)
 
@@ -331,7 +345,7 @@ function ForcingModelAndRegion(flist::Vector{T},cache::BasicILMCache;Xi_to_ref =
    return fmlist
 end
 
-ForcingModelAndRegion(::Any,cache::BasicILMCache) = ForcingModelAndRegion(AbstractForcingModel[],cache)
+ForcingModelAndRegion(::Any,cache::BasicILMCache;kwargs...) = ForcingModelAndRegion(AbstractForcingModel[],cache;kwargs...)
 
 #=
 Application of forcing
@@ -339,88 +353,111 @@ Application of forcing
 
 
 """
-    apply_forcing!(out,x,t,fv::Vector{ForcingModelAndRegion},phys_params)
+    apply_forcing!(out,y,x,t,fv::Vector{ForcingModelAndRegion},sys::ILMSystem)
 
 Return the total contribution of forcing in the vector `fv` to `out`,
-based on the current state `x`, time `t`, and physical parameters in `phys_params`.
+based on the current state `x`, time `t`, and ILM system `sys`.
 Note that `out` is zeroed before the contributions are added.
 """
-function apply_forcing!(out,x,t,fr::Vector{<:ForcingModelAndRegion},phys_params)
+apply_forcing!(out,y,x,t,fr::Vector{<:ForcingModelAndRegion},sys::ILMSystem) = 
+            apply_forcing!(out,y,x,t,fr,sys.phys_params,sys.motions,sys.base_cache)
+
+function apply_forcing!(out,y,x,t,fr::Vector{<:ForcingModelAndRegion},phys_params,motions,base_cache::BasicILMCache)
+    fr_updated, Xi_to_ref = _regenerate_forcing_cache(fr,x,motions,base_cache)
     fill!(out,0.0)
     for f in fr
-        _apply_forcing!(out,x,t,f,phys_params)
+        _apply_forcing!(out,y,t,f,phys_params,Xi_to_ref)
     end
     return out
 end
 
+
+_regenerate_forcing_cache(fr,x,::Nothing,cache) = fr, MotionTransform{2}()
+
+function _regenerate_forcing_cache(fr,x,motions::ILMMotion,cache)
+    @unpack reference_body, m = motions
+    _regenerate_forcing_cache(fr,x,m,cache,Val(reference_body))
+end
+
+_regenerate_forcing_cache(fr,x,m::RigidBodyMotion,cache,::Val{0}) = fr, MotionTransform{2}()
+
+function _regenerate_forcing_cache(fr,x,m::RigidBodyMotion,cache,::Val{N}) where {N}
+    Xl = body_transforms(x,m)
+    Xi_to_ref = Xl[N]
+    ForcingModelAndRegion(fr,cache;Xi_to_ref=Xi_to_ref), Xi_to_ref
+end
+
+
+
+
 """
-    apply_forcing!(dx,x,t,f::ForcingModelAndRegion,phys_params)
+    apply_forcing!(dy,y,x,t,f::ForcingModelAndRegion,sys::ILMSystem)
 
 Return the contribution of forcing in `f` to the right-hand side `dx`
 based on the current state `x`, time `t`, and physical parameters in `phys_params`.
 """
-apply_forcing!(dx,x,t,fr::ForcingModelAndRegion,phys_params) = apply_forcing!(dx,x,t,[fr],phys_params)
+apply_forcing!(dy,y,x,t,fr::ForcingModelAndRegion,sys) = apply_forcing!(dy,y,x,t,[fr],sys)
 
 #=
 The following define how forcing of each type get applied. Each one
 calls the forcing model to determine the strength.
 =#
 
-function _apply_forcing!(dx,x,t,fcache::ForcingModelAndRegion{<:AreaRegionCache},phys_params)
+function _apply_forcing!(dy,y,t,fcache::ForcingModelAndRegion{<:AreaRegionCache},phys_params,Xi_to_ref)
     @unpack region_cache, fcn = fcache
     @unpack str = region_cache
 
     fill!(str,0.0)
-    fcn(str,x,t,region_cache,phys_params)
+    fcn(str,y,t,region_cache,phys_params)
 
-    dx .+= str.*mask(region_cache)
-    return dx
+    dy .+= str.*mask(region_cache)
+    return dy
 end
 
-function _apply_forcing!(dx,x,t,fcache::ForcingModelAndRegion{<:LineRegionCache},phys_params)
+function _apply_forcing!(dy,y,t,fcache::ForcingModelAndRegion{<:LineRegionCache},phys_params,Xi_to_ref)
     @unpack region_cache, fcn = fcache
     @unpack str, cache = region_cache
 
     fill!(str,0.0)
-    fcn(str,x,t,region_cache,phys_params)
+    fcn(str,y,t,region_cache,phys_params)
 
     fill!(cache.gdata_cache,0.0)
     regularize!(cache.gdata_cache,str,cache)
-    dx .+= cache.gdata_cache
-    return dx
+    dy .+= cache.gdata_cache
+    return dy
 end
 
-function _apply_forcing!(dx,x,t,fcache::ForcingModelAndRegion{<:PointRegionCache,T},phys_params) where T
+function _apply_forcing!(dy,y,t,fcache::ForcingModelAndRegion{<:PointRegionCache,T},phys_params,Xi_to_ref) where T
     @unpack region_cache, fcn = fcache
     @unpack str, cache = region_cache
     @unpack regop = cache
 
     fill!(str,0.0)
-    fcn(str,x,t,region_cache,phys_params)
+    fcn(str,y,t,region_cache,phys_params)
 
     fill!(cache.gdata_cache,0.0)
     regop(cache.gdata_cache,str)
-    dx .+= cache.gdata_cache
-    return dx
+    dy .+= cache.gdata_cache
+    return dy
 end
 
-function _apply_forcing!(dx,x,t,fcache::ForcingModelAndRegion{<:PointRegionCache,<:Function},phys_params)
+function _apply_forcing!(dy,y,t,fcache::ForcingModelAndRegion{<:PointRegionCache,<:Function},phys_params,Xi_to_ref)
     @unpack region_cache, shape, fcn, kwargs = fcache
     @unpack cache = region_cache
 
     # `shape` is a function in this case, used to obtain the point coordinates
     # Use is to to generate an instantaneous PointRegionCache
-    _pts = shape(x,t,region_cache,phys_params)
+    _pts = shape(y,t,region_cache,phys_params)
     typeof(_pts) <: Tuple ? pts = VectorData(_pts...) : pts = _pts
     new_region_cache = PointRegionCache(pts,cache;kwargs...)
     @unpack str, cache = new_region_cache
     @unpack regop = cache
 
     fill!(str,0.0)
-    fcn(str,x,t,region_cache,phys_params)
+    fcn(str,y,t,region_cache,phys_params)
 
     fill!(cache.gdata_cache,0.0)
     regop(cache.gdata_cache,str)
-    dx .+= cache.gdata_cache
-    return dx
+    dy .+= cache.gdata_cache
+    return dy
 end
