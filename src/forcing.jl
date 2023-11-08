@@ -202,7 +202,11 @@ for f in [:Scalar,:Vector]
         cache = $cname(shape,g;L=L,kwargs...)
         m = mask(cache)
         str = similar_grid(cache)
-        gf = _generatedfield(str,spatialfield,g)
+
+        # Generate spatial field with given transform
+        sf_updated = _update_spatialfield(spatialfield,Xi_to_ref)
+        gf = _generatedfield(str,sf_updated,g)
+
         return AreaRegionCache{typeof(m),typeof(str),typeof(spatialfield),typeof(gf),typeof(cache)}(m,str,spatialfield,gf,cache)
     end
 
@@ -210,7 +214,11 @@ for f in [:Scalar,:Vector]
         cache = $cname(g;L=L,kwargs...)
         m = mask(cache)
         str = similar_grid(cache)
-        gf = _generatedfield(str,spatialfield,g)
+
+        # Generate spatial field with given transform
+        sf_updated = _update_spatialfield(spatialfield,Xi_to_ref)
+        gf = _generatedfield(str,sf_updated,g)
+
         return AreaRegionCache{typeof(m),typeof(str),typeof(spatialfield),typeof(gf),typeof(cache)}(m,str,spatialfield,gf,cache)
     end
 
@@ -366,7 +374,7 @@ function _update_shape!(pts::VectorData,transform::MotionTransform,Xi_to_ref::Mo
     nothing
 end
 
-ForcingModelAndRegion(f::AbstractForcingModel,cache::BasicILMCache) = ForcingModelAndRegion(AbstractForcingModel[f],cache)
+ForcingModelAndRegion(f::AbstractForcingModel,cache::BasicILMCache;kwargs...) = ForcingModelAndRegion(AbstractForcingModel[f],cache;kwargs...)
 
 
 function ForcingModelAndRegion(flist::Vector{T},cache::BasicILMCache;Xi_to_ref = MotionTransform{2}()) where {T<: AbstractForcingModel}
@@ -400,7 +408,7 @@ function apply_forcing!(out,y,x,t,fr::Vector{<:ForcingModelAndRegion},phys_param
     # then regenerate the forcing cache. Otherwise just use the given one.
     fr_updated, Xi_to_ref = _regenerate_forcing_cache(fr,x,motions,base_cache)
     fill!(out,0.0)
-    for f in fr
+    for f in fr_updated
         _apply_forcing!(out,y,t,f,phys_params,Xi_to_ref)
     end
     return out
@@ -419,6 +427,7 @@ _regenerate_forcing_cache(fr,x,m::RigidBodyMotion,cache,::Val{0}) = fr, MotionTr
 function _regenerate_forcing_cache(fr,x,m::RigidBodyMotion,cache,::Val{N}) where {N}
     Xl = body_transforms(x,m)
     Xi_to_ref = Xl[N]
+    println(Xi_to_ref)
     ForcingModelAndRegion(fr,cache;Xi_to_ref=Xi_to_ref), Xi_to_ref
 end
 
