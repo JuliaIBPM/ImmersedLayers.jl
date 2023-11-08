@@ -313,7 +313,9 @@ function _forcingmodelandregion(::AbstractForcingModel,::MotionTransform,::Basic
 for f in [:Area,:Line,:Point]
   modtype = Symbol(string(f)*"ForcingModel")
   regcache = Symbol(string(f)*"RegionCache")
-  @eval function _forcingmodelandregion(model::$modtype,Xi_to_ref::MotionTransform,cache::BasicILMCache)
+  @eval function _forcingmodelandregion(model::Union{$modtype,ForcingModelAndRegion{T}},Xi_to_ref::MotionTransform,cache::BasicILMCache) where {T<:$regcache}
+
+    # Place the shape at the desired position
     shape = deepcopy(model.shape)
     _update_shape!(shape,model.transform,Xi_to_ref)
 
