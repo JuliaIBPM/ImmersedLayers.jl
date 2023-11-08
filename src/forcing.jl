@@ -442,7 +442,7 @@ end
 Return the contribution of forcing in `f` to the right-hand side `dy`
 based on the current state `y`, auxiliary state `x`, time `t`, and ILM system `sys`.
 """
-apply_forcing!(dy,y,x,t,fr::ForcingModelAndRegion,sys) = apply_forcing!(dy,y,x,t,[fr],sys)
+apply_forcing!(dy,y,x,t,fr::ForcingModelAndRegion,a...) = apply_forcing!(dy,y,x,t,[fr],a...)
 
 #=
 The following define how forcing of each type get applied. Each one
