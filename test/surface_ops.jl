@@ -453,28 +453,28 @@ end
                        "areaheater2_coeff" => 2.0)
 
   fregion1 = Circle(0.2,Δs)
-  T = RigidTransform((0.5,0.0),0.0)
-  T(fregion1)
+  tr1 = RigidTransform((0.5,0.0),0.0)
+
   function model1!(σ,T,t,fr::AreaRegionCache,phys_params)
       σ .= phys_params["areaheater1_flux"]
    end
-   afm = AreaForcingModel(fregion1,model1!)
+   afm = AreaForcingModel(fregion1,tr1,model1!)
 
    fregion2 = Square(0.5,Δs)
-   T = RigidTransform((0.0,1.0),0.0)
-   T(fregion2)
+   tr2 = RigidTransform((0.0,1.0),0.0)
+  
    function model2!(σ,T,t,fr::LineRegionCache,phys_params)
      σ .= phys_params["lineheater_flux"]
     end
-   lfm = LineForcingModel(fregion2,model2!)
+   lfm = LineForcingModel(fregion2,tr2,model2!)
 
    fregion3 = Polygon([0.0,1.0,0.5],[0.0,0.0,0.5],Δs)
-   T = RigidTransform((-1.0,-1.0),π/4)
-   T(fregion3)
+   tr3 = RigidTransform((-1.0,-1.0),π/4)
+   
    function model3!(σ,T,t,fr::AreaRegionCache,phys_params)
      σ .= phys_params["areaheater2_coeff"]*(phys_params["areaheater2_temp"] - T)
    end
-   afm2 = AreaForcingModel(fregion3,model3!)
+   afm2 = AreaForcingModel(fregion3,tr3,model3!)
 
    pts = VectorData([-1.2,0.5],[0.5,0.5])
    str = [1.0,-1.0]
@@ -493,9 +493,11 @@ end
 
    T = zeros_grid(scache)
    dT = similar_grid(scache)
+   x = nothing
+   motions = nothing
    t = 0.0
 
-   apply_forcing!(dT,T,t,fcache,phys_params)
+   apply_forcing!(dT,T,x,t,fcache,phys_params,motions,scache)
 
 
    function point_function(T,t,fr::PointRegionCache,phys_params)
@@ -508,28 +510,30 @@ end
 
    T2 = zeros_grid(scache)
    dT2 = similar_grid(scache)
+   x = nothing
+   motions = nothing
    t = 0.0
 
-   apply_forcing!(dT,T,t,fcache,phys_params)
-   apply_forcing!(dT2,T2,t,fcache2,phys_params)
+   apply_forcing!(dT,T,x,t,fcache,phys_params,motions,scache)
+   apply_forcing!(dT2,T2,x,t,fcache2,phys_params,motions,scache)
 
    @test dT == dT2
 
    str = [1.0,-1.0,2.0]
 
-   @test_throws DimensionMismatch apply_forcing!(dT2,T2,t,fcache2,phys_params)
+   @test_throws DimensionMismatch apply_forcing!(dT2,T2,x,t,fcache2,phys_params,motions,scache)
 
    # Area forcing with no shape mask
     afm = AreaForcingModel(model1!)
     fcache = ForcingModelAndRegion(afm,scache)
-    apply_forcing!(dT,T,t,fcache,phys_params)
+    apply_forcing!(dT,T,x,t,fcache,phys_params,motions,scache)
 
     function model6!(σ,T,t,fr::AreaRegionCache,phys_params)
         σ .= fr.generated_field()
      end
     afm = AreaForcingModel(model6!,spatialfield=SpatialGaussian(0.5,0.1,0,0,10))
     fcache = ForcingModelAndRegion(afm,scache)
-    apply_forcing!(dT,T,t,fcache,phys_params)
+    apply_forcing!(dT,T,x,t,fcache,phys_params,motions,scache)
 
     @test dT == fcache[1].region_cache.generated_field()
 

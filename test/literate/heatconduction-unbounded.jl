@@ -91,13 +91,12 @@ to return the strength of the line forcing. We bundle these together
 using [`LineForcingModel`](@ref).
 =#
 fregion1 = Square(0.5,1.4*Δx)
-T = RigidTransform((0.0,1.0),0.0)
-update_body!(fregion1,T)
+tr1 = RigidTransform((0.0,1.0),0.0)
 
 function model1!(σ,T,t,fr::LineRegionCache,phys_params)
     σ .= phys_params["lineheater_flux"]
 end
-lfm = LineForcingModel(fregion1,model1!);
+lfm = LineForcingModel(fregion1,tr1,model1!);
 
 #=
 Now the oscillatory heater, which we place at $(0,-0.5)$. This one has a few more parameters,
@@ -106,8 +105,7 @@ of the target temperature. These are bundled with [`AreaForcingModel`](@ref).
 =#
 
 fregion2 = Circle(0.2,1.4*Δx)
-T = RigidTransform((0.0,-0.5),0.0)
-update_body!(fregion2,T)
+tr2 = RigidTransform((0.0,-0.5),0.0)
 
 function model2!(σ,T,t,fr::AreaRegionCache,phys_params)
     f = phys_params["areaheater_freq"]
@@ -115,7 +113,7 @@ function model2!(σ,T,t,fr::AreaRegionCache,phys_params)
     h = phys_params["areaheater_coeff"]
     σ .= h*(T0*cos(2π*f*t) - T)
 end
-afm = AreaForcingModel(fregion2,model2!);
+afm = AreaForcingModel(fregion2,tr2,model2!);
 
 #=
 Finally, the convection velocity model. Here, we make use of the
@@ -159,7 +157,7 @@ function heatconduction_rhs!(dT,T,x,sys::ILMSystem,t)
 
     ## Compute the contribution from the forcing models to the right-hand side
     fill!(dT_tmp,0.0)
-    apply_forcing!(dT_tmp,T,t,fcache,phys_params)
+    apply_forcing!(dT_tmp,T,x,t,fcache,sys)
     dT .+= dT_tmp
 
     return dT
@@ -192,7 +190,7 @@ function ImmersedLayers.prob_cache(prob::UnboundedHeatConductionProblem,
     cdcache = ConvectiveDerivativeCache(base_cache)
 
     ## Create cache for the forcing regions
-    fcache = ForcingModelAndRegion(forcing["heating models"],base_cache);
+    fcache = ForcingModelAndRegion(forcing["heating models"],base_cache)
 
     dT_tmp = zeros_grid(base_cache)
 

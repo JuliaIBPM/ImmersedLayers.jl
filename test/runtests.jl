@@ -46,7 +46,7 @@ if GROUP == "All" || GROUP == "Literate"
       #endswith(file,".jl") && @testset "$file" begin include(joinpath(root,file)) end
       global file_str = "$file"
       global body = :(begin include(joinpath($root,$file)) end)
-      #endswith(file,".jl") && startswith(file,"gridops.jl") && @mysafetestset file_str body
+      #endswith(file,".jl") && startswith(file,"s") && @mysafetestset file_str body
       endswith(file,".jl") && @mysafetestset file_str body
     end
   end
