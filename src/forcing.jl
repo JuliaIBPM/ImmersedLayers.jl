@@ -423,6 +423,8 @@ function _regenerate_forcing_cache(fr,x,motions::ILMMotion,cache)
     _regenerate_forcing_cache(fr,x,m,cache,Val(reference_body))
 end
 
+_regenerate_forcing_cache(fr,x,::Nothing,cache,::Val{N}) where {N} = fr, MotionTransform{2}()
+
 _regenerate_forcing_cache(fr,x,m::RigidBodyMotion,cache,::Val{0}) = fr, MotionTransform{2}()
 
 function _regenerate_forcing_cache(fr,x,m::RigidBodyMotion,cache,::Val{N}) where {N}
