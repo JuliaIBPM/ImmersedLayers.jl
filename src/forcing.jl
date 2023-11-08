@@ -346,7 +346,8 @@ struct ForcingModelAndRegion{RT<:AbstractRegionCache,ST,TT,MT,KT}
     kwargs :: KT
 end
 
-function _forcingmodelandregion(::AbstractForcingModel,::MotionTransform,::BasicILMCache) end
+# This function declaration prevents errors with unknown TypeVar  
+function _forcingmodelandregion(::Union{AbstractForcingModel,ForcingModelAndRegion},::MotionTransform,::BasicILMCache) end
 
 for f in [:Area,:Line,:Point]
   modtype = Symbol(string(f)*"ForcingModel")

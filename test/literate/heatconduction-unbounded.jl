@@ -159,7 +159,7 @@ function heatconduction_rhs!(dT,T,x,sys::ILMSystem,t)
 
     ## Compute the contribution from the forcing models to the right-hand side
     fill!(dT_tmp,0.0)
-    apply_forcing!(dT_tmp,T,t,fcache,phys_params)
+    apply_forcing!(dT_tmp,T,x,t,fcache,sys)
     dT .+= dT_tmp
 
     return dT
@@ -192,7 +192,7 @@ function ImmersedLayers.prob_cache(prob::UnboundedHeatConductionProblem,
     cdcache = ConvectiveDerivativeCache(base_cache)
 
     ## Create cache for the forcing regions
-    fcache = ForcingModelAndRegion(forcing["heating models"],base_cache);
+    fcache = ForcingModelAndRegion(forcing["heating models"],base_cache)
 
     dT_tmp = zeros_grid(base_cache)
 
