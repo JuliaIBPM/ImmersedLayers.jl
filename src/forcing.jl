@@ -377,7 +377,7 @@ end
 ForcingModelAndRegion(f::AbstractForcingModel,cache::BasicILMCache;kwargs...) = ForcingModelAndRegion(AbstractForcingModel[f],cache;kwargs...)
 
 
-function ForcingModelAndRegion(flist::Vector{T},cache::BasicILMCache;Xi_to_ref = MotionTransform{2}()) where {T<: AbstractForcingModel}
+function ForcingModelAndRegion(flist::Vector{T},cache::BasicILMCache;Xi_to_ref = MotionTransform{2}()) where {T<: Union{AbstractForcingModel,ForcingModelAndRegion}}
    fmlist = ForcingModelAndRegion[]
    for f in flist
      push!(fmlist,_forcingmodelandregion(f,Xi_to_ref,cache))
@@ -427,7 +427,6 @@ _regenerate_forcing_cache(fr,x,m::RigidBodyMotion,cache,::Val{0}) = fr, MotionTr
 function _regenerate_forcing_cache(fr,x,m::RigidBodyMotion,cache,::Val{N}) where {N}
     Xl = body_transforms(x,m)
     Xi_to_ref = Xl[N]
-    println(Xi_to_ref)
     ForcingModelAndRegion(fr,cache;Xi_to_ref=Xi_to_ref), Xi_to_ref
 end
 
