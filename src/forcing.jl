@@ -19,15 +19,15 @@ for ftype in [:Area,:Line,:Point]
     eval(quote
       export $fmname
 
-      struct $fmname{RT,TT,KT,MDT<:Function} <: AbstractForcingModel
+      struct $fmname{RT,TT,MDT<:Function} <: AbstractForcingModel
           shape :: RT
           transform :: TT
-          kwargs :: KT
+          kwargs :: AbstractDict
           fcn :: MDT
           $fmname(shape,transform,fcn;kwargs...) = 
-                    new{typeof(shape),typeof(transform),typeof(kwargs),typeof(fcn)}(shape,transform,kwargs,fcn)
+                    new{typeof(shape),typeof(transform),typeof(fcn)}(shape,transform,kwargs,fcn)
           $fmname(shape,fcn;kwargs...) = 
-                    new{typeof(shape),MotionTransform{2},typeof(kwargs),typeof(fcn)}(shape,MotionTransform{2}(),kwargs,fcn)          
+                    new{typeof(shape),MotionTransform{2},typeof(fcn)}(shape,MotionTransform{2}(),kwargs,fcn)          
       end
 
     end)
@@ -361,6 +361,10 @@ for f in [:Area,:Line,:Point]
     region_cache = $regcache(shape,cache;Xi_to_ref=Xi_to_ref,model.kwargs...)
     ForcingModelAndRegion{typeof(region_cache),typeof(model.shape),typeof(model.transform),typeof(model.fcn),typeof(model.kwargs)}(region_cache,model.shape,model.transform,model.fcn,model.kwargs)
   end
+  
+  #@eval ForcingModelAndRegion(flist::Vector{T},cache::BasicILMCache;kwargs...) where {T<:$modtype} = 
+  #          ForcingModelAndRegion(convert(Vector{AbstractForcingModel},flist),cache;kwargs...)
+
 end
 
 _update_shape!(shape,::Nothing,Xi_to_ref) = nothing
@@ -386,7 +390,7 @@ function ForcingModelAndRegion(flist::Vector{T},cache::BasicILMCache;Xi_to_ref =
    return fmlist
 end
 
-ForcingModelAndRegion(::Any,cache::BasicILMCache;kwargs...) = ForcingModelAndRegion(AbstractForcingModel[],cache;kwargs...)
+ForcingModelAndRegion(flist,cache::BasicILMCache;kwargs...) = ForcingModelAndRegion(AbstractForcingModel[],cache;kwargs...)
 
 #=
 Application of forcing
