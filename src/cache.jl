@@ -387,7 +387,7 @@ _ddf_type(R::Regularize) = _ddf_type(R.ddf)
 _ddf_type(cache::BasicILMCache) = _ddf_type(cache.regop)
 
 # Getting the list of first indices for each body, for partitioning of surface vectors
-_firstindices(b::Body) = [1,length(body)+1]
+_firstindices(b::Body) = [1,length(b)+1]
 _firstindices(bl::BodyList) = [map(i -> first(getrange(bl,i)),1:length(bl)); numpts(bl)+1]
 
 ## Obtaining copies of the grid and surface data
