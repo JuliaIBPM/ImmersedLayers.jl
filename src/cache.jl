@@ -165,7 +165,8 @@ function SurfaceScalarCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::
                               ddftype = DEFAULT_DDF,
                               scaling = DEFAULT_SCALING,
                               dtype = DEFAULT_DATA_TYPE,
-                              L = _get_laplacian(1.0,g,true,scaling;dtype=dtype)) where {N}
+                              Ldtype = DEFAULT_DATA_TYPE,
+                              L = _get_laplacian(1.0,g,true,scaling;dtype=Ldtype)) where {N}
 
 	X = points(bl)
   sscalar_cache = nothing
@@ -185,7 +186,8 @@ function SurfaceVectorCache(bl::BodyList,a::ScalarData{N},nrm::VectorData{N},g::
                               ddftype = DEFAULT_DDF,
                               scaling = DEFAULT_SCALING,
                               dtype = DEFAULT_DATA_TYPE,
-                              L = _get_laplacian(1.0,g,true,scaling;dtype=dtype)) where {N}
+                              Ldtype = DEFAULT_DATA_TYPE,
+                              L = _get_laplacian(1.0,g,true,scaling;dtype=Ldtype)) where {N}
 
 	X = points(bl)
   sscalar_cache = ScalarData(X, dtype = dtype)
