@@ -2,18 +2,24 @@
     @snapshotoutput(name)
 
 A function that returns some instantaneous output about a time-varying solution should have
-the signature `name(state,constraint,aux_state,sys::ILMSystem,t[,kwargs...])`, where `state` is a solution vector
+the signature `name(state,constraint,aux_state,sys::ILMSystem,t,[args...];[kwargs...])`, where `state` is a solution vector
 (of the same type as returned by `state(zeros_sol(sys))`), `constraint` is
-of the same type as returned by `constraint(zeros_sol(sys))`),
-`sys` is the system struct,
-`t` is time, and `kwargs` are any additional keyword arguments. This macro
+of the same type as returned by `constraint(zeros_sol(sys))`), and `aux_state` is the same
+as `aux_state(zeros_sol(sys))`, `sys` is the system struct,
+`t` is time, and `args` are additional arguments and `kwargs` are any additional keyword arguments. This macro
 extends that function so that it will also operate on the integrator
 e.g, `name(integrator)`, and the solution history array `sol`, e.g.,
 `name(sol::ODESolution,sys,t)`, using interpolation for values of `t` that are not explicitly
 in the solution array. It can also take a range of values of `t`, e.g,
 `name(sol::ODESolution,sys,0.1:0.01:0.2)`.
+
+This will also create a function `name_xy` that operates on the same sets of arguments, but returns
+a spatially interpolatable version of the quantity `name`, which can be accessed with `x`, `y` coordinates.
+In the case of the array with a time range, it returns a vector of such interpolatable objects.
 """
 macro snapshotoutput(name)
+
+  name_xy = Symbol(name,"_xy")  
 
   return esc(quote
 
@@ -28,11 +34,26 @@ macro snapshotoutput(name)
       $name(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,t::AbstractArray,args...;kwargs...) =
           map(ti -> $name(sol(ti),sys,ti,args...;kwargs...),t)
 
-      export $name
+      
+      $name_xy(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem,t,args...;kwargs...) = interpolatable_field($name(u,sys,t,args...;kwargs...),sys)
+
+      $name_xy(integ::ConstrainedSystems.OrdinaryDiffEq.ODEIntegrator,args...;kwargs...) = interpolatable_field($name(integ,args...;kwargs...),integ.p)
+
+      $name_xy(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,t::Real,args...;kwargs...) = interpolatable_field($name(sol(t),sys,t,args...;kwargs...),sys)
+
+      $name_xy(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,t::AbstractArray,args...;kwargs...) =
+          map(ti -> interpolatable_field($name(sol(ti),sys,ti,args...;kwargs...),sys),t)
+
+      export $name, $name_xy
 
   end)
 
 end
+
+interpolatable_field(a,base_cache::BasicILMCache) = interpolatable_field(a,base_cache.g)
+interpolatable_field(a,sys::ILMSystem) = interpolatable_field(a,sys.base_cache)
+
+
 
 """
     @scalarsurfacemetric(name)

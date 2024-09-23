@@ -379,6 +379,34 @@ temperature(sol,sys,0.0051:0.0001:0.0061);
 nothing #hide
 ````
 
+This also gives us a spatially-interpolated version of the temperature
+field. To get this interpolated version at $t = 0.0051$, for example,
+
+````@example heatconduction
+Tfcn = temperature_xy(sol,sys,0.0051)
+````
+
+And then, to get the temperature at location $(x,y) = (-0.9,0)$, for example,
+
+````@example heatconduction
+Tfcn(-0.9,0)
+````
+
+We can also get a time array of these spatially-interpolated fields
+by supplying `temperature_xy` with an array of times.
+
+````@example heatconduction
+Tfcn_array = temperature_xy(sol,sys,0.0051:0.0001:0.0061);
+nothing #hide
+````
+
+Then, each element in `Tfcn_array` corresponds to an entry
+in the given time array, and can be accessed at an $(x,y)$ point.
+
+````@example heatconduction
+Tfcn_array[4](-0.9,0)
+````
+
 ## Motions
 It is straightforward to make bodies move in time-varying problems,
 using the `RigidBodyMotion` function. In the previous example
