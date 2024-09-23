@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Stokes flow · ImmersedLayers.jl</title><meta name="title" content="Stokes flow · ImmersedLayers.jl"/><meta property="og:title" content="Stokes flow · ImmersedLayers.jl"/><meta property="twitter:title" content="Stokes flow · ImmersedLayers.jl"/><meta name="description" content="Documentation for ImmersedLayers.jl."/><meta property="og:description" content="Documentation for ImmersedLayers.jl."/><meta property="twitter:description" content="Documentation for ImmersedLayers.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">ImmersedLayers.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Basics</span><ul><li><a class="tocitem" href="../caches/">Immersed layer caches</a></li><li><a class="tocitem" href="../surfaceops/">Surface-grid operations</a></li><li><a class="tocitem" href="../multbodies/">Multiple bodies</a></li><li><a class="tocitem" href="../gridops/">Grid operations</a></li><li><a class="tocitem" href="../helmholtz/">Helmholtz decomposition</a></li><li><a class="tocitem" href="../matrices/">Matrix operators</a></li><li><a class="tocitem" href="../dirichlet/">A Dirichlet Poisson problem</a></li><li><a class="tocitem" href="../utilities/">Utilities</a></li></ul></li><li><span class="tocitem">Setting up PDEs</span><ul><li><a class="tocitem" href="../problems/">Problems and the system</a></li><li><a class="tocitem" href="../neumann/">Poisson with Neumann conditions</a></li><li class="is-active"><a class="tocitem" href>Stokes flow</a><ul class="internal"><li><a class="tocitem" href="#Set-up-the-extra-cache-and-solve-function"><span>Set up the extra cache and solve function</span></a></li><li><a class="tocitem" href="#Set-up-a-grid,-body,-and-boundary-conditions"><span>Set up a grid, body, and boundary conditions</span></a></li><li><a class="tocitem" href="#Solve-the-problem"><span>Solve the problem</span></a></li></ul></li><li><a class="tocitem" href="../heatconduction/">Setting up a time-varying PDE</a></li><li><a class="tocitem" href="../heatconduction-unbounded/">A time-varying PDE with forcing</a></li><li><a class="tocitem" href="../heatconduction-neumann/">A time-varying PDE with Neumann conditions</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Setting up PDEs</a></li><li class="is-active"><a href>Stokes flow</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Stokes flow</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaIBPM/ImmersedLayers.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/JuliaIBPM/ImmersedLayers.jl/blob/main/test/literate/stokes.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Stokes-flow"><a class="docs-heading-anchor" href="#Stokes-flow">Stokes flow</a><a id="Stokes-flow-1"></a><a class="docs-heading-anchor-permalink" href="#Stokes-flow" title="Permalink"></a></h1><p>Here, we&#39;ll demonstrate a solution of the Stokes equations, with Dirichlet (i.e. no-slip) boundary conditions on a surface. The purpose of this case is to demonstrate the use of the tools with vector-valued data – in this case, the fluid velocity field.</p><p>After taking the curl of the velocity-pressure form of the Stokes equations, the governing equations for this problem can be written as</p><p class="math-container">\[\mu \nabla^2 \omega - \nabla \times (\delta(\chi) \mathbf{\sigma}) = \nabla\times \nabla \cdot (\delta(\chi)\mathbf{\Sigma})\]</p><p class="math-container">\[\delta^T(\chi) \mathbf{v} = \overline{\mathbf{v}}_b\]</p><p class="math-container">\[\mathbf{v} = \nabla \phi + \nabla\times \psi\]</p><p>where <span>$\psi$</span> and <span>$\phi$</span> are the solutions of</p><p class="math-container">\[\nabla^2 \psi = -\omega\]</p><p class="math-container">\[\nabla^2 \phi = \delta(\chi) \mathbf{n}\cdot [\mathbf{v}_b]\]</p><p>and <span>$\mathbf{\Sigma} = \mu ([\mathbf{v}_b]\mathbf{n} + \mathbf{n} [\mathbf{v}_b] - \mathbf{n}\cdot[\mathbf{v}_b]\mathbf{I})$</span> is a surface viscous flux tensor; and <span>$[\mathbf{v}_b] = \mathbf{v}_b^+ - \mathbf{v}_b^-$</span> and <span>$\overline{\mathbf{v}}_b = (\mathbf{v}_b^+ + \mathbf{v}_b^-)/2$</span> are the jump and average of the surface velocities on either side of a surface.</p><p>We can discretize and combine these equations into a saddle-point form for <span>$\psi$</span> and <span>$\sigma$</span>:</p><p class="math-container">\[\begin{bmatrix}L^2 &amp; C_s^T \\ C_s &amp; 0 \end{bmatrix}\begin{pmatrix} \psi \\ \mathbf{\sigma} \end{pmatrix} = \begin{pmatrix} -C D_s [\mathbf{v}_b]  \\ \overline{\mathbf{v}}_b - G_s L^{-1} R \mathbf{n}\cdot [\mathbf{v}_b]  \end{pmatrix}\]</p><p>Note that <span>$L^2$</span> represents the discrete biharmonic operator. (We have absorbed the viscosity <span>$\mu$</span> into the scaling of the problem.)</p><p>We can easily break this down into algorithmic form by the same block-LU decomposition of other problems. The difference here is that <span>$\mathbf{v}$</span> and <span>$\mathbf{\sigma}$</span> are vector-valued, so we treat this fundamentally as a vector-valued problem.</p><pre><code class="language-julia hljs">using ImmersedLayers
+using Plots
+using LinearAlgebra
+using UnPack</code></pre><h2 id="Set-up-the-extra-cache-and-solve-function"><a class="docs-heading-anchor" href="#Set-up-the-extra-cache-and-solve-function">Set up the extra cache and solve function</a><a id="Set-up-the-extra-cache-and-solve-function-1"></a><a class="docs-heading-anchor-permalink" href="#Set-up-the-extra-cache-and-solve-function" title="Permalink"></a></h2><p>The problem type is generated with the usual macro call, but now with <code>vector</code> type</p><pre><code class="language-julia hljs">@ilmproblem StokesFlow vector</code></pre><p>As with other cases, the extra cache holds additional intermediate data, as well as the Schur complement. We need a few more intermediate variable for this problem. We&#39;ll also construct the filtering matrix for showing the traction field.</p><pre><code class="language-julia hljs">struct StokesFlowCache{SMT,SSMT,CMT,RCT,DVT,VNT,ST,VFT,FT} &lt;: AbstractExtraILMCache
+   S :: SMT
+   Ss :: SSMT
+   C :: CMT
+   Rc :: RCT
+   dv :: DVT
+   vb :: DVT
+   vprime :: DVT
+   dvn :: VNT
+   sstar :: ST
+   vϕ :: VFT
+   ϕ :: FT
+end</code></pre><p>Extend the <code>prob_cache</code> function to construct the extra cache</p><pre><code class="language-julia hljs">function ImmersedLayers.prob_cache(prob::StokesFlowProblem,base_cache::BasicILMCache)
+    S = create_CL2invCT(base_cache)
+    Ss = create_CLinvCT_scalar(base_cache)
+    C = create_surface_filter(base_cache)
+
+    dv = zeros_surface(base_cache)
+    vb = zeros_surface(base_cache)
+    vprime = zeros_surface(base_cache)
+
+    dvn = ScalarData(dv)
+    sstar = zeros_gridcurl(base_cache)
+    vϕ = zeros_grid(base_cache)
+    ϕ = Nodes(Primal,sstar)
+
+    Rc = RegularizationMatrix(base_cache,dvn,ϕ)
+
+    StokesFlowCache(S,Ss,C,Rc,dv,vb,vprime,dvn,sstar,vϕ,ϕ)
+end</code></pre><p>And finally, extend the <code>solve</code> function to do the actual solving. We pass in the external and internal surface velocities via the <code>bc</code> keyword The function returns the velocity field, streamfunction field, and surface traction</p><pre><code class="language-julia hljs">function ImmersedLayers.solve(prob::StokesFlowProblem,sys::ILMSystem)
+    @unpack extra_cache, base_cache, bc, phys_params = sys
+    @unpack nrm = base_cache
+    @unpack S, Ss, C, Rc, dv, vb, vprime, sstar, dvn, vϕ, ϕ  = extra_cache
+
+    σ = zeros_surface(sys)
+    s = zeros_gridcurl(sys)
+    v = zeros_grid(sys)
+
+    # Get the jumps in velocity across surface
+    prescribed_surface_jump!(dv,sys)
+
+    # Compute ψ*
+    surface_divergence_symm!(v,dv,sys)
+    curl!(sstar,v,sys)
+    sstar .*= -1.0
+
+    inverse_laplacian!(sstar,sys)
+    inverse_laplacian!(sstar,sys)
+
+    # Adjustment for jump in normal velocity
+    pointwise_dot!(dvn,nrm,dv)
+    regularize!(ϕ,dvn,Rc)
+    inverse_laplacian!(ϕ,sys)
+    grad!(vϕ,ϕ,sys)
+
+    # Get the average velocity on the surface
+    prescribed_surface_average!(vb,sys)
+    interpolate!(vprime,vϕ,sys)
+    vprime .= vb - vprime
+
+    # Compute surface velocity due to ψ*
+    curl!(v,sstar,sys)
+    interpolate!(vb,v,sys)
+
+    # Spurious slip
+    vprime .-= vb
+    σ .= S\vprime
+
+    # Correction streamfunction
+    surface_curl!(s,σ,sys)
+    s .*= -1.0
+    inverse_laplacian!(s,sys)
+    inverse_laplacian!(s,sys)
+
+    # Correct
+    s .+= sstar
+
+    # Assemble the velocity
+    curl!(v,s,sys)
+    v .+= vϕ
+
+    # Add the streamfunction equivalent to scalar potential
+    ds = zeros_surfacescalar(base_cache)
+    surface_grad_cross!(ds,ϕ,base_cache)
+    ds .= Ss\ds
+    surface_curl_cross!(sstar,ds,base_cache)
+    sstar .*= -1.0
+    inverse_laplacian!(sstar,base_cache)
+    s .+= sstar
+
+    # Filter the traction twice to clean it up a bit
+    σ .= C^2*σ
+
+    return v, s, σ
+end</code></pre><h2 id="Set-up-a-grid,-body,-and-boundary-conditions"><a class="docs-heading-anchor" href="#Set-up-a-grid,-body,-and-boundary-conditions">Set up a grid, body, and boundary conditions</a><a id="Set-up-a-grid,-body,-and-boundary-conditions-1"></a><a class="docs-heading-anchor-permalink" href="#Set-up-a-grid,-body,-and-boundary-conditions" title="Permalink"></a></h2><p>We&#39;ll consider a rectangle here</p><pre><code class="language-julia hljs">Δx = 0.01
+Lx = 4.0
+xlim = (-Lx/2,Lx/2)
+ylim = (-Lx/2,Lx/2)
+g = PhysicalGrid(xlim,ylim,Δx)
+Δs = 1.4*cellsize(g)
+body = Rectangle(0.5,0.25,Δs)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Closed polygon with 4 vertices and 214 points
+   Current position: (0.0,0.0)
+   Current angle (rad): 0.0
+</code></pre><p>Set up the boundary condition functions and assemble them into a <code>Dict</code>. We will consider the flow generated by simply translating the body to the right at unit velocity. We set the external <span>$x$</span> velocity to 1 and <span>$y$</span> velocity to zero. The internal velocity we set to zero.</p><pre><code class="language-julia hljs">function get_vsplus(base_cache,phys_params)
+    vsplus = zeros_surface(base_cache)
+    vsplus.u .= 1.0
+    return vsplus
+end
+get_vsminus(base_cache,phys_params) = zeros_surface(base_cache)
+
+bcdict = Dict(&quot;exterior&quot;=&gt;get_vsplus,&quot;interior&quot;=&gt;get_vsminus)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dict{String, Function} with 2 entries:
+  &quot;interior&quot; =&gt; get_vsminus
+  &quot;exterior&quot; =&gt; get_vsplus</code></pre><p>Set up the problem and the system, passing in the boundary condition information</p><pre><code class="language-julia hljs">prob = StokesFlowProblem(g,body,scaling=GridScaling,bc=bcdict)
+sys = construct_system(prob);</code></pre><h2 id="Solve-the-problem"><a class="docs-heading-anchor" href="#Solve-the-problem">Solve the problem</a><a id="Solve-the-problem-1"></a><a class="docs-heading-anchor-permalink" href="#Solve-the-problem" title="Permalink"></a></h2><pre><code class="language-julia hljs">@time v, s, σ = solve(prob,sys)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">  0.182908 seconds (200.79 k allocations: 57.155 MiB, 8.19% compilation time)</code></pre><p>Let&#39;s look at the velocity components</p><pre><code class="language-julia hljs">plot(v,sys)</code></pre><img src="ee73cf33.svg" alt="Example block output"/><p>Note that the velocity is zero inside, as desired. Let&#39;s look at the streamlines here</p><pre><code class="language-julia hljs">plot(s,sys)</code></pre><img src="eaf3bf7d.svg" alt="Example block output"/><p>We&#39;ll plot the surface traction components, too.</p><pre><code class="language-julia hljs">plot(σ.u,sys,label=&quot;σx&quot;)
+plot!(σ.v,sys,label=&quot;σy&quot;)</code></pre><img src="d23104c4.svg" alt="Example block output"/><p>Now, let&#39;s apply a different motion, where we rotate it counter-clockwise at unit angular velocity. We simply re-define the external velocity function.</p><pre><code class="language-julia hljs">function get_vsplus(base_cache,phys_params)
+    pts = points(base_cache)
+    vsplus = zeros_surface(base_cache)
+    vsplus.u .= -pts.v
+    vsplus.v .= pts.u
+    return vsplus
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">get_vsplus (generic function with 1 method)</code></pre><p>Solve it again and plot the velocity and streamlines</p><pre><code class="language-julia hljs">v, s, σ = solve(prob,sys)
+plot(v,sys)</code></pre><img src="a8f7708f.svg" alt="Example block output"/><pre><code class="language-julia hljs">plot(s,sys)</code></pre><img src="1443cad2.svg" alt="Example block output"/><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../neumann/">« Poisson with Neumann conditions</a><a class="docs-footer-nextpage" href="../heatconduction/">Setting up a time-varying PDE »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Monday 23 September 2024 21:57">Monday 23 September 2024</span>. Using Julia version 1.7.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
