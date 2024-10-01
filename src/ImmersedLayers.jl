@@ -78,6 +78,14 @@ const DEFAULT_SCALING = GridScaling
 const DEFAULT_DATA_TYPE = Float64
 const DEFAULT_DDF = CartesianGrids.Yang3
 
+#=
+This is necessary to avoid conflicting broadcast rules for calculations between
+GridData and arrays. This comes up for adaptive time stepping.
+=#
+Base.Broadcast.BroadcastStyle(::ConstrainedSystems.RecursiveArrayTools.ArrayPartitionStyle{Base.Broadcast.DefaultArrayStyle{2}},
+                              ::ConstrainedSystems.RecursiveArrayTools.ArrayPartitionStyle{Base.Broadcast.ArrayStyle{GridData}}) = 
+                              ConstrainedSystems.RecursiveArrayTools.ArrayPartitionStyle{Base.Broadcast.ArrayStyle{GridData}}()
+
 
 """
 $(TYPEDEF)
