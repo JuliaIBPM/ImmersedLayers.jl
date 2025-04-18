@@ -27,21 +27,21 @@ macro snapshotoutput(name)
 
       $name(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem{S,P,0},t,args...;kwargs...) where {S,P} = $name(state(u),zeros_surface(sys),aux_state(u),sys,t,args...;kwargs...)
 
-      $name(integ::ConstrainedSystems.OrdinaryDiffEq.ODEIntegrator,args...;kwargs...) = $name(integ.u,integ.p,integ.t,args...;kwargs...)
+      $name(integ::ODEIntegrator,args...;kwargs...) = $name(integ.u,integ.p,integ.t,args...;kwargs...)
 
-      $name(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,t::Real,args...;kwargs...) = $name(sol(t),sys,t,args...;kwargs...)
+      $name(sol::ODESolution,sys::ILMSystem,t::Real,args...;kwargs...) = $name(sol(t),sys,t,args...;kwargs...)
 
-      $name(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,t::AbstractArray,args...;kwargs...) =
+      $name(sol::ODESolution,sys::ILMSystem,t::AbstractArray,args...;kwargs...) =
           map(ti -> $name(sol(ti),sys,ti,args...;kwargs...),t)
 
       
       $name_xy(u::ConstrainedSystems.ArrayPartition,sys::ILMSystem,t,args...;kwargs...) = interpolatable_field($name(u,sys,t,args...;kwargs...),sys)
 
-      $name_xy(integ::ConstrainedSystems.OrdinaryDiffEq.ODEIntegrator,args...;kwargs...) = interpolatable_field($name(integ,args...;kwargs...),integ.p)
+      $name_xy(integ::ODEIntegrator,args...;kwargs...) = interpolatable_field($name(integ,args...;kwargs...),integ.p)
 
-      $name_xy(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,t::Real,args...;kwargs...) = interpolatable_field($name(sol(t),sys,t,args...;kwargs...),sys)
+      $name_xy(sol::ODESolution,sys::ILMSystem,t::Real,args...;kwargs...) = interpolatable_field($name(sol(t),sys,t,args...;kwargs...),sys)
 
-      $name_xy(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,t::AbstractArray,args...;kwargs...) =
+      $name_xy(sol::ODESolution,sys::ILMSystem,t::AbstractArray,args...;kwargs...) =
           map(ti -> interpolatable_field($name(sol(ti),sys,ti,args...;kwargs...),sys),t)
 
       export $name, $name_xy
@@ -74,7 +74,7 @@ the entire history.
 """
 macro scalarsurfacemetric(name)
     return esc(quote
-        function $name(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,bodyid::Int;kwargs...)
+        function $name(sol::ODESolution,sys::ILMSystem,bodyid::Int;kwargs...)
             mom = map((u,t) -> $name(u,sys,t,bodyid;kwargs...),sol.u,sol.t)
             mom
         end
@@ -102,7 +102,7 @@ the entire history.
 """
 macro vectorsurfacemetric(name)
     return esc(quote
-        function $name(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,bodyid::Int;kwargs...)
+        function $name(sol::ODESolution,sys::ILMSystem,bodyid::Int;kwargs...)
             v = map((u,t) -> $name(u,sys,t,bodyid;kwargs...),sol.u,sol.t)
             return tuple([map(vi -> vi[i],v) for i in eachindex(first(v))]...)
         end
@@ -122,12 +122,12 @@ Return the list of surfaces (as a `BodyList`) at the time `t`, using
 the ODE solution array `sol`. If the surfaces are stationary, then
 this simply returns them and ignores the time argument.
 """
-surfaces(sol::ConstrainedSystems.OrdinaryDiffEq.ODESolution,sys::ILMSystem,t) = surfaces(sol(t),sys,t)
+surfaces(sol::ODESolution,sys::ILMSystem,t) = surfaces(sol(t),sys,t)
 
 
 """
-    surfaces(int::ConstrainedSystems.OrdinaryDiffEq.ODEIntegrator) -> BodyList
+    surfaces(int::ODEIntegrator) -> BodyList
 
 Return the list of surfaces (as a `BodyList`) in the integrator `int`.
 """
-surfaces(integ::ConstrainedSystems.OrdinaryDiffEq.ODEIntegrator) = surfaces(integ.u,integ.p,integ.t)
+surfaces(integ::ODEIntegrator) = surfaces(integ.u,integ.p,integ.t)
