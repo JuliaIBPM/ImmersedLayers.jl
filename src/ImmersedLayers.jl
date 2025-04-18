@@ -13,6 +13,10 @@ using DocStringExtensions
 
 import CartesianGrids: Laplacian
 
+import ConstrainedSystems: init
+import ConstrainedSystems.OrdinaryDiffEqCore: ODEIntegrator, ODESolution
+export ODEIntegrator, ODESolution
+
 #using CartesianGrids
 #using RigidBodyTools
 

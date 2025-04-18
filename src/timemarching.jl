@@ -1,4 +1,5 @@
 import ConstrainedSystems: init
+using ConstrainedSystems.OrdinaryDiffEqCore: ODEIntegrator
 
 const DEFAULT_ALGORITHM_WITH_C = ConstrainedSystems.HETrapezoidalAB2()
 const DEFAULT_ALGORITHM_WITHOUT_C = ConstrainedSystems.LiskaIFHERK()
@@ -219,7 +220,7 @@ function RigidBodyTools.update_exogenous!(sys::ILMSystem,a_edof::AbstractVector)
   update_exogenous!(m,a_edof)
 end
 
-function RigidBodyTools.update_exogenous!(integrator::ConstrainedSystems.OrdinaryDiffEq.ODEIntegrator,a_edof::AbstractVector)
+function RigidBodyTools.update_exogenous!(integrator::ODEIntegrator,a_edof::AbstractVector)
   @unpack p, cache = integrator
   @unpack ptmp = cache
   update_exogenous!(p,a_edof)
